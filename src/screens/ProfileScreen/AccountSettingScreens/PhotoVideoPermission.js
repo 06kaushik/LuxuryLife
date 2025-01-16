@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, Switch, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Switch, Dimensions, ScrollView, FlatList } from "react-native";
 import images from "../../../components/images";
+import Modal from "react-native-modal";
+
 
 const PhotoVideoPermissions = ({ navigation }) => {
     // State for switches
@@ -19,6 +21,20 @@ const PhotoVideoPermissions = ({ navigation }) => {
     const [filesharing, setFileSharing] = useState(false)
     const [multimediaprev, SetMultiMediaPrev] = useState(false)
     const [storageperm, setStoragePerm] = useState(false)
+    const [sharingwith, setSharingWith] = useState(false)
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedImages, setSelectedImages] = useState([]);
+
+    const users = [
+        { id: 1, name: "StunningMiss, 33", location: "New Delhi", images: [images.dummy, images.dummy1, images.dummy1, images.dummy] },
+        { id: 2, name: "StunningMiss, 33", location: "New Delhi", images: [images.dummy, images.dummy1, images.dummy1, images.dummy] },
+        { id: 3, name: "StunningMiss, 33", location: "New Delhi", images: [images.dummy, images.dummy1, images.dummy1, images.dummy] },
+    ];
+
+    const handleImageClick = (images) => {
+        setSelectedImages(images);
+        setModalVisible(true);
+    };
 
 
     return (
@@ -179,15 +195,69 @@ const PhotoVideoPermissions = ({ navigation }) => {
                 </View>
 
                 <View style={{ borderWidth: 0.5, width: '100%', borderColor: '#E0E2E9', top: 8 }} />
+                <View style={styles.toggleContainer}>
+                    <Text style={[styles.sectionHeader, { marginTop: 20 }]}>Sharing Private{'\n'}Photos with</Text>
+                    <Switch
+                        value={sharingwith}
+                        onValueChange={() => setSharingWith((prev) => !prev)}
+                        trackColor={{ false: "#C4C4C4", true: "#916008" }}
+                        thumbColor={"#FFF"}
+                    />
+                </View>
+                <ScrollView style={{ marginTop: 10 }}>
+                    {users.map((user) => (
+                        <View key={user.id} style={styles.userContainer}>
+                            <Image source={user.images[0]} style={{ height: 130, width: 100, borderRadius: 8 }} />
+                            <View style={{}}>
+                                <Text style={styles.userName}>{user.name}</Text>
+                                <Text style={styles.userLocation}>{user.location}</Text>
+                                <View style={styles.photoContainer}>
+                                    <Image source={user.images[0]} style={styles.photo} />
+                                    <Image source={user.images[1]} style={styles.photo} />
+                                    <TouchableOpacity
+                                        style={styles.imageButton}
+                                        onPress={() => handleImageClick(user.images)}
+                                    >
+                                        <Text style={styles.imageCount}>2+</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
 
-                <View style={styles.photoSection}>
-                    <Text style={styles.sectionHeader}>Sharing Private Photos with</Text>
+                            <TouchableOpacity style={styles.hideButton}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Image source={images.closeeye} style={{ height: 18, width: 18, marginRight: 5 }} />
+                                    <Text style={styles.hideText}>Hide</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                        </View>
+                    ))}
+                </ScrollView>
+
+                {/* Modal for displaying images */}
+                <Modal visible={modalVisible} transparent animationType="slide">
+                    <View style={styles.modalContainer}>
+                        <FlatList
+                            data={selectedImages}
+                            horizontal
+                            keyExtractor={(item, index) => index.toString()}
+                            renderItem={({ item }) => (
+                                <Image source={item} style={styles.modalImage} />
+                            )}
+                        />
+                        <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                            <Text style={styles.closeText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Modal>
+
+                {/* <View style={styles.photoSection}>
                     <Image source={images.privacy} style={styles.privacyIcon} />
                     <Text style={styles.emptyText}>You haven't shared any private photos.</Text>
                     <Text style={styles.infoText}>
                         Members that you have shared private photos with will display here.
                     </Text>
-                </View>
+                </View> */}
             </ScrollView>
         </View>
     );
@@ -273,5 +343,92 @@ const styles = StyleSheet.create({
         textAlign: "center",
         marginTop: 5,
         paddingHorizontal: 10,
+    },
+    userContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginVertical: 15,
+    },
+    photoContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 4, marginLeft: 20
+    },
+    photo: {
+        width: 40,
+        height: 40,
+        borderRadius: 5,
+        marginRight: 5,
+    },
+    imageButton: {
+        backgroundColor: "#916008",
+        borderRadius: 12,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        alignItems: "center",
+    },
+    imageCount: {
+        color: "#FFF",
+        fontFamily: "Poppins-Bold",
+        fontSize: 12,
+    },
+    userInfoContainer: {
+        flex: 1,
+        marginLeft: 10,
+    },
+    userName: {
+        fontFamily: "Poppins-Medium",
+        fontSize: 14,
+        color: "black",
+        marginLeft: 20
+    },
+    userLocation: {
+        fontFamily: "Poppins-Regular",
+        fontSize: 12,
+        color: "#7B7B7B",
+        marginLeft: 20
+    },
+    hideButton: {
+        borderWidth: 1,
+        height: 36,
+        width: 90,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center', // Center content horizontally
+        borderColor: '#B8B8B8',
+        marginTop: 50, // Replacing `top` with `marginTop`
+        marginLeft: 10, // Replacing `left` with `marginLeft`
+    },
+    hideText: {
+        color: "#3C4043",
+        fontFamily: "Poppins-Medium",
+        fontSize: 14,
+        textAlign: 'center',
+        top: 1
+    },
+
+    modalContainer: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.8)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    modalImage: {
+        width: Dimensions.get("window").width, // Full width of the screen
+        height: Dimensions.get("window").height * 0.8, // 80% of screen height
+        resizeMode: "contain", // Ensures the image fits without distortion
+        marginBottom: 20,
+    },
+    closeButton: {
+        backgroundColor: "#916008",
+        padding: 10,
+        borderRadius: 10,
+        bottom: 20
+        // marginTop: 20,
+    },
+    closeText: {
+        color: "#FFF",
+        fontFamily: "Poppins-Bold",
+        fontSize: 14,
     },
 });

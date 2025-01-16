@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect} from "react";
 import { Text, View, TouchableOpacity, Image, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
 import images from "../../../components/images";
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -12,10 +12,27 @@ const VerifyIdentity = ({ navigation }) => {
     const [photos1, setPhotos1] = useState([]);
     const [loading, setLoading] = useState(false);
     const [canSelectBack, setCanSelectBack] = useState(false);
-    const userId = '677687b24cd0469415aa2c8a';
+    const [userdetails, setUserDetails] = useState(null)
+
+
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
+        };
+        fetchUserDetails();
+    }, []);
 
     const uploadPhoto = async (uri) => {
-        const token = await AsyncStorage.getItem('verifcationToken');
+        const token = await AsyncStorage.getItem('authToken');
         try {
             const formData = new FormData();
             formData.append('file', {
@@ -43,7 +60,7 @@ const VerifyIdentity = ({ navigation }) => {
     };
 
     const uploadDocuments = async (frontUrl, backUrl) => {
-        const token = await AsyncStorage.getItem('verifcationToken');
+        const token = await AsyncStorage.getItem('authToken');
         try {
             const payload = {
                 documents: {
@@ -52,7 +69,7 @@ const VerifyIdentity = ({ navigation }) => {
                 },
             };
 
-            const response = await axios.put(`account/upload-document/${userId}`, payload, {
+            const response = await axios.put(`account/upload-document/${userdetails?._id}`, payload, {
                 headers: {
                     Authorization: token,
                     'Content-Type': 'application/json',

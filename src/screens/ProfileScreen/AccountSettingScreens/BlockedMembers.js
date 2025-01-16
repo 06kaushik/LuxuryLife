@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Text, View, TouchableOpacity, Image, StyleSheet, FlatList, ImageBackground } from "react-native";
 import images from "../../../components/images";
 import LinearGradient from 'react-native-linear-gradient';
@@ -7,7 +7,6 @@ import axios from "axios";
 
 const BlockedMembers = ({ navigation }) => {
 
-    const userId = '677687b24cd0469415aa2c8a'
     const [currentPage, setCurrentPage] = useState(0);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMoreData, setHasMoreData] = useState(true);
@@ -49,21 +48,36 @@ const BlockedMembers = ({ navigation }) => {
             image: images.dummy,
         },
     ]);
+    const [userdetails, setUserDetails] = useState(null)
 
+
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
+        };
+        fetchUserDetails();
+    }, []);
 
     const getBlockedMember = async (page = 0) => {
-        const token = await AsyncStorage.getItem('verifcationToken');
+        const token = await AsyncStorage.getItem('authToken');
         const headers = {
             Authorization: token,
         };
         const body = {
             currentPage: page,
             pageLength: 20,
-            
         };
-
         try {
-            const resp = await axios.post(`account/get-blocked-member/${userId}`, body, { headers });
+            const resp = await axios.post(`account/get-blocked-member/${userdetails?._id}`, body, { headers });
             console.log('Response from the viewed me data:', resp.data.data);
 
             if (resp.data.data > 0) {
@@ -143,20 +157,20 @@ const BlockedMembers = ({ navigation }) => {
                 </View>
             ) : (
                 <FlatList
-                data={blockedMembers}
-                renderItem={renderBlockedMembers}
-                keyExtractor={(item, index) => index.toString()}
-                numColumns={2}
-                style={{ marginTop: 20 }}
-                contentContainerStyle={styles.gridContent}
-                onEndReached={loadMoreData}
-                onEndReachedThreshold={0.5} // Trigger load more when 50% from the bottom
-                ListFooterComponent={
-                    isLoadingMore && (
-                        <Text style={{ textAlign: 'center', marginVertical: 10 }}>Loading more...</Text>
-                    )
-                }
-            />
+                    data={blockedMembers}
+                    renderItem={renderBlockedMembers}
+                    keyExtractor={(item, index) => index.toString()}
+                    numColumns={2}
+                    style={{ marginTop: 20 }}
+                    contentContainerStyle={styles.gridContent}
+                    onEndReached={loadMoreData}
+                    onEndReachedThreshold={0.5} // Trigger load more when 50% from the bottom
+                    ListFooterComponent={
+                        isLoadingMore && (
+                            <Text style={{ textAlign: 'center', marginVertical: 10 }}>Loading more...</Text>
+                        )
+                    }
+                />
             )}
         </View>
     );

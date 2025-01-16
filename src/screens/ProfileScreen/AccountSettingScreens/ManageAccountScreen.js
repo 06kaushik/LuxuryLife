@@ -81,7 +81,7 @@ const ManageAccount = ({ navigation }) => {
         } catch (error) {
             console.log('error from the update account api', error.message);
         }
-    }
+    } 
 
     const loadSettingsFromStorage = async () => {
         try {

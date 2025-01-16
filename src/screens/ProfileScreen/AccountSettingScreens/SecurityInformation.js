@@ -6,9 +6,26 @@ import axios from "axios";
 
 const SecurityInformation = ({ navigation }) => {
 
-    const userId = '677687b24cd0469415aa2c8a';
     const [securityQuestions, setSecurityQuestions] = useState(false);
     const [twoFactorAuth, setTwoFactorAuth] = useState(false);
+    const [userdetails, setUserDetails] = useState(null)
+
+
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
+        };
+        fetchUserDetails();
+    }, []);
 
 
     useEffect(() => {
@@ -21,7 +38,7 @@ const SecurityInformation = ({ navigation }) => {
 
 
     const handleSecurity = async () => {
-        const token = await AsyncStorage.getItem('verifcationToken');
+        const token = await AsyncStorage.getItem('authToken');
         const headers = {
             Authorization: token,
         };
@@ -34,9 +51,9 @@ const SecurityInformation = ({ navigation }) => {
         console.log('body of handle security', body);
 
         try {
-            const resp = await axios.put(`account/update-account-settings/${userId}`, body, { headers })
+            const resp = await axios.put(`account/update-account-settings/${userdetails?._id}`, body, { headers })
             console.log('response from handle security', resp.data.data);
-            await AsyncStorage.setItem('accountSettings', JSON.stringify(body));
+            await AsyncStorage.setItem('accountSecurity', JSON.stringify(body));
 
         } catch (error) {
             console.log('error from handle security', error.message);
@@ -45,7 +62,7 @@ const SecurityInformation = ({ navigation }) => {
 
     const loadSettingsFromStorage = async () => {
         try {
-            const storedSettings = await AsyncStorage.getItem('accountSettings');
+            const storedSettings = await AsyncStorage.getItem('accountSecurity');
             if (storedSettings) {
                 const parsedSettings = JSON.parse(storedSettings);
                 setSecurityQuestions(parsedSettings.securituySetting.securityQuestion);
@@ -62,13 +79,13 @@ const SecurityInformation = ({ navigation }) => {
 
     const fetchAccountSettings = async () => {
         try {
-            const token = await AsyncStorage.getItem('verifcationToken');
+            const token = await AsyncStorage.getItem('authToken');
             const headers = { Authorization: token };
-            const response = await axios.get(`account/get-account-settings/${userId}`, { headers });
+            const response = await axios.get(`account/get-account-settings/${userdetails?._id}`, { headers });
             const data = response.data.data;
             setSecurityQuestions(data.securituySetting.securityQuestion);
             setTwoFactorAuth(data.securituySetting.toFactorAuth);
-            await AsyncStorage.setItem('accountSettings', JSON.stringify(data));
+            await AsyncStorage.setItem('accountSecurity', JSON.stringify(data));
         } catch (error) {
             console.error('Error fetching account settings:', error.message);
 

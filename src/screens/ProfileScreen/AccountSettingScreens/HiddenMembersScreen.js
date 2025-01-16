@@ -8,7 +8,6 @@ import axios from "axios";
 const HiddenMembers = ({ navigation }) => {
 
 
-    const userId = '677687b24cd0469415aa2c8a'
     const [currentPage, setCurrentPage] = useState(0);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMoreData, setHasMoreData] = useState(true);
@@ -50,9 +49,27 @@ const HiddenMembers = ({ navigation }) => {
             image: images.dummy,
         },
     ]);
+    const [userdetails, setUserDetails] = useState(null)
+
+
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
+        };
+        fetchUserDetails();
+    }, []);
 
     const getHiddenMember = async (page = 0) => {
-        const token = await AsyncStorage.getItem('verifcationToken');
+        const token = await AsyncStorage.getItem('authToken');
         const headers = {
             Authorization: token,
         };
@@ -61,9 +78,8 @@ const HiddenMembers = ({ navigation }) => {
             pageLength: 20,
 
         };
-
         try {
-            const resp = await axios.post(`account/get-hidden-member/${userId}`, body, { headers });
+            const resp = await axios.post(`account/get-hidden-member/${userdetails?._id}`, body, { headers });
             console.log('Response from the viewed me data:', resp.data.data);
 
             if (resp.data.data > 0) {

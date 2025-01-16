@@ -108,10 +108,12 @@ const AccountSetting = ({ navigation }) => {
             </View>
 
             <View style={styles.cont1}>
-                <View style={{ flexDirection: 'row', }}>
-                    <Image source={images.about} style={styles.img} />
-                    <Text style={styles.txt1}>About</Text>
-                </View>
+                <TouchableOpacity onPress={() => navigation.navigate('About')}>
+                    <View style={{ flexDirection: 'row', }}>
+                        <Image source={images.about} style={styles.img} />
+                        <Text style={styles.txt1}>About</Text>
+                    </View>
+                </TouchableOpacity>
                 <Image source={images.rightarrow} style={styles.arrow} />
             </View>
 

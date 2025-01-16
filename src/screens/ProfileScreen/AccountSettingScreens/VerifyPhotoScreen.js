@@ -11,10 +11,27 @@ const VerifySelfie = ({ navigation }) => {
     const [selfie, setSelfie] = useState(null);
     const [uploadedUrl, setUploadedUrl] = useState(null); // Store the uploaded URL
     const [isUploading, setIsUploading] = useState(false); // Loader state
-    const userId = '677687b24cd0469415aa2c8a';
+    const [userdetails, setUserDetails] = useState(null)
+
+
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
+        };
+        fetchUserDetails();
+    }, []);
 
     const uploadPhoto = async (uri) => {
-        const token = await AsyncStorage.getItem('verifcationToken');
+        const token = await AsyncStorage.getItem('authToken');
         try {
             const formData = new FormData();
             formData.append('file', {
@@ -47,7 +64,7 @@ const VerifySelfie = ({ navigation }) => {
             Toast.show('Please upload a selfie before submitting.', Toast.SHORT);
             return;
         }
-        const token = await AsyncStorage.getItem('verifcationToken');
+        const token = await AsyncStorage.getItem('authToken');
         const payload = {
             step: 24,
             accountUpdatePayload: {
@@ -57,7 +74,7 @@ const VerifySelfie = ({ navigation }) => {
         console.log('Submitting payload:', payload);
 
         try {
-            const response = await axios.put(`auth/update-account/${userId}`, payload, {
+            const response = await axios.put(`auth/update-account/${userdetails?._id}`, payload, {
                 headers: {
                     Authorization: token,
                     'Content-Type': 'application/json',

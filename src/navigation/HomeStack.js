@@ -21,6 +21,7 @@ import UserProfileDetails from "../components/UserProfileDetails";
 import PreferenceTopNavigator from "./PreferenceTopScreen";
 import OneToOneChat from "../screens/ChatScreen/OneToOneChat";
 import ViewProfile from "../screens/ProfileScreen/ViewProfileScreen";
+import AboutScreen from "../screens/ProfileScreen/AccountSettingScreens/AboutScreen";
 
 
 const Stack = createStackNavigator();
@@ -50,6 +51,8 @@ const HomeStack = () => {
             <Stack.Screen name="PreferenceTopScreen" component={PreferenceTopNavigator} />
             <Stack.Screen name="OneToOneChat" component={OneToOneChat} />
             <Stack.Screen name="ViewProfile" component={ViewProfile} />
+            <Stack.Screen name="About" component={AboutScreen} />
+
 
 
 
