@@ -1,0 +1,1 @@
+export const FETCH_URL = 'http://10.5.61.35:8001/api/v1/'

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "387779373749",
+    "project_id": "luxurylifeacade",
+    "storage_bucket": "luxurylifeacade.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:387779373749:android:a16a370be5791ab73e6cfc",
+        "android_client_info": {
+          "package_name": "com.luxurylife"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "387779373749-cpotu83j3mj6c8olgjm58rii4qepvn4m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.luxurylife",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "387779373749-3ikotarkoc8ilie4tqkmstmpuo6kc7tt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQJUHndRvA9IF0p4e-kbj9xnnYpEFAO7Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "387779373749-3ikotarkoc8ilie4tqkmstmpuo6kc7tt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
