@@ -25,8 +25,8 @@ const ResetPassWithSecurityQstn = ({ navigation }) => {
             <TouchableOpacity onPress={() => navigation.goBack()}>
                 <Image source={images.back} style={styles.backIcon} />
             </TouchableOpacity>
-            <Text style={styles.txt}>Verify Your Identity {'\n'} with Security {'\n'} Questions</Text>
-            <Text style={styles.txt1}>Answer the security questions below as {'\n'} an alternate verification method if you {'\n'} can't access your email.</Text>
+            <Text style={styles.txt}>Verify Your Identity with Security Questions</Text>
+            <Text style={styles.txt1}>Answer the security questions below as an alternate verification method if you can't access your email.</Text>
             <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.input}
@@ -39,7 +39,7 @@ const ResetPassWithSecurityQstn = ({ navigation }) => {
                 />
 
             </View>
-            <Text style={styles.txt3}>Need help? Contact our support team for {'\n'} assistance.</Text>
+            <Text style={styles.txt3}>Need help? Contact our support team for assistance.</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
                 <Text style={styles.txt4}>Back to login <Text style={styles.underline}>Log in</Text></Text>
             </TouchableOpacity>

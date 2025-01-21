@@ -22,7 +22,7 @@ const PasswordResttingGudance = ({ navigation }) => {
                 </View>
                 <View style={{ marginLeft: 20 }}>
                     <Text style={styles.txt8}>Check Your Spam/Junk Folder</Text>
-                    <Text style={styles.txt9}>Sometimes, our emails can end up in your {'\n'}spam folder. Make sure to check there!</Text>
+                    <Text style={styles.txt9}>Sometimes, our emails can end up in your spam folder. Make sure to check there!</Text>
                 </View>
             </View>
 
@@ -32,7 +32,7 @@ const PasswordResttingGudance = ({ navigation }) => {
                 </View>
                 <View style={{ marginLeft: 20 }}>
                     <Text style={styles.txt8}>Resend the Reset Link</Text>
-                    <Text style={styles.txt9}>If you still haven't recieved the email, click {'\n'}below to resend the password reset link to {'\n'}your inbox.{'\n'}<Text style={{ textDecorationLine: 'underline' }}>Resend Link</Text></Text>
+                    <Text style={styles.txt9}>If you still haven't recieved the email, click below to resend the password reset link to your inbox. <Text style={{ textDecorationLine: 'underline' }}>Resend Link</Text></Text>
                 </View>
             </View>
 
@@ -42,7 +42,7 @@ const PasswordResttingGudance = ({ navigation }) => {
                 </View>
                 <View style={{ marginLeft: 20 }}>
                     <Text style={styles.txt8}>Contact Support</Text>
-                    <Text style={styles.txt9}>If you're still experiencing issues, feel free to {'\n'}contact our support team for further assistance.{'\n'}<Text style={{ textDecorationLine: 'underline' }}>support@luxurylife.ai</Text></Text>
+                    <Text style={styles.txt9}>If you're still experiencing issues, feel free to contact our support team for further assistance.{'\n'}<Text style={{ textDecorationLine: 'underline' }}>support@luxurylife.ai</Text></Text>
                 </View>
             </View>
 

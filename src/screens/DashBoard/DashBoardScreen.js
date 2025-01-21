@@ -15,6 +15,7 @@ import images from "../../components/images";
 import Modal from 'react-native-modal';
 import ProgressCircle from 'react-native-progress/Circle';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 
 const { width, height } = Dimensions.get("window");
@@ -53,11 +54,16 @@ const DashBoardScreen = ({ navigation }) => {
     const getHobbies = ['Travel', 'Sport', 'Cinema', 'Cooking', 'Adventure']
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [completionPercentage, setCompletionPercentage] = useState(50); // Adjust this as per actual progress
+    const [userdetails, setUserDetails] = useState(null)
+
+
+
 
 
     useEffect(() => {
-        getUserDetails()
-    },[])
+        getUserData()
+    }, [userdetails])
+
 
     const toggleModal = () => {
         setIsModalVisible(!isModalVisible);
@@ -67,6 +73,18 @@ const DashBoardScreen = ({ navigation }) => {
         setSeek(type);
     };
 
+
+    const profileDetailsBottom = scrollY.interpolate({
+        inputRange: [0, 100],  // Track scrolling from the start
+        outputRange: [50, -150],  // Move the profile details up as user scrolls
+        extrapolate: 'clamp',  // Ensure the value doesn't go beyond the range
+    });
+
+    const profileDetailsOpacity = scrollY.interpolate({
+        inputRange: [0, 100],  // Track scrolling from the start
+        outputRange: [1, 0],  // Fade out the profile details as user scrolls
+        extrapolate: 'clamp',
+    });
 
     const handleHHobbies = (hobby) => {
         if (userhobbies.includes(hobby)) {
@@ -128,6 +146,26 @@ const DashBoardScreen = ({ navigation }) => {
         position.setValue({ x: 0, y: 0 });
     };
 
+    const handleHeartSwipe = () => {
+        Animated.timing(position, {
+            toValue: { x: width + 100, y: 0 },
+            duration: 300,
+            useNativeDriver: true,
+        }).start(() => {
+            handleSwipe("right");
+        });
+    };
+
+    const handleCrossSwipe = () => {
+        Animated.timing(position, {
+            toValue: { x: -width - 100, y: 0 },
+            duration: 300,
+            useNativeDriver: true,
+        }).start(() => {
+            handleSwipe("left");
+        });
+    };
+
     const rotate = position.x.interpolate({
         inputRange: [-width / 2, 0, width / 2],
         outputRange: ["-15deg", "0deg", "15deg"],
@@ -147,15 +185,32 @@ const DashBoardScreen = ({ navigation }) => {
         extrapolate: "clamp",
     });
 
-    const getUserDetails = async () => {
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
+        };
+        fetchUserDetails();
+    }, []);
+
+    const getUserData = async () => {
+        const token = await AsyncStorage.getItem('authToken');
+        const headers = {
+            Authorization: token
+        };
         try {
-            const data = await AsyncStorage.getItem('UserData')
-            console.log('response from the async user data', data);
-
-
+            const resp = await axios.get(`home/get-user-profile/${userdetails?._id}`, { headers })
+            console.log('response from the user detailss', resp?.data);
         } catch (error) {
-            console.log('error from the async', error);
-
+            console.log('error fromt he user detalss', error.response.data.message);
         }
     }
 
@@ -197,34 +252,26 @@ const DashBoardScreen = ({ navigation }) => {
                                 )}
                                 scrollEventThrottle={16}
                             >
-
-                                <Animated.Image
-                                    source={item.image}
-                                    style={[styles.image, {
-                                        height: imageHeight,
-                                        opacity: imageOpacity,
-                                    }]}
-                                    resizeMode="cover"
-                                />
-
-                                <LinearGradient
-                                    colors={["transparent", "rgba(0,0,0,2)", "rgba(0,0,0,2)"]}
-                                    locations={[0.1, 0.6, 1]} // Smooth gradient effect
-                                    style={styles.gradient}
-                                >
-                                    <View style={styles.overlayContent}>
-                                        <View style={styles.onlineBadge}>
-                                            <Text style={styles.onlineText1}>Online</Text>
-                                        </View>
-                                        <Text style={styles.cardName}>{item.name}, {item.age}</Text>
-                                        <Text style={styles.cardLocation}>{item.location}</Text>
-                                        <Text style={styles.cardDistance}>{item.distance}</Text>
-
-                                    </View>
-                                </LinearGradient>
-
+                                <TouchableOpacity style={{}} onPress={() => {
+                                    console.log("Image clicked");
+                                    navigation.navigate("UserProfileDetails");
+                                }}>
+                                    <Animated.Image
+                                        source={item.image}
+                                        style={[styles.image, {
+                                            height: imageHeight,
+                                            opacity: imageOpacity,
+                                        }]}
+                                        resizeMode="cover"
+                                    />
+                                    <LinearGradient
+                                        colors={["transparent", "rgba(0,0,0,2)", "rgba(0,0,0,2)"]}
+                                        locations={[0.1, 0.6, 1]}
+                                        style={styles.gradient}
+                                    >
+                                    </LinearGradient>
+                                </TouchableOpacity>
                                 <View style={styles.details}>
-
                                     <View style={styles.contentContainer}>
                                         <View style={styles.cont1}>
                                             <Text style={styles.onlineText}>Online</Text>
@@ -403,17 +450,35 @@ const DashBoardScreen = ({ navigation }) => {
                                 </View>
                             </Animated.ScrollView>
                             {/* Action Buttons */}
-                            <View style={styles.buttonContainer}>
-                                <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={() => navigation.navigate('UserProfileDetails')}>
-                                    <Image source={images.cross} style={styles.buttonIcon} />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={[styles.circleButton, styles.heartButton]}>
-                                    <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
-                                    <Image source={images.chat} style={styles.buttonIcon} />
-                                </TouchableOpacity>
-                            </View>
+
+                            <Animated.View style={{
+                                position: "absolute",
+                                bottom: profileDetailsBottom,  // Interpolated to move it out of view
+                                opacity: profileDetailsOpacity,  // Interpolated to fade it out
+                                width: "100%"
+                            }}>
+                                <View style={{ bottom: 30, left: 16 }}>
+                                    <View style={styles.onlineBadge}>
+                                        <Text style={styles.onlineText1}>Online</Text>
+                                    </View>
+                                    <Text style={styles.cardName}>{item.name}, {item.age}</Text>
+                                    <Text style={styles.cardLocation}>{item.location}</Text>
+                                    <Text style={styles.cardDistance}>{item.distance}</Text>
+                                </View>
+
+                                {/* Action Buttons */}
+                                <View style={styles.buttonContainer}>
+                                    <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={handleCrossSwipe}>
+                                        <Image source={images.cross} style={styles.buttonIcon} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={handleHeartSwipe} style={[styles.circleButton, styles.heartButton]}>
+                                        <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
+                                        <Image source={images.chat} style={styles.buttonIcon} />
+                                    </TouchableOpacity>
+                                </View>
+                            </Animated.View>
                         </Animated.View>
                     );
                 })
@@ -502,13 +567,13 @@ const styles = StyleSheet.create({
     },
     card: {
         width: "100%",
-        height: '80%',
+        height: '85%',
         position: "absolute",
-        bottom: 0, // Align it to the bottom
-        borderTopLeftRadius: 40, // Optional: Add some border radius
-        borderTopRightRadius: 40, // Optional: Add some border radius
-        backgroundColor: "white", // Ensure it has a background color
-        overflow: "hidden", // Keep content inside rounded corners
+        bottom: 0,
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        backgroundColor: "white",
+        overflow: "hidden",
     },
 
     image: {
@@ -527,7 +592,7 @@ const styles = StyleSheet.create({
 
     overlayContent: {
         position: "absolute",
-        bottom: 550,
+        bottom: 200,
         left: 16,
     },
 
@@ -538,7 +603,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#4caf50',
         borderColor: '#4caf50',
         borderRadius: 20,
-        justifyContent: 'center'
+        justifyContent: 'center',
+        bottom: 10
+
     },
     onlineText1: {
         textAlign: 'center',
@@ -591,9 +658,9 @@ const styles = StyleSheet.create({
     buttonContainer: {
         flexDirection: "row",
         justifyContent: "space-around",
-        position: "absolute",
-        bottom: 20,
-        width: "100%",
+        // position: "absolute",
+        // bottom: 20,
+        // width: "100%",
     },
     circleButton: {
         width: 50,

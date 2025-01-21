@@ -23,6 +23,7 @@ const ViewProfile = ({ navigation }) => {
         private: Array(6).fill(null)  // Initialize with 6 empty slots for private photos
     });
     const [userdetails, setUserDetails] = useState(null)
+    const [selectedButton1, setSelectedButton1] = useState('Rejected');
 
     const [isEditing, setIsEditing] = useState(false);
     const [text, setText] = useState('');
@@ -68,41 +69,47 @@ const ViewProfile = ({ navigation }) => {
 
 
     useEffect(() => {
-        const fetchUserDetails = async () => {
-            try {
-                const data = await AsyncStorage.getItem('UserData');
-                if (data !== null) {
-                    const parsedData = JSON.parse(data);
-                    setUserDetails(parsedData);
-                    setPhotos({
-                        public: [...parsedData.publicPhotos, ...Array(6 - parsedData.publicPhotos.length).fill(null)],
-                        private: [...parsedData.privatePhotos, ...Array(6 - parsedData.privatePhotos.length).fill(null)]
-                    });
-                    setText(parsedData?.myHeading);
-                    setAbout(parsedData?.aboutUsDescription)
-                    setUserHobbies(parsedData?.hobbies)
-                    const ageRange = parsedData?.preferences?.ageRange;
-                    if (ageRange) {
-                        setAgeRange([ageRange.min, ageRange.max]);
-                    }
-                    setEthnicity(parsedData?.ethnicity)
-                    setHeight(parsedData?.tall?.value)
-                    setUnit(parsedData?.tall?.unit)
-                    setSelectedBodyType(parsedData?.bodyType)
-                    setChild(parsedData?.children)
-                    setSmoke(parsedData?.smoke)
-                    setDrinking(parsedData?.drink)
-                    setEducation(parsedData?.highestEducation)
-                    setField(parsedData?.workField)
-                    setNetWorth(parsedData?.netWorthRange)
-                }
-            } catch (error) {
-                console.log('Error fetching user data:', error);
-            }
-        };
-
         fetchUserDetails();
     }, []);
+
+    const fetchUserDetails = async () => {
+        try {
+            const data = await AsyncStorage.getItem('UserData');
+            if (data !== null) {
+                const parsedData = JSON.parse(data);
+                setUserDetails(parsedData);
+                setPhotos({
+                    public: [
+                        ...parsedData.publicPhotos,
+                        ...Array(6 - parsedData.publicPhotos.length).fill(null),
+                    ],
+                    private: [
+                        ...parsedData.privatePhotos,
+                        ...Array(6 - parsedData.privatePhotos.length).fill(null),
+                    ],
+                });
+                setText(parsedData?.myHeading);
+                setAbout(parsedData?.aboutUsDescription)
+                setUserHobbies(parsedData?.hobbies)
+                const ageRange = parsedData?.preferences?.ageRange;
+                if (ageRange) {
+                    setAgeRange([ageRange.min, ageRange.max]);
+                }
+                setEthnicity(parsedData?.ethnicity)
+                setHeight(parsedData?.tall?.value)
+                setUnit(parsedData?.tall?.unit)
+                setSelectedBodyType(parsedData?.bodyType)
+                setChild(parsedData?.children)
+                setSmoke(parsedData?.smoke)
+                setDrinking(parsedData?.drink)
+                setEducation(parsedData?.highestEducation)
+                setField(parsedData?.workField)
+                setNetWorth(parsedData?.netWorthRange)
+            }
+        } catch (error) {
+            console.log('Error fetching user data:', error);
+        }
+    };
 
     const handleSubmit = async () => {
         const token = await AsyncStorage.getItem('authToken');
@@ -111,18 +118,18 @@ const ViewProfile = ({ navigation }) => {
         };
 
         try {
-            // Upload each photo and get the URLs
+            console.log('Current photos state:', photos);
+
             const urls = await Promise.all(
                 [...photos.public, ...photos.private].map((photo, index) => {
                     if (!photo) return null;
-                    const isPrivate = index >= photos.public.length;  // Determine if it's a private photo
-                    return uploadPhoto(photo, isPrivate);  // Upload and get the URL
+                    const isPrivate = index >= photos.public.length; // Determine if it's private
+                    return uploadPhoto(photo, isPrivate); // Upload and get the URL
                 })
             );
 
-
-            const publicPhotosUrls = urls.slice(1, 7).filter(Boolean);
-            const privatePhotosUrls = urls.slice(7).filter(Boolean);
+            const publicPhotosUrls = urls.slice(0, 6).filter(Boolean);
+            const privatePhotosUrls = urls.slice(6).filter(Boolean);
 
             const accountUpdatePayload = {
                 step: 20,
@@ -131,23 +138,22 @@ const ViewProfile = ({ navigation }) => {
                     privatePhotos: privatePhotosUrls,
                 },
             };
-
             console.log('Payload for account update:', accountUpdatePayload);
-
-            // Send the request to update the account
-            const response = await axios.put(`auth/update-account/${userdetails?._id}`, accountUpdatePayload, { headers });
+            const response = await axios.put(
+                `auth/update-account/${userdetails?._id}`,
+                accountUpdatePayload,
+                { headers }
+            );
             console.log('Response from account update:', response.data);
             if (response.status === 200) {
                 Toast.show('Photos uploaded successfully!', Toast.SHORT);
+                fetchUserDetails()
             }
         } catch (error) {
-            // console.error('Error updating account:', error.response?.data || error.message);
-            if (error.message === 'Network Error') {
-                throw new Error('Network Error');
-            }
-            // Alert.alert('Error', 'Failed to upload photos. Please try again.');
+            console.error('Error updating account:', error.response?.data || error.message);
         }
     };
+
 
     const uploadPhoto = async (uri, isPrivate = false) => {
         const token = await AsyncStorage.getItem('authToken');
@@ -159,7 +165,10 @@ const ViewProfile = ({ navigation }) => {
                 type: 'image/jpeg',
             });
 
-            const endpoint = isPrivate ? 'file/upload-private' : 'file/upload';
+            const endpoint = isPrivate
+                ? 'file/upload-private'
+                : 'file/upload';
+
             const response = await axios.post(endpoint, formData, {
                 headers: {
                     Authorization: token,
@@ -176,11 +185,12 @@ const ViewProfile = ({ navigation }) => {
         }
     };
 
+
     const renderItem = (item, index, type, isResponsePhoto) => (
         <TouchableOpacity
             key={index}
             style={styles.photoBox}
-            onPress={() => handlePhotoSelection(index, type)} // Pass the correct index to handlePhotoSelection
+            onPress={() => handlePhotoSelection(index, type)}
         >
             {item ? (
                 <ImageBackground
@@ -190,14 +200,27 @@ const ViewProfile = ({ navigation }) => {
                 >
                     <TouchableOpacity
                         style={styles.removeIcon}
-                        onPress={() => isResponsePhoto ? handleDeletePhoto(index, type, item) : handleRemovePhoto(index, type)}
+                        onPress={() =>
+                            isResponsePhoto
+                                ? handleDeletePhoto(index, type, item)
+                                : handleRemovePhoto(index, type)
+                        }
                     >
                         <View style={styles.cont4}>
-                            <Image style={styles.crossText} source={isResponsePhoto ? images.delete : images.cross} />
+                            <Image
+                                style={styles.crossText}
+                                source={
+                                    isResponsePhoto ? images.delete : images.cross
+                                }
+                            />
                         </View>
                     </TouchableOpacity>
                     {isUploading[index] && (
-                        <ActivityIndicator style={{ alignSelf: 'center', top: 30 }} size="large" color="white" />
+                        <ActivityIndicator
+                            style={{ alignSelf: 'center', top: 30 }}
+                            size="large"
+                            color="white"
+                        />
                     )}
                 </ImageBackground>
             ) : (
@@ -205,6 +228,7 @@ const ViewProfile = ({ navigation }) => {
             )}
         </TouchableOpacity>
     );
+
 
     const handlePhotoSelection = async (index, type) => {
         const options = {
@@ -216,61 +240,56 @@ const ViewProfile = ({ navigation }) => {
             if (!response.didCancel && !response.error && response.assets) {
                 const newPhotoUri = response.assets[0].uri;
 
-                // Update the photos state to reflect the selected photo
                 setPhotos((prevState) => {
                     const updatedPhotos = { ...prevState };
-                    if (!updatedPhotos[type]) {
-                        updatedPhotos[type] = Array(6).fill(null); // Initialize the type if not exists
-                    }
-                    updatedPhotos[type][index] = newPhotoUri; // Set the selected slot with the new photo URI
+                    updatedPhotos[type][index] = newPhotoUri; // Update the correct array
                     return updatedPhotos;
                 });
 
                 try {
-                    const isPrivate = index >= 6;  // Check if the photo is private based on index
+                    const isPrivate = type === 'private';
                     const uploadedUrl = await uploadPhoto(newPhotoUri, isPrivate);
 
-                    // Update AsyncStorage with the new uploaded photo URL
+                    // Update AsyncStorage
                     const data = await AsyncStorage.getItem('UserData');
                     if (data) {
                         const parsedData = JSON.parse(data);
+
                         if (isPrivate) {
-                            parsedData.privatePhotos.push(uploadedUrl);
+                            parsedData.privatePhotos = [
+                                ...parsedData.privatePhotos,
+                                uploadedUrl,
+                            ];
                         } else {
-                            parsedData.publicPhotos.push(uploadedUrl);
+                            parsedData.publicPhotos = [
+                                ...parsedData.publicPhotos,
+                                uploadedUrl,
+                            ];
                         }
 
-                        // Save the updated data back to AsyncStorage
-                        await AsyncStorage.setItem('UserData', JSON.stringify(parsedData));
+                        await AsyncStorage.setItem(
+                            'UserData',
+                            JSON.stringify(parsedData)
+                        );
 
-                        // Update the photos state to trigger re-render after upload
-                        setPhotos(prevState => {
+                        // Update state
+                        setPhotos((prevState) => {
                             const updatedPhotos = { ...prevState };
-                            if (isPrivate) {
-                                updatedPhotos.private[index] = uploadedUrl; // Update the private photo array
-                            } else {
-                                updatedPhotos.public[index] = uploadedUrl; // Update the public photo array
-                            }
-                            return updatedPhotos; // Return updated state to trigger re-render
+                            updatedPhotos[type][index] = uploadedUrl;
+                            return updatedPhotos;
                         });
-                        handleSubmit()
-                        console.log('Updated photos in AsyncStorage:', parsedData);
+
+                        // Call handleSubmit to sync with the backend
+                        await handleSubmit();
                     }
                 } catch (error) {
                     console.error('Error uploading photo:', error);
-                } finally {
-                    // Stop loader and any other finalization actions
-                    setIsUploading(prevState => {
-                        const newState = [...prevState];
-                        newState[index] = false; // Mark upload as complete
-                        return newState;
-                    });
                 }
-            } else {
-                console.log('Photo selection was canceled or an error occurred');
             }
         });
     };
+
+
 
     const handleDeletePhoto = async (index, type, item) => {
         // Show loader during deletion
@@ -836,9 +855,13 @@ const ViewProfile = ({ navigation }) => {
 
     return (
         <View style={styles.main}>
+            <TouchableOpacity style={{ flexDirection: 'row', marginTop: 20, marginLeft: 16 }} onPress={() => navigation.goBack('')}>
+                <Image source={images.back} style={{ height: 20, width: 20, top: 8 }} />
+                <Text style={{ marginLeft: 10, fontFamily: 'Poppins-Medium', fontSize: 20 }}>Profile</Text>
+            </TouchableOpacity>
             <View style={styles.cont}>
                 <Image source={{ uri: userdetails?.profilePicture }} style={styles.profile} />
-                <Text style={styles.txt}>Himanshu</Text>
+                <Text style={styles.txt}>{userdetails?.userName}</Text>
             </View>
             <View style={styles.cont1}>
                 <AnimatedCircularProgress
@@ -901,6 +924,85 @@ const ViewProfile = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
                 )}
+                <Text style={[styles.txt4, { marginLeft: 16, marginTop: 20 }]}>Request Private Photos</Text>
+                <View style={{
+                    borderWidth: 1,
+                    height: 80,
+                    width: '90%',
+                    alignSelf: 'center',
+                    borderRadius: 5,
+                    borderColor: '#D9D9D9',
+                    padding: 10,
+                    justifyContent: 'center',
+                }}>
+                    <View style={{
+                        flexDirection: "row",
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                    }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Image source={images.profilePic} style={{ height: 60, width: 60, borderRadius: 30, marginRight: 10 }} />
+                            <View style={{ marginTop: 5 }}>
+                                <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 16, color: '#000', }}>StunningMiss,33</Text>
+                                <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 14, color: '#7B7B7B' }}>New Delhi</Text>
+                            </View>
+                        </View>
+
+                        <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 12, color: '#7B7B7B', marginBottom: 5 }}>2 hours</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <TouchableOpacity style={{ marginRight: 10, borderWidth: 1, height: 30, width: 30, justifyContent: 'center', borderRadius: 100, backgroundColor: 'black', borderColor: 'black' }}>
+                                    <Image source={images.cross} style={{ height: 15, width: 15, alignSelf: 'center', tintColor: 'white' }} />
+                                </TouchableOpacity>
+                                <TouchableOpacity style={{ borderWidth: 1, height: 30, width: 30, justifyContent: 'center', borderRadius: 100, backgroundColor: "#916008", borderColor: "#916008" }}>
+                                    <Image source={images.tick1} style={{ height: 20, width: 20, alignSelf: 'center', tintColor: 'white' }} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+                <View style={{
+                    borderWidth: 1,
+                    height: 80,
+                    width: '90%',
+                    alignSelf: 'center',
+                    borderRadius: 5,
+                    borderColor: '#D9D9D9',
+                    padding: 10,
+                    justifyContent: 'center',
+                    marginTop: 20
+                }}>
+                    <View style={{
+                        flexDirection: "row",
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                    }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Image source={images.profilePic} style={{ height: 60, width: 60, borderRadius: 30, marginRight: 10 }} />
+                            <View style={{ marginTop: 5 }}>
+                                <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 16, color: '#000', }}>StunningMiss,33</Text>
+                                <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 14, color: '#7B7B7B' }}>New Delhi</Text>
+                            </View>
+                        </View>
+
+                        <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 12, color: '#7B7B7B', marginBottom: 5 }}>2 hours</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <TouchableOpacity style={{ marginRight: 10, borderWidth: 1, height: 30, width: 30, justifyContent: 'center', borderRadius: 100, backgroundColor: 'black', borderColor: 'black' }}>
+                                    <Image source={images.cross} style={{ height: 15, width: 15, alignSelf: 'center', tintColor: 'white' }} />
+                                </TouchableOpacity>
+                                <TouchableOpacity style={{ borderWidth: 1, height: 30, width: 30, justifyContent: 'center', borderRadius: 100, backgroundColor: "#916008", borderColor: "#916008" }}>
+                                    <Image source={images.tick1} style={{ height: 20, width: 20, alignSelf: 'center', tintColor: 'white' }} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+                <TouchableOpacity onPress={() => navigation.navigate('ViewRequest')}>
+                    <Text style={{ marginLeft: 16, color: '#916008', fontFamily: 'Poppins-Regular', fontSize: 16, marginTop: 20 }}>View All</Text>
+                </TouchableOpacity>
+
+
                 <View style={styles.cont5}>
                     <Image source={images.verified} style={styles.img2} />
                     <Text style={styles.txt4}>Verifications</Text>
@@ -1520,7 +1622,7 @@ const styles = StyleSheet.create({
     },
     cont2: {
         height: 35,
-        width: '60%',
+        width: '50%',
         alignSelf: 'center',
         borderRadius: 100,
         marginTop: 12,

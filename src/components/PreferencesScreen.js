@@ -1,56 +1,217 @@
-import React, { useState } from "react";
-import { Text, View, TouchableOpacity, Image, StyleSheet, ScrollView, TextInput, Dimensions } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Text, View, TouchableOpacity, Image, StyleSheet, FlatList, ScrollView, TextInput, Dimensions } from "react-native";
 import MultiSlider from "@ptomasroos/react-native-multi-slider";
 import images from "./images";
 import Modal from "react-native-modal";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Geolocation from '@react-native-community/geolocation';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+
 
 
 const { width } = Dimensions.get("window");
 
 const PreferencesScreen = ({ navigation }) => {
 
-    const [location, setLocation] = useState("Other Locations");
-    const [distanceRange, setDistanceRange] = useState([0, 700]); // MultiSlider for Distance
-    const [ageRange, setAgeRange] = useState([18, 60]); // MultiSlider for Age
-    const [selectedOptions, setSelectedOptions] = useState({});
+
+    const [locations, setLocations] = useState(["Other Location"]);
+    const [location, setLocation] = useState(null);
+    const [isOtherLocation, setIsOtherLocation] = useState(false);
+    const [showSearch, setShowSearch] = useState(true);
+    const [distanceRange, setDistanceRange] = useState([0, 100]);
+    const [ageRange, setAgeRange] = useState([18, 60]);
+    const [selectedOptions, setSelectedOptions] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
     const [isSeekingVisible, setIsSeekingVisible] = useState(false);
-    const [bodytype, setBodyType] = useState(false)
-    const [togglebodytype, setToggleBodyType] = useState({})
+    const [bodytype, setBodyType] = useState(false);
+    const [selectedBodyTypes, setSelectedBodyTypes] = useState([]);
     const [verificationvisible, setVerificationVisible] = useState(false)
-    const [verificationtoggle, setVerificationToggle] = useState({})
+    const [verificationtoggle, setVerificationToggle] = useState([])
     const [isLevelVisible, setIsLevelVisible] = useState(false)
-    const [leveltoggle, setLevelToggle] = useState({})
+    const [leveltoggle, setLevelToggle] = useState([])
     const [isEthnicityVisible, setIsEthnicityVisible] = useState(false)
-    const [ethnicitytoggle, setEthnicityToggle] = useState({})
+    const [ethnicitytoggle, setEthnicityToggle] = useState([])
     const [isHeightVisible, setIsHeightVisible] = useState(false)
     const [height, setHeight] = useState([137, 213]);
     const [isSmokeVisible, setIsSmokeVisible] = useState(false)
-    const [smoketoggle, setSmokeToggle] = useState({})
+    const [smoketoggle, setSmokeToggle] = useState([])
     const [IsDrinkingVisible, setIsDrinkingVisible] = useState(false)
-    const [drinkingtoggle, setDrinkingToggle] = useState({})
+    const [drinkingtoggle, setDrinkingToggle] = useState([])
     const [IsRelationVisible, setIsRelationVisible] = useState(false)
-    const [relationtoggle, setRelationToggle] = useState({})
+    const [relationtoggle, setRelationToggle] = useState([])
     const [IsEducationVisible, setIsEducationVisible] = useState(false)
-    const [educationtoggle, setEducationToggle] = useState({})
+    const [educationtoggle, setEducationToggle] = useState([])
     const [IsChildrenVisible, setIsChildrenVisible] = useState(false)
-    const [childrentoggle, setChildrenToggle] = useState({})
+    const [childrentoggle, setChildrenToggle] = useState([])
     const [IsLanguageVisible, setIsLanguageVisible] = useState(false)
-    const [languagetoggle, setLanguageToggle] = useState({})
+    const [languagetoggle, setLanguageToggle] = useState([])
     const [IsSavedFilter, setIsSavedFilter] = useState(false)
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [searchName, setSearchName] = useState("");
+    const [isLoading1, setIsLoading1] = useState(false);
+    const [searchcity, setSearchCity] = useState('')
+    const [suggestions, setSuggestions] = useState([]);
+    const [userdetails, setUserDetails] = useState(null)
+    const [selectedlocation, setSelectedLocation] = useState('')
+
+
+    useEffect(() => {
+        if (searchcity.length >= 3) {
+            fetchLocationSuggestions(searchcity);
+        } else {
+            setSuggestions([])
+        }
+    }, [searchcity]);
+
+    const fetchLocationSuggestions = async (query) => {
+        setIsLoading1(true);
+        try {
+            const response = await axios.get(
+                `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=AIzaSyBMSu3-s9hl4tDatsaEcTXC5Ul-IEP5J_E`
+            );
+            const results = response.data.results;
+            console.log('resultt', JSON.stringify(results));
+            if (results.length > 0) {
+                // Extract necessary data from the first result
+                const locationData = results[0];
+                const addressComponents = locationData.address_components;
+
+                // Helper function to extract specific types (city, state, country)
+                const getAddressComponent = (type) =>
+                    addressComponents.find((component) => component.types.includes(type))?.long_name || '';
+
+                const city = getAddressComponent('locality') || getAddressComponent('administrative_area_level_2');
+                const state = getAddressComponent('administrative_area_level_1');
+                const country = getAddressComponent('country');
+                const latitude = locationData.geometry.location.lat;
+                const longitude = locationData.geometry.location.lng;
+
+                // Save data
+                setSuggestions(results); // Update suggestions list
+                console.log({
+                    city,
+                    state,
+                    country,
+                    latitude,
+                    longitude,
+                });
+
+                // Optionally, store this in state or any persistent storage
+                setSelectedLocation({ city, state, country, latitude, longitude });
+            } else {
+                setSuggestions([]); // Clear suggestions if no results
+            }
+        } catch (error) {
+            console.error("Error fetching location suggestions:", error);
+        } finally {
+            setIsLoading1(false); // End loading
+        }
+    };
+
+
+    const handleSuggestionPress = (item) => {
+        const selectedCity = item.formatted_address.split(',')[0]; // Extract the city name
+        setSearchCity(selectedCity);
+        setSuggestions([]);
+        setLocations((prev) => [selectedCity, ...prev]); // Add the new city to the list
+        setLocation(selectedCity); // Set the selected location
+        setShowSearch(false); // Hide the search box
+    };
+
+    const handleRadioSelection = (selectedLoc) => {
+        if (selectedLoc === "Other Location") {
+            setShowSearch(true);
+            setIsOtherLocation(true);
+            setLocation(null);
+        } else {
+            setShowSearch(false);
+            setIsOtherLocation(false);
+            setLocation(selectedLoc); // Set the selected location
+        }
+    };
 
 
 
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+                    if (parsedData.city) {
+                        setLocations([parsedData.city, "Other Location"]);
+                        setLocation(parsedData.city);
+                        setShowSearch(false);
+                    }
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
+        };
+        fetchUserDetails();
+    }, []);
 
     ///////// API INTEGRATION ////////// 
 
     const getSearch = async () => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token,
+        };
+        let body = {
+            where: {
+                userNameSearchText: "",
+                currentCity: location,
+                otherLocation: isOtherLocation ? location : null,
+                maxDistance: distanceRange[1],
+                location: {
+                    longitude: userdetails?.location?.coordinates[0],
+                    latitude: userdetails?.location?.coordinates[1],
+                    city: userdetails?.city,
+                    state: userdetails?.state,
+                    country: userdetails?.country
+                },
+                options: selectedOptions,
+                memberSeeking: selectedTags,
+                hobbies: [],
+                bodyType: selectedBodyTypes,
+                verification: verificationtoggle,
+                ethnicity: ethnicitytoggle,
+                height: {
+                    min: height[0],
+                    max: height[1]
+                },
+                smoking: smoketoggle,
+                drinking: drinkingtoggle,
+                relationshipStatus: relationtoggle,
+                children: childrentoggle,
+                education: educationtoggle,
+                workField: [],
+                levels: leveltoggle,
+                languages: languagetoggle,
+                profileText: "",
+                ageRange: {
+                    min: ageRange[0],
+                    max: ageRange[1]
+                },
+                gender: userdetails?.preferences?.gender
+            },
+            pageLength: 11,
+            currentPage: 0,
+            autopopulate: true
+        }
+        console.log('body of preferece', body);
 
+        try {
+            // const resp = await axios.post('home/search', body, { headers })
+            // console.log('response from the get search api', resp.data);
+            // navigation.navigate('PreferenceTopScreen')
+        } catch (error) {
+            console.log('error from the get search api', error.response.data.message);
+        }
     }
-
 
     const toggleModal = () => {
         setIsModalVisible((prev) => !prev);
@@ -62,81 +223,134 @@ const PreferencesScreen = ({ navigation }) => {
     };
 
     const toggleOption = (option) => {
-        setSelectedOptions((prev) => ({
-            ...prev,
-            [option]: !prev[option],
-        }));
+        setSelectedOptions((prevOptions) => {
+            if (prevOptions.includes(option)) {
+                return prevOptions.filter((item) => item !== option);
+            } else {
+                return [...prevOptions, option];
+            }
+        });
     };
 
     const bodyTypeToggle = (option) => {
-        setToggleBodyType((prev) => ({
-            ...prev,
-            [option]: !prev[option],
-        }));
-    }
+        setSelectedBodyTypes((prev) => {
+            if (prev.includes(option)) {
+                // If option is already selected, remove it
+                return prev.filter((item) => item !== option);
+            } else {
+                // If option is not selected, add it
+                return [...prev, option];
+            }
+        });
+    };
 
 
     const toggleVerification = (option) => {
-        setVerificationToggle((prev) => ({
-            ...prev,
-            [option]: !prev[option],
-        }));
+        setVerificationToggle((prev) => {
+            if (prev.includes(option)) {
+                // If option is already selected, remove it
+                return prev.filter((item) => item !== option);
+            } else {
+                // If option is not selected, add it
+                return [...prev, option];
+            }
+        });
     }
 
     const toggleLevel = (option) => {
-        setLevelToggle((prev) => ({
-            ...prev,
-            [option]: !prev[option],
-        }));
+        setLevelToggle((prev) => {
+            if (prev.includes(option)) {
+                // If option is already selected, remove it
+                return prev.filter((item) => item !== option);
+            } else {
+                // If option is not selected, add it
+                return [...prev, option];
+            }
+        });
     }
 
     const toggleEthnicity = (option) => {
-        setEthnicityToggle((prev) => ({
-            ...prev,
-            [option]: !prev[option],
-        }));
+        setEthnicityToggle((prev) => {
+            if (prev.includes(option)) {
+                // If option is already selected, remove it
+                return prev.filter((item) => item !== option);
+            } else {
+                // If option is not selected, add it
+                return [...prev, option];
+            }
+        });
     }
 
     const toggleSmoke = (option) => {
-        setSmokeToggle((prev) => ({
-            ...prev,
-            [option]: !prev[option],
-        }));
+        setSmokeToggle((prev) => {
+            if (prev.includes(option)) {
+                // If option is already selected, remove it
+                return prev.filter((item) => item !== option);
+            } else {
+                // If option is not selected, add it
+                return [...prev, option];
+            }
+        });
     }
 
     const toggleDrinking = (option) => {
-        setDrinkingToggle((prev) => ({
-            ...prev,
-            [option]: !prev[option],
-        }));
+        setDrinkingToggle((prev) => {
+            if (prev.includes(option)) {
+                // If option is already selected, remove it
+                return prev.filter((item) => item !== option);
+            } else {
+                // If option is not selected, add it
+                return [...prev, option];
+            }
+        });
     }
 
     const toggleRelation = (option) => {
-        setRelationToggle((prev) => ({
-            ...prev,
-            [option]: !prev[option],
-        }));
+        setRelationToggle((prev) => {
+            if (prev.includes(option)) {
+                // If option is already selected, remove it
+                return prev.filter((item) => item !== option);
+            } else {
+                // If option is not selected, add it
+                return [...prev, option];
+            }
+        });
     }
 
     const toggleEducation = (option) => {
-        setEducationToggle((prev) => ({
-            ...prev,
-            [option]: !prev[option],
-        }));
+        setEducationToggle((prev) => {
+            if (prev.includes(option)) {
+                // If option is already selected, remove it
+                return prev.filter((item) => item !== option);
+            } else {
+                // If option is not selected, add it
+                return [...prev, option];
+            }
+        });
     }
 
     const toggleChildren = (option) => {
-        setChildrenToggle((prev) => ({
-            ...prev,
-            [option]: !prev[option],
-        }));
+        setChildrenToggle((prev) => {
+            if (prev.includes(option)) {
+                // If option is already selected, remove it
+                return prev.filter((item) => item !== option);
+            } else {
+                // If option is not selected, add it
+                return [...prev, option];
+            }
+        });
     }
 
     const toggleLanguage = (option) => {
-        setLanguageToggle((prev) => ({
-            ...prev,
-            [option]: !prev[option],
-        }));
+        setLanguageToggle((prev) => {
+            if (prev.includes(option)) {
+                // If option is already selected, remove it
+                return prev.filter((item) => item !== option);
+            } else {
+                // If option is not selected, add it
+                return [...prev, option];
+            }
+        });
     }
 
     const toggleTag = (tag) => {
@@ -220,22 +434,51 @@ const PreferencesScreen = ({ navigation }) => {
                 </TouchableOpacity>
                 {/* Location */}
                 <Text style={styles.sectionTitle}>LOCATION</Text>
-                <View style={styles.radioGroup}>
-                    {["Shalimar Baugh", "Other Locations"].map((loc) => (
-                        <TouchableOpacity key={loc} onPress={() => setLocation(loc)} style={styles.radioButton}>
-                            <View style={styles.radioCircle}>
-                                {location === loc && <View style={styles.radioInnerCircle} />}
-                            </View>
-                            <Text style={styles.radioText}>{loc}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                {locations.length > 0 && (
+                    <View style={styles.radioGroup}>
+                        {locations.map((loc) => (
+                            <TouchableOpacity
+                                key={loc}
+                                onPress={() => handleRadioSelection(loc)}
+                                style={styles.radioButton}
+                            >
+                                <View style={styles.radioCircle}>
+                                    {location === loc && <View style={styles.radioInnerCircle} />}
+                                </View>
+                                <Text style={styles.radioText}>{loc}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
 
                 {/* Search Box */}
-                <View style={styles.searchContainer}>
-                    <TextInput style={styles.searchBox} placeholder="Search your city here" placeholderTextColor={'#7B7B7B'} />
-                    <Image source={images.search} style={styles.searchIcon} />
-                </View>
+                {showSearch && (
+                    <View style={styles.searchContainer}>
+                        <TextInput
+                            style={styles.searchBox}
+                            placeholder="Search your city here"
+                            placeholderTextColor={'#7B7B7B'}
+                            onChangeText={setSearchCity}
+                            value={searchcity}
+                        />
+                        <Image source={images.search} style={styles.searchIcon} />
+                    </View>
+                )}
+                {searchcity.length >= 3 && suggestions.length > 0 && (
+                    <FlatList
+                        data={suggestions}
+                        keyExtractor={(item, index) => index.toString()}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity onPress={() => handleSuggestionPress(item)}>
+                                <View style={styles.suggestionItem}>
+                                    <Text style={styles.suggestionText}>{item.formatted_address}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                    />
+                )}
+                {/* Loading indicator */}
+                {isLoading1 && <Text>Loading...</Text>}
 
                 {/* Distance Slider */}
                 <Text style={styles.sectionTitle}>MAXIMUM DISTANCE</Text>
@@ -245,7 +488,7 @@ const PreferencesScreen = ({ navigation }) => {
                     sliderLength={width * 0.9}
                     onValuesChange={(values) => setDistanceRange(values)}
                     min={0}
-                    max={1000}
+                    max={150}
                     step={10}
                     snapped
                     trackStyle={{
@@ -265,11 +508,11 @@ const PreferencesScreen = ({ navigation }) => {
                             onPress={() => toggleOption(option)}
                             style={[
                                 styles.option,
-                                selectedOptions[option] && styles.optionSelected,
+                                selectedOptions.includes(option) && styles.optionSelected,
                             ]}
                         >
                             <View style={styles.checkboxContainer}>
-                                {selectedOptions[option] && <Text style={styles.tickMark}>✔</Text>}
+                                {selectedOptions.includes(option) && <Text style={styles.tickMark}>✔</Text>}
                             </View>
                             <Text style={styles.optionText}>{option}</Text>
                         </TouchableOpacity>
@@ -333,18 +576,18 @@ const PreferencesScreen = ({ navigation }) => {
                     />
                 </TouchableOpacity>
                 {bodytype && (
-                    <View>
-                        {["Slim", "Athletic", "Average", "Curvy", "Full Figure", "Heavyset"].map((option) => (
+                    <View style={styles.optionsGrid}>
+                        {["Slim", "Athletic", "Average", "Heavy"].map((option) => (
                             <TouchableOpacity
                                 key={option}
                                 onPress={() => bodyTypeToggle(option)}
                                 style={[
                                     styles.option,
-                                    togglebodytype[option] && styles.optionSelected,
+                                    selectedBodyTypes.includes(option) && styles.optionSelected,
                                 ]}
                             >
                                 <View style={styles.checkboxContainer}>
-                                    {togglebodytype[option] && <Text style={styles.tickMark}>✔</Text>}
+                                    {selectedBodyTypes.includes(option) && <Text style={styles.tickMark}>✔</Text>}
                                 </View>
                                 <Text style={styles.optionText}>{option}</Text>
                             </TouchableOpacity>
@@ -367,11 +610,11 @@ const PreferencesScreen = ({ navigation }) => {
                                 onPress={() => toggleVerification(option)}
                                 style={[
                                     styles.option,
-                                    verificationtoggle[option] && styles.optionSelected,
+                                    verificationtoggle.includes(option) && styles.optionSelected,
                                 ]}
                             >
                                 <View style={styles.checkboxContainer}>
-                                    {verificationtoggle[option] && <Text style={styles.tickMark}>✔</Text>}
+                                    {verificationtoggle.includes(option) && <Text style={styles.tickMark}>✔</Text>}
                                 </View>
                                 <Text style={styles.optionText}>{option}</Text>
                             </TouchableOpacity>
@@ -394,11 +637,11 @@ const PreferencesScreen = ({ navigation }) => {
                                 onPress={() => toggleLevel(option)}
                                 style={[
                                     styles.option,
-                                    leveltoggle[option] && styles.optionSelected,
+                                    leveltoggle.includes(option) && styles.optionSelected,
                                 ]}
                             >
                                 <View style={styles.checkboxContainer}>
-                                    {leveltoggle[option] && <Text style={styles.tickMark}>✔</Text>}
+                                    {leveltoggle.includes(option) && <Text style={styles.tickMark}>✔</Text>}
                                 </View>
                                 <Text style={styles.optionText}>{option}</Text>
                             </TouchableOpacity>
@@ -421,11 +664,11 @@ const PreferencesScreen = ({ navigation }) => {
                                 onPress={() => toggleEthnicity(option)}
                                 style={[
                                     styles.option,
-                                    ethnicitytoggle[option] && styles.optionSelected,
+                                    ethnicitytoggle.includes(option) && styles.optionSelected,
                                 ]}
                             >
                                 <View style={styles.checkboxContainer}>
-                                    {ethnicitytoggle[option] && <Text style={styles.tickMark}>✔</Text>}
+                                    {ethnicitytoggle.includes(option) && <Text style={styles.tickMark}>✔</Text>}
                                 </View>
                                 <Text style={styles.optionText}>{option}</Text>
                             </TouchableOpacity>
@@ -475,11 +718,11 @@ const PreferencesScreen = ({ navigation }) => {
                                 onPress={() => toggleSmoke(option)}
                                 style={[
                                     styles.option,
-                                    smoketoggle[option] && styles.optionSelected,
+                                    smoketoggle.includes(option) && styles.optionSelected,
                                 ]}
                             >
                                 <View style={styles.checkboxContainer}>
-                                    {smoketoggle[option] && <Text style={styles.tickMark}>✔</Text>}
+                                    {smoketoggle.includes(option) && <Text style={styles.tickMark}>✔</Text>}
                                 </View>
                                 <Text style={styles.optionText}>{option}</Text>
                             </TouchableOpacity>
@@ -502,11 +745,11 @@ const PreferencesScreen = ({ navigation }) => {
                                 onPress={() => toggleDrinking(option)}
                                 style={[
                                     styles.option,
-                                    drinkingtoggle[option] && styles.optionSelected,
+                                    drinkingtoggle.includes(option) && styles.optionSelected,
                                 ]}
                             >
                                 <View style={styles.checkboxContainer}>
-                                    {drinkingtoggle[option] && <Text style={styles.tickMark}>✔</Text>}
+                                    {drinkingtoggle.includes(option) && <Text style={styles.tickMark}>✔</Text>}
                                 </View>
                                 <Text style={styles.optionText}>{option}</Text>
                             </TouchableOpacity>
@@ -529,11 +772,11 @@ const PreferencesScreen = ({ navigation }) => {
                                 onPress={() => toggleRelation(option)}
                                 style={[
                                     styles.option,
-                                    relationtoggle[option] && styles.optionSelected,
+                                    relationtoggle.includes(option) && styles.optionSelected,
                                 ]}
                             >
                                 <View style={styles.checkboxContainer}>
-                                    {relationtoggle[option] && <Text style={styles.tickMark}>✔</Text>}
+                                    {relationtoggle.includes(option) && <Text style={styles.tickMark}>✔</Text>}
                                 </View>
                                 <Text style={styles.optionText}>{option}</Text>
                             </TouchableOpacity>
@@ -556,11 +799,11 @@ const PreferencesScreen = ({ navigation }) => {
                                 onPress={() => toggleEducation(option)}
                                 style={[
                                     styles.option,
-                                    educationtoggle[option] && styles.optionSelected,
+                                    educationtoggle.includes(option) && styles.optionSelected,
                                 ]}
                             >
                                 <View style={styles.checkboxContainer}>
-                                    {educationtoggle[option] && <Text style={styles.tickMark}>✔</Text>}
+                                    {educationtoggle.includes(option) && <Text style={styles.tickMark}>✔</Text>}
                                 </View>
                                 <Text style={styles.optionText}>{option}</Text>
                             </TouchableOpacity>
@@ -583,11 +826,11 @@ const PreferencesScreen = ({ navigation }) => {
                                 onPress={() => toggleChildren(option)}
                                 style={[
                                     styles.option,
-                                    childrentoggle[option] && styles.optionSelected,
+                                    childrentoggle.includes(option) && styles.optionSelected,
                                 ]}
                             >
                                 <View style={styles.checkboxContainer}>
-                                    {childrentoggle[option] && <Text style={styles.tickMark}>✔</Text>}
+                                    {childrentoggle.includes(option) && <Text style={styles.tickMark}>✔</Text>}
                                 </View>
                                 <Text style={styles.optionText}>{option}</Text>
                             </TouchableOpacity>
@@ -610,11 +853,11 @@ const PreferencesScreen = ({ navigation }) => {
                                 onPress={() => toggleLanguage(option)}
                                 style={[
                                     styles.option,
-                                    languagetoggle[option] && styles.optionSelected,
+                                    languagetoggle.includes(option) && styles.optionSelected,
                                 ]}
                             >
                                 <View style={styles.checkboxContainer}>
-                                    {languagetoggle[option] && <Text style={styles.tickMark}>✔</Text>}
+                                    {languagetoggle.includes(option) && <Text style={styles.tickMark}>✔</Text>}
                                 </View>
                                 <Text style={styles.optionText}>{option}</Text>
                             </TouchableOpacity>
@@ -628,9 +871,9 @@ const PreferencesScreen = ({ navigation }) => {
                     <Text style={styles.txt1}>Reset</Text>
                 </View>
                 <TouchableOpacity style={[styles.cont1, { width: '40%' }]} onPress={toggleModal}>
-                    <Text style={styles.txt1}>Save this Search</Text>
+                    <Text style={styles.txt1}>Save Search</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.cont1, { width: '30%', backgroundColor: '#916008', borderColor: '#E0E2E9', }]} onPress={() => navigation.navigate('PreferenceTopScreen')}>
+                <TouchableOpacity style={[styles.cont1, { width: '30%', backgroundColor: '#916008', borderColor: '#E0E2E9', }]} onPress={() => getSearch()}>
                     <Text style={[styles.txt1, { color: 'white' }]}>Apply</Text>
                 </TouchableOpacity>
             </View>
@@ -673,11 +916,37 @@ const styles = StyleSheet.create({
     searchBox: { borderWidth: 1, borderColor: "#E8E6EA", borderRadius: 15, paddingLeft: 20, paddingRight: 35 },
     searchIcon: { position: "absolute", right: 10, top: "50%", transform: [{ translateY: -10 }], height: 20, width: 20 },
     sliderLabel: { fontSize: 14, color: "gray", marginVertical: 5 },
-    radioGroup: { flexDirection: "row" },
-    radioButton: { flexDirection: "row", alignItems: "center", marginRight: 20 },
-    radioCircle: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: "#916008", justifyContent: "center" },
-    radioInnerCircle: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#916008", alignSelf: 'center' },
-    radioText: { marginLeft: 5, fontSize: 14, color: "#5F6368" },
+    radioGroup: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+    },
+    radioButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginRight: 20,
+        marginBottom: 10,
+    },
+    radioCircle: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: "#916008",
+        justifyContent: "center",
+    },
+    radioInnerCircle: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: "#916008",
+        alignSelf: "center",
+    },
+    radioText: {
+        marginLeft: 5,
+        fontSize: 14,
+        color: "#5F6368",
+    },
+
     optionsGrid: { flexDirection: "row", flexWrap: "wrap" },
     option: { flexDirection: "row", alignItems: "center", marginBottom: 10, width: "48%" },
     // optionSelected: { backgroundColor: "#916008" },
@@ -757,5 +1026,18 @@ const styles = StyleSheet.create({
         color: "white",
         fontSize: 16,
         fontWeight: "bold",
+    },
+    suggestionItem: {
+        padding: 10,
+        borderBottomWidth: 1,
+        borderColor: '#ddd',
+    },
+    suggestionText: {
+        fontSize: 16,
+    },
+    txt: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
 });

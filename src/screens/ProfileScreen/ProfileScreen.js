@@ -165,11 +165,13 @@ const ProfileScreen = ({ navigation }) => {
 
             <ScrollView style={{}}>
 
-                <Text style={styles.txt}>Himanshu</Text>
+                <Text style={styles.txt}>{userdetails?.userName}</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('ViewProfile')}>
-                    <Text style={styles.txt1}>View Profile</Text>
+                    <Text style={styles.txt1}>View & Edit Profile</Text>
                 </TouchableOpacity>
-                <Text style={[styles.txt1, { bottom: 5 }]}>Edit</Text>
+                {/* <TouchableOpacity onPress={() => navigation.navigate('ViewProfile')}>
+                    <Text style={[styles.txt1, { bottom: 5 }]}>Edit</Text>
+                </TouchableOpacity> */}
 
                 <View style={styles.cont}>
                     <View style={styles.cont1}>
@@ -183,16 +185,19 @@ const ProfileScreen = ({ navigation }) => {
                     marginLeft: 16,
                     alignSelf: 'center'
                 }}>
-                    <AnimatedCircularProgress
-                        size={20}
-                        width={4}
-                        fill={userdetails?.profileCompletion}
-                        tintColor="#916008"
-                        backgroundColor="#ffffff"
-                        rotation={0}
-                        lineCap="round"
-                        strokeCap="round"
-                    />
+                    <View style={{ top: 3 }}>
+                        <AnimatedCircularProgress
+                            size={20}
+                            width={4}
+                            fill={userdetails?.profileCompletion}
+                            tintColor="#916008"
+                            backgroundColor="#ffffff"
+                            rotation={0}
+                            lineCap="round"
+                            strokeCap="round"
+                        />
+                    </View>
+
                     <Text style={styles.txt3}>{Math.round(userdetails?.profileCompletion)}% Profile Completion</Text>
                 </View>
 
@@ -215,7 +220,9 @@ const ProfileScreen = ({ navigation }) => {
                 </TouchableOpacity>
                 <View style={styles.cont4}>
                     <Image source={images.help} style={styles.boost} />
-                    <Text style={[styles.txt6, { color: 'black' }]}>Help Center</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('HelpCenter')}>
+                        <Text style={[styles.txt6, { color: 'black' }]}>Help Center</Text>
+                    </TouchableOpacity>
                 </View>
 
                 <View style={{ marginBottom: 100, marginTop: 20 }}>

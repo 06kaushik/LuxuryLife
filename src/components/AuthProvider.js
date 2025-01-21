@@ -27,6 +27,7 @@ const AuthProvider = ({ children, navigation }) => {
     const checkAuthStatus = async () => {
       try {
         const token = await AsyncStorage.getItem('authToken');
+
         if (token) {
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           setIsAuthenticated(true);

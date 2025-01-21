@@ -70,13 +70,7 @@ const LoginScreen = ({ navigation }) => {
                     <Text style={style.welcomeText}>Welcome to</Text>
                     <Text style={style.titleText}>Luxury Life!</Text>
                     <Text style={style.subtitleText}>Where Ambition Meets Affluence</Text>
-                    <Text style={style.termsText}>
-                        By Clicking login, you are agree with our
-                        <Text style={style.underline}> Terms.</Text>
-                        {'\n'} Learn how we process your data in our
-                        <Text style={style.underline}> Privacy</Text> {'\n'}
-                        <Text style={style.underline}>Policy.</Text> and
-                        <Text style={style.underline}> Cookies Policy</Text>
+                    <Text style={style.termsText}>By Clicking login, you are agree with our<Text style={style.underline}> Terms.</Text> Learn how we process your data in our<Text style={style.underline}> Privacy Policy</Text> and<Text style={style.underline}> Cookies Policy.</Text>
                     </Text>
                     <TouchableOpacity onPress={handleGoogleSignIn} disabled={isLoading}>
                         <View style={style.buttonContainer}>

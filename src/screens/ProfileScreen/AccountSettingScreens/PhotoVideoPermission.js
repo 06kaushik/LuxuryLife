@@ -1,40 +1,197 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, Switch, Dimensions, ScrollView, FlatList } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+    View, Text, StyleSheet, TouchableOpacity, Image, Switch, Dimensions, ScrollView, FlatList, ActivityIndicator
+} from "react-native";
 import images from "../../../components/images";
 import Modal from "react-native-modal";
-
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PhotoVideoPermissions = ({ navigation }) => {
-    // State for switches
+    const [loading, setLoading] = useState(true); // Loader state
     const [blockIncoming1, setBlockIncoming1] = useState(true);
     const [blockIncoming2, setBlockIncoming2] = useState(false);
     const [receiveCalls, setReceiveCalls] = useState(false);
     const [incomingRingtone, setIncomingRingtone] = useState(false);
-    const [photosharing, setPhotoSharing] = useState(false)
-    const [photovisibility, setPhotoVisibility] = useState(false)
-    const [autodownload, setAutoDownload] = useState(false)
-    const [privatephoto, setPrivatePhoto] = useState(false)
-    const [privatesharing, setPrivateSharing] = useState(false)
-    const [videosharing, setVideoSharing] = useState(false)
-    const [autoplayback, setAutoPlayBack] = useState(false)
-    const [videocallperm, setVideoCallPer] = useState(false)
-    const [filesharing, setFileSharing] = useState(false)
-    const [multimediaprev, SetMultiMediaPrev] = useState(false)
-    const [storageperm, setStoragePerm] = useState(false)
-    const [sharingwith, setSharingWith] = useState(false)
+    const [photosharing, setPhotoSharing] = useState(false);
+    const [photovisibility, setPhotoVisibility] = useState(false);
+    const [autodownload, setAutoDownload] = useState(false);
+    const [privatephoto, setPrivatePhoto] = useState(false);
+    const [privatesharing, setPrivateSharing] = useState(false);
+    const [videosharing, setVideoSharing] = useState(false);
+    const [autoplayback, setAutoPlayBack] = useState(false);
+    const [videocallperm, setVideoCallPer] = useState(false);
+    const [filesharing, setFileSharing] = useState(false);
+    const [multimediaprev, SetMultiMediaPrev] = useState(false);
+    const [storageperm, setStoragePerm] = useState(false);
+    const [sharingwith, setSharingWith] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedImages, setSelectedImages] = useState([]);
-
-    const users = [
-        { id: 1, name: "StunningMiss, 33", location: "New Delhi", images: [images.dummy, images.dummy1, images.dummy1, images.dummy] },
-        { id: 2, name: "StunningMiss, 33", location: "New Delhi", images: [images.dummy, images.dummy1, images.dummy1, images.dummy] },
-        { id: 3, name: "StunningMiss, 33", location: "New Delhi", images: [images.dummy, images.dummy1, images.dummy1, images.dummy] },
-    ];
+    const [userdetails, setUserDetails] = useState(null);
+    const [privatememberlist, setPrivateMemberList] = useState([]);
+    const [privatePhotos, setPrivatePhotos] = useState([]);
 
     const handleImageClick = (images) => {
         setSelectedImages(images);
         setModalVisible(true);
     };
+
+    useEffect(() => {
+        const initializeData = async () => {
+            try {
+                // Show loader
+                setLoading(true);
+
+                // Fetch user details
+                const userData = await AsyncStorage.getItem('UserData');
+                if (!userData) {
+                    console.error('User data is missing.');
+                    return;
+                }
+
+                const parsedData = JSON.parse(userData);
+                setUserDetails(parsedData);
+
+                // Fetch private photos
+                setPrivatePhotos(parsedData.privatePhotos || []);
+
+                // Fetch private members only if user ID is valid
+                if (parsedData?._id) {
+                    await getPrivateMember(parsedData._id);
+                } else {
+                    console.error('User ID is missing. Unable to fetch private members.');
+                }
+            } catch (error) {
+                console.error('Error during initialization:', error.message);
+            } finally {
+                // Hide loader
+                setLoading(false);
+            }
+        };
+
+        initializeData();
+    }, []);
+
+
+    const handleSharingWithToggle = async (newValue) => {
+        setSharingWith(newValue);
+        if (newValue === true) {
+            try {
+                const token = await AsyncStorage.getItem('authToken');
+                const headers = {
+                    Authorization: token,
+                };
+                if (!userdetails?._id) {
+                    console.error('User ID is missing. Unable to fetch private members.');
+                    return;
+                }
+                const body = {};
+                const resp = await axios.put(`account/remove-all-private-pic-access/${userdetails?._id}`, body, { headers });
+                console.log('Response from removing all private access:', resp.data);
+                await getPrivateMember(userdetails._id);
+            } catch (error) {
+                console.error('Error from removing all private access:', error?.response?.data?.message || error.message);
+            }
+        }
+    };
+
+    const hidePrivateMember = async (accessId) => {
+        const token = await AsyncStorage.getItem('authToken');
+        if (!token) {
+            console.error('Authorization token is missing.');
+            return;
+        }
+
+        if (!userdetails?._id) {
+            console.error('User ID is missing. Unable to fetch private members.');
+            return;
+        }
+
+        const headers = {
+            Authorization: token,
+        };
+        let body = {
+            status: 'Removed'
+        }
+
+        try {
+            const resp = await axios.put(`account/updated-private-pic-access/${accessId}`, body, { headers });
+            console.log('Response from the hide member API:', resp?.data?.data);
+
+            // Call getPrivateMember with the userId
+            await getPrivateMember(userdetails._id);
+        } catch (error) {
+            console.error('Error fetching hide members:', error.response?.data?.message || error.message);
+        }
+    };
+
+
+    const getPrivateMember = async (userId) => {
+        const token = await AsyncStorage.getItem('authToken');
+        if (!token) {
+            console.error('Authorization token is missing.');
+            return;
+        }
+
+        const headers = {
+            Authorization: token,
+        };
+        let body = {}
+
+        try {
+            const resp = await axios.post(`account/get-private-pic-access/${userId}`, body, { headers });
+            // console.log('Response from private member API:', resp?.data?.data);
+            setPrivateMemberList(resp?.data?.data || []);
+        } catch (error) {
+            const message = error.response?.data?.message || error.message || 'Unknown error';
+            console.error(`Error fetching private members: ${message}`);
+        }
+    };
+
+
+    const renderMemberList = ({ item: user }) => (
+        <View key={user?._id} style={styles.userContainer}>
+            <Image
+                source={{ uri: user?.targetUserId?.profilePicture }}
+                style={{ height: 130, width: 100, borderRadius: 8 }}
+            />
+            <View>
+                <Text style={styles.userName}>{user?.targetUserId?.userName}</Text>
+                <Text style={styles.userLocation}>
+                    {user?.targetUserId?.city}, {user?.targetUserId?.state}, {user?.targetUserId?.country}
+                </Text>
+                <View style={styles.photoContainer}>
+                    {privatePhotos.slice(0, 2).map((photo, index) => (
+                        <Image key={index} source={{ uri: photo }} style={styles.photo} />
+                    ))}
+                    {privatePhotos.length > 2 && (
+                        <TouchableOpacity
+                            style={styles.imageButton}
+                            onPress={() => handleImageClick(privatePhotos)}
+                        >
+                            <Text style={styles.imageCount}>+{privatePhotos.length - 2}</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
+
+            <TouchableOpacity style={styles.hideButton} onPress={() => hidePrivateMember(user?._id)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                    <Image source={images.closeeye} style={{ height: 18, width: 18, marginRight: 5 }} />
+                    <Text style={styles.hideText}>Hide</Text>
+                </View>
+            </TouchableOpacity>
+        </View>
+    );
+
+    if (loading) {
+        return (
+            <View style={styles.loaderContainer}>
+                <ActivityIndicator size="large" color="#916008" />
+            </View>
+        );
+    }
+
 
 
     return (
@@ -196,45 +353,34 @@ const PhotoVideoPermissions = ({ navigation }) => {
 
                 <View style={{ borderWidth: 0.5, width: '100%', borderColor: '#E0E2E9', top: 8 }} />
                 <View style={styles.toggleContainer}>
-                    <Text style={[styles.sectionHeader, { marginTop: 20 }]}>Sharing Private{'\n'}Photos with</Text>
+                    <Text style={[styles.sectionHeader, { marginTop: 20 }]}>
+                        Sharing Private{'\n'}Photos with
+                    </Text>
                     <Switch
                         value={sharingwith}
-                        onValueChange={() => setSharingWith((prev) => !prev)}
+                        onValueChange={(newValue) => handleSharingWithToggle(newValue)}
                         trackColor={{ false: "#C4C4C4", true: "#916008" }}
                         thumbColor={"#FFF"}
                     />
                 </View>
-                <ScrollView style={{ marginTop: 10 }}>
-                    {users.map((user) => (
-                        <View key={user.id} style={styles.userContainer}>
-                            <Image source={user.images[0]} style={{ height: 130, width: 100, borderRadius: 8 }} />
-                            <View style={{}}>
-                                <Text style={styles.userName}>{user.name}</Text>
-                                <Text style={styles.userLocation}>{user.location}</Text>
-                                <View style={styles.photoContainer}>
-                                    <Image source={user.images[0]} style={styles.photo} />
-                                    <Image source={user.images[1]} style={styles.photo} />
-                                    <TouchableOpacity
-                                        style={styles.imageButton}
-                                        onPress={() => handleImageClick(user.images)}
-                                    >
-                                        <Text style={styles.imageCount}>2+</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
+                {privatememberlist.length === 0 ?
+                    <View style={styles.photoSection}>
+                        <Image source={images.privacy} style={styles.privacyIcon} />
+                        <Text style={styles.emptyText}>You haven't shared any private photos.</Text>
+                        <Text style={styles.infoText}>
+                            Members that you have shared private photos with will display here.
+                        </Text>
+                    </View>
+                    :
+                    <FlatList
+                        data={privatememberlist}
+                        keyExtractor={(item) => item._id}
+                        renderItem={renderMemberList}
+                        contentContainerStyle={{ paddingBottom: 20 }}
+                    />
+                }
 
-                            <TouchableOpacity style={styles.hideButton}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Image source={images.closeeye} style={{ height: 18, width: 18, marginRight: 5 }} />
-                                    <Text style={styles.hideText}>Hide</Text>
-                                </View>
-                            </TouchableOpacity>
 
-                        </View>
-                    ))}
-                </ScrollView>
-
-                {/* Modal for displaying images */}
                 <Modal visible={modalVisible} transparent animationType="slide">
                     <View style={styles.modalContainer}>
                         <FlatList
@@ -242,7 +388,10 @@ const PhotoVideoPermissions = ({ navigation }) => {
                             horizontal
                             keyExtractor={(item, index) => index.toString()}
                             renderItem={({ item }) => (
-                                <Image source={item} style={styles.modalImage} />
+                                <Image
+                                    source={{ uri: item }}
+                                    style={styles.modalImage}
+                                />
                             )}
                         />
                         <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
@@ -251,13 +400,8 @@ const PhotoVideoPermissions = ({ navigation }) => {
                     </View>
                 </Modal>
 
-                {/* <View style={styles.photoSection}>
-                    <Image source={images.privacy} style={styles.privacyIcon} />
-                    <Text style={styles.emptyText}>You haven't shared any private photos.</Text>
-                    <Text style={styles.infoText}>
-                        Members that you have shared private photos with will display here.
-                    </Text>
-                </View> */}
+
+
             </ScrollView>
         </View>
     );
@@ -394,10 +538,11 @@ const styles = StyleSheet.create({
         width: 90,
         borderRadius: 8,
         justifyContent: 'center',
-        alignItems: 'center', // Center content horizontally
+        alignItems: 'center',
         borderColor: '#B8B8B8',
-        marginTop: 50, // Replacing `top` with `marginTop`
-        marginLeft: 10, // Replacing `left` with `marginLeft`
+        marginTop: 50,
+        right: 30
+
     },
     hideText: {
         color: "#3C4043",
@@ -431,4 +576,5 @@ const styles = StyleSheet.create({
         fontFamily: "Poppins-Bold",
         fontSize: 14,
     },
+    loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });

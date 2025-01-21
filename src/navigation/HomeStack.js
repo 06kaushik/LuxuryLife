@@ -22,6 +22,8 @@ import PreferenceTopNavigator from "./PreferenceTopScreen";
 import OneToOneChat from "../screens/ChatScreen/OneToOneChat";
 import ViewProfile from "../screens/ProfileScreen/ViewProfileScreen";
 import AboutScreen from "../screens/ProfileScreen/AccountSettingScreens/AboutScreen";
+import ViewRequestScreen from "../screens/ProfileScreen/ViewRequestsScreen";
+import MembershipScreen from "../screens/ProfileScreen/AccountSettingScreens/MembershipandBilling";
 
 
 const Stack = createStackNavigator();
@@ -52,6 +54,11 @@ const HomeStack = () => {
             <Stack.Screen name="OneToOneChat" component={OneToOneChat} />
             <Stack.Screen name="ViewProfile" component={ViewProfile} />
             <Stack.Screen name="About" component={AboutScreen} />
+            <Stack.Screen name="ViewRequest" component={ViewRequestScreen} />
+            <Stack.Screen name="Membership" component={MembershipScreen} />
+
+
+
 
 
 

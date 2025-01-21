@@ -76,6 +76,8 @@ const images = {
     publicp: require('../assets/publicp.png'),
     privatep2: require('../assets/privatep2.png'),
     delete: require('../assets/delete.png'),
+    tick1: require('../assets/tick1.png'),
+
 
 
 

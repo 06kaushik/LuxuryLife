@@ -7,6 +7,8 @@ import DashBoardScreen from "../screens/DashBoard/DashBoardScreen";
 import InterestTopNavigator from "./LikeTopNavigator";
 import ChatScreen from "../screens/ChatScreen/ChatScreen";
 import ProfileScreen from "../screens/ProfileScreen/ProfileScreen";
+import FileredUsers from "../screens/FilteredUsers.js/FilteredUsers";
+
 
 const { width } = Dimensions.get("window");
 const Tab = createBottomTabNavigator();
@@ -33,6 +35,8 @@ const BottomTabNavigator = () => {
                             iconSource = images.heart;
                         } else if (route.name === "Chat") {
                             iconSource = images.chat;
+                        } else if (route.name === 'Search') {
+                            iconSource = images.search
                         } else if (route.name === "Profile") {
                             iconSource = images.user;
                         }
@@ -60,6 +64,7 @@ const BottomTabNavigator = () => {
                 <Tab.Screen name="Dash" component={DashBoardScreen} />
                 <Tab.Screen name="Likes" component={InterestTopNavigator} />
                 <Tab.Screen name="Chat" component={ChatScreen} />
+                <Tab.Screen name="Search" component={FileredUsers} />
                 <Tab.Screen name="Profile" component={ProfileScreen} />
             </Tab.Navigator>
         </View>
@@ -72,10 +77,9 @@ const styles = StyleSheet.create({
     gradientBackground: {
         position: "absolute",
         bottom: 0,
-        height: 80, // Adjust height to fill only the bottom white portion
+        height: 80,
         width: width,
-        zIndex: -1, // Push gradient behind other components
-
+        zIndex: -1,
     },
     tabBarStyle: {
         backgroundColor: "#301F12",

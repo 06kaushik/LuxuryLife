@@ -19,7 +19,6 @@ const CreatePassword = ({ navigation, route }) => {
 
     const createPassword = async () => {
         setErrorMessage('');
-
         if (password !== confirmPassword) {
             setErrorMessage('Passwords do not match. Please re-enter.');
             return;
@@ -55,19 +54,18 @@ const CreatePassword = ({ navigation, route }) => {
             setErrorMessage('There was an error creating your password. Please try again.');
         } finally {
             setIsLoading(false);
-
         }
     };
 
     return (
+
         <View style={styles.main}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
                 <Image source={images.back} style={styles.backIcon} />
             </TouchableOpacity>
-
-            <Text style={styles.txt}>Create Your {'\n'} Password</Text>
+            <Text style={styles.txt}>Create Your Password</Text>
             <Text style={styles.subtitle}>
-                To ensure your account's security, please {'\n'} choose a new password.
+                To ensure your account's security, please choose a new password.
             </Text>
 
             <View style={styles.inputContainer}>

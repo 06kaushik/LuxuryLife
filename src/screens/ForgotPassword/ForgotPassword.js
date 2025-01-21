@@ -39,9 +39,9 @@ const ForgotPassword = ({ navigation }) => {
                     <Image source={images.back} style={styles.backIcon} />
                 </TouchableOpacity>
                 <Text style={styles.txt}>Reset</Text>
-                <Text style={[styles.txt, { bottom: 20 }]}>Your Password</Text>
-                <Text style={styles.txt1}>Forgot your password? Don't worry - it {'\n'} happens!</Text>
-                <Text style={styles.txt2}>Enter your registered email ID below, and we'll send {'\n'} you a secure link to reset your password.</Text>
+                <Text style={[styles.txt, { bottom: 30 }]}>Your Password</Text>
+                <Text style={styles.txt1}>Forgot your password? Don't worry - it happens!</Text>
+                <Text style={styles.txt2}>Enter your registered email ID below, and we'll send you a secure link to reset your password.</Text>
                 <View style={styles.inputContainer}>
                     <TextInput
                         style={styles.input}
@@ -53,11 +53,11 @@ const ForgotPassword = ({ navigation }) => {
                         onChangeText={setEmail}
                     />
                 </View>
-                <Text style={styles.txt3}>Need help? Contact our support team for {'\n'} assistance.</Text>
+                <Text style={styles.txt3}>Need help? Contact our support team for assistance.</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('Login')}>
                     <Text style={styles.txt4}>Back to login <Text style={styles.underline}>Log in</Text></Text>
                 </TouchableOpacity>
-                <View style={{ marginTop: 120 }}>
+                <View style={{ marginTop: 50 }}>
                     <Text style={styles.txt5}>Can't Access Your Email?</Text>
                     <TouchableOpacity onPress={() => navigation.navigate('ResetWithSecurity')}>
                         <Text style={styles.txt6}>Try Another Way</Text>

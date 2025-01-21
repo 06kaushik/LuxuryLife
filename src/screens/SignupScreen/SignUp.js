@@ -244,6 +244,8 @@ const SignUp = ({ navigation }) => {
     }, []);
 
     const handleGoogleSignIn = async () => {
+        console.log('in sign up processs',);
+
         if (
             isChecked === true &&
             isChecked1 === true
@@ -526,7 +528,7 @@ const SignUp = ({ navigation }) => {
                         <View>
                             <Text style={styles.title}>Where Ambition Meets Affluence</Text>
                             <Text style={styles.subtitle}>
-                                Let's get to know you better to create your personalized {'\n'} luxury dating experience.
+                                Let's get to know you better to create your personalized luxury dating experience.
                             </Text>
                             <Text style={styles.question}>What is your gender?</Text>
                             {['Male', 'Female', 'Non-binary/Other'].map((option) => (
@@ -554,7 +556,7 @@ const SignUp = ({ navigation }) => {
                     <View>
                         <Text style={styles.txt}>Tell Us Your Date of Birth</Text>
                         <Text style={styles.txt1}>
-                            To ensure you meet our platform's age {'\n'} requirements, please enter your date of birth.
+                            To ensure you meet our platform's age requirements, please enter your date of birth.
                         </Text>
                         <View style={styles.cont}>
                             <TouchableOpacity style={styles.cont1} onPress={showDatePicker}>
@@ -596,7 +598,7 @@ const SignUp = ({ navigation }) => {
                     <ScrollView style={{}}>
                         <View>
                             <Text style={styles.txt4}>Great! Let's Link Your Account</Text>
-                            <Text style={styles.txt5}>Connect your account to get started quickly and {'\n'} securely.</Text>
+                            <Text style={styles.txt5}>Connect your account to get started quickly and securely.</Text>
                             <View>
                                 <TextInput
                                     placeholder='Enter email'

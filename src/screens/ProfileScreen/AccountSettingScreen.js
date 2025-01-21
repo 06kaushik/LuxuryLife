@@ -28,10 +28,12 @@ const AccountSetting = ({ navigation }) => {
             </View>
 
             <View style={styles.cont1}>
-                <View style={{ flexDirection: 'row', }}>
-                    <Image source={images.membership} style={styles.img} />
-                    <Text style={styles.txt1}>Membership and Billing</Text>
-                </View>
+                <TouchableOpacity onPress={() => navigation.navigate('Membership')}>
+                    <View style={{ flexDirection: 'row', }}>
+                        <Image source={images.membership} style={styles.img} />
+                        <Text style={styles.txt1}>Membership and Billing</Text>
+                    </View>
+                </TouchableOpacity>
                 <Image source={images.rightarrow} style={styles.arrow} />
             </View>
 
@@ -98,7 +100,6 @@ const AccountSetting = ({ navigation }) => {
 
             <View style={styles.cont1}>
                 <TouchableOpacity onPress={() => navigation.navigate('HelpCenter')}>
-
                     <View style={{ flexDirection: 'row', }}>
                         <Image source={images.help} style={styles.img} />
                         <Text style={styles.txt1}>Help Center</Text>

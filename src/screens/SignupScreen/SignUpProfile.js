@@ -12,7 +12,7 @@ import Geolocation from '@react-native-community/geolocation';
 import LottieView from 'lottie-react-native';
 import { AuthContext } from '../../components/AuthProvider';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -46,8 +46,8 @@ const ProfileSignUp = ({ navigation, route }) => {
     const [profileheading, setProfileHeading] = useState('')
     const [aboutyou, setAboutYou] = useState('')
     const bodyTypes = ['Slim', 'Athletic', 'Average', 'Curvy', 'Plus-Size', 'Petite', 'Muscular', 'Broad', 'Lean', 'Prefer not to say']
-    const ethnicity = ['Asian', 'Black/African descent', 'Hispanic/Latino', 'Middle Eastern', 'Native American/Indigenous', 'Pacific Islander', 'White/Caucasian', 'Mixed/Multiracial', 'Other', 'Prefer not to say']
-    const education = ['High School or Equivalent', 'Some college', 'Associates Degree', 'Bachelors Degree', 'Master Degree', 'Doctorate or PhD', 'Other', 'Prefer not to say']
+    const ethnicity = ['Asian', 'Black/African descent', 'Hispanic/Latino', 'Middle Eastern', 'Native American/Indigenous', 'Pacific Islander', 'White/Caucasian', 'Mixed/Multiracial', 'Other', 'Prefer not to say',]
+    const education = ['High School or Equivalent', 'Some college', 'Associates Degree', 'Bachelors Degree', 'Master Degree', 'Doctorate or PhD', 'Other', 'Prefer not to say',]
     const workField = ['Finance/Investments', 'Technology/Software', 'Art/Entertainment', 'Healthcare/Medical', 'Law/Legal', 'Education/Training', 'Marketing/Sales', 'Hospitality/Real Estate', 'Entrepreneur/Startup', 'Other', 'Prefer not to say']
     const statusR = ['Single', 'In a Relationship', 'Engaged', 'Married', 'Divorced', 'Widowed', 'Other', 'Prefer not to say']
     const children = ['Yes,I have children', 'No,I do not have children', 'Prefer not to say']
@@ -87,7 +87,7 @@ const ProfileSignUp = ({ navigation, route }) => {
     }, [search]);
 
     const fetchLocationSuggestions = async (query) => {
-        setIsLoading1(true); // Start loading
+        setIsLoading1(true);
 
         try {
             const response = await axios.get(
@@ -96,6 +96,8 @@ const ProfileSignUp = ({ navigation, route }) => {
 
             // Extracting suggestions from the API response
             const results = response.data.results;
+            console.log('resultt', JSON.stringify(results));
+
             if (results.length > 0) {
                 setSuggestions(results); // Update suggestions list with results
             } else {
@@ -368,6 +370,13 @@ const ProfileSignUp = ({ navigation, route }) => {
             Authorization: token,
         };
         const publicPhotos = photos.slice(1, 7).filter(Boolean);
+        const profilePicture = urls[0] || '';
+
+        if (profilePicture.length === 0) {
+            Toast.show('Please Upload Profile Picture To Proceed.', Toast.SHORT);
+            return;
+        }
+
         if (publicPhotos.length < 3) {
             Toast.show('Please select at least 3 public photos.', Toast.SHORT);
             return;
@@ -1057,94 +1066,142 @@ const ProfileSignUp = ({ navigation, route }) => {
                 )
             case 8:
                 return (
-                    <View>
-                        <Text style={styles.txt}>What's Your Ethnicity?</Text>
-                        <Text style={styles.txt1}>Let your matches get to know you better by sharing your background.</Text>
-                        <Text style={styles.txt3}>Choose Your Ethnicity</Text>
-                        <View style={styles.bodyTypeContainer}>
-                            {ethnicity.map((type) => (
-                                <TouchableOpacity
-                                    key={type}
-                                    style={[
-                                        styles.bodyTypeButton,
-                                        selectethnicity === type && styles.selectedBodyTypeButton,
-                                    ]}
-                                    onPress={() => handleEthnicity(type)}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.bodyTypeText,
-                                            selectethnicity === type && styles.selectedBodyTypeText,
-                                        ]}
-                                    >
-                                        {type}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
-                )
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={100}
+                        >
+                            <ScrollView
+                                contentContainerStyle={{
+                                    paddingHorizontal: 20,
+                                    paddingBottom: 140, // Adjust dynamically for footer space
+                                    flexGrow: 1, // Ensures the ScrollView grows with the content
+                                }}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                <Text style={styles.txt}>What's Your Ethnicity?</Text>
+                                <Text style={styles.txt1}>
+                                    Let your matches get to know you better by sharing your background.
+                                </Text>
+                                <Text style={styles.txt3}>Choose Your Ethnicity</Text>
+
+                                <View style={styles.bodyTypeContainer}>
+                                    {ethnicity.map((type) => (
+                                        <TouchableOpacity
+                                            key={type}
+                                            style={[
+                                                styles.bodyTypeButton,
+                                                selectethnicity === type && styles.selectedBodyTypeButton,
+                                            ]}
+                                            onPress={() => handleEthnicity(type)}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.bodyTypeText,
+                                                    selectethnicity === type && styles.selectedBodyTypeText,
+                                                ]}
+                                            >
+                                                {type}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
+                );
+
+
             case 9:
                 return (
-                    <View>
-                        <Text style={styles.txt}>What is Your Highest Level of Education?</Text>
-                        <Text style={styles.txt1}>Help us get to know you better by sharing your education background.</Text>
-                        <Text style={styles.txt3}>Choose Your Level of Education</Text>
-                        <ScrollView style={{ marginBottom: 220 }}>
-                            <View style={styles.bodyTypeContainer}>
-                                {education.map((type) => (
-                                    <TouchableOpacity
-                                        key={type}
-                                        style={[
-                                            styles.bodyTypeButton,
-                                            selecteducation === type && styles.selectedBodyTypeButton,
-                                        ]}
-                                        onPress={() => handleEducation(type)}
-                                    >
-                                        <Text
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={100}
+                        >
+                            <ScrollView
+                                contentContainerStyle={{
+                                    paddingHorizontal: 20,
+                                    paddingBottom: 140, // Adjust dynamically for footer space
+                                    flexGrow: 1, // Ensures the ScrollView grows with the content
+                                }}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                <Text style={styles.txt}>What is Your Highest Level of Education?</Text>
+                                <Text style={styles.txt1}>Help us get to know you better by sharing your education background.</Text>
+                                <Text style={styles.txt3}>Choose Your Level of Education</Text>
+
+                                <View style={styles.bodyTypeContainer}>
+                                    {education.map((type) => (
+                                        <TouchableOpacity
+                                            key={type}
                                             style={[
-                                                styles.bodyTypeText,
-                                                selecteducation === type && styles.selectedBodyTypeText,
+                                                styles.bodyTypeButton,
+                                                selecteducation === type && styles.selectedBodyTypeButton,
                                             ]}
+                                            onPress={() => handleEducation(type)}
                                         >
-                                            {type}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </ScrollView>
-                    </View>
+                                            <Text
+                                                style={[
+                                                    styles.bodyTypeText,
+                                                    selecteducation === type && styles.selectedBodyTypeText,
+                                                ]}
+                                            >
+                                                {type}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
                 )
             case 10:
                 return (
-                    <View>
-                        <Text style={styles.txt}>What Field Do You Work In?</Text>
-                        <Text style={styles.txt1}>Let us know your profession to help us match you with like-minded individuals.</Text>
-                        <Text style={styles.txt3}>Choose Your Field</Text>
-                        <ScrollView style={{ marginBottom: 200 }}>
-                            <View style={styles.bodyTypeContainer}>
-                                {workField.map((type) => (
-                                    <TouchableOpacity
-                                        key={type}
-                                        style={[
-                                            styles.bodyTypeButton,
-                                            workfield === type && styles.selectedBodyTypeButton,
-                                        ]}
-                                        onPress={() => handleWorkField(type)}
-                                    >
-                                        <Text
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={100}
+                        >
+                            <ScrollView
+                                contentContainerStyle={{
+                                    paddingHorizontal: 20,
+                                    paddingBottom: 140, // Adjust dynamically for footer space
+                                    flexGrow: 1, // Ensures the ScrollView grows with the content
+                                }}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                <Text style={styles.txt}>What Field Do You Work In?</Text>
+                                <Text style={styles.txt1}>Let us know your profession to help us match you with like-minded individuals.</Text>
+                                <Text style={styles.txt3}>Choose Your Field</Text>
+
+                                <View style={styles.bodyTypeContainer}>
+                                    {workField.map((type) => (
+                                        <TouchableOpacity
+                                            key={type}
                                             style={[
-                                                styles.bodyTypeText,
-                                                workfield === type && styles.selectedBodyTypeText,
+                                                styles.bodyTypeButton,
+                                                workfield === type && styles.selectedBodyTypeButton,
                                             ]}
+                                            onPress={() => handleWorkField(type)}
                                         >
-                                            {type}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </ScrollView>
-                    </View>
+                                            <Text
+                                                style={[
+                                                    styles.bodyTypeText,
+                                                    workfield === type && styles.selectedBodyTypeText,
+                                                ]}
+                                            >
+                                                {type}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
                 )
             case 11:
                 return (
@@ -1207,33 +1264,48 @@ const ProfileSignUp = ({ navigation, route }) => {
 
             case 13:
                 return (
-                    <View>
-                        <Text style={styles.txt}>What is Your Net Worth?</Text>
-                        <Text style={styles.txt1}>Enter the approximate amount that best reflects your current financial standing.</Text>
-                        <ScrollView style={{ marginBottom: 120 }}>
-                            <View style={styles.bodyTypeContainer}>
-                                {netWorth.map((type) => (
-                                    <TouchableOpacity
-                                        key={type}
-                                        style={[
-                                            styles.bodyTypeButton,
-                                            networth === type && styles.selectedBodyTypeButton,
-                                        ]}
-                                        onPress={() => handleNetWorth(type)}
-                                    >
-                                        <Text
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={100}
+                        >
+                            <ScrollView
+                                contentContainerStyle={{
+                                    paddingHorizontal: 20,
+                                    paddingBottom: 140, // Adjust dynamically for footer space
+                                    flexGrow: 1, // Ensures the ScrollView grows with the content
+                                }}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                <Text style={styles.txt}>What is Your Net Worth?</Text>
+                                <Text style={styles.txt1}>Enter the approximate amount that best reflects your current financial standing.</Text>
+
+                                <View style={styles.bodyTypeContainer}>
+                                    {netWorth.map((type) => (
+                                        <TouchableOpacity
+                                            key={type}
                                             style={[
-                                                styles.bodyTypeText,
-                                                networth === type && styles.selectedBodyTypeText,
+                                                styles.bodyTypeButton,
+                                                networth === type && styles.selectedBodyTypeButton,
                                             ]}
+                                            onPress={() => handleNetWorth(type)}
                                         >
-                                            {type}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </ScrollView>
-                    </View>
+                                            <Text
+                                                style={[
+                                                    styles.bodyTypeText,
+                                                    networth === type && styles.selectedBodyTypeText,
+                                                ]}
+                                            >
+                                                {type}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
                 )
             case 14:
                 return (
@@ -1274,35 +1346,50 @@ const ProfileSignUp = ({ navigation, route }) => {
                 )
             case 15:
                 return (
-                    <View>
-                        <Text style={styles.txt}>What Are Your Hobbies?</Text>
-                        <Text style={styles.txt1}>Select at least 3 hobbies that reflect your passions and lifestyle. Let's connect you with othes who share your interests and refined tastes.(Maximum 7 hobbies only)</Text>
-                        <Text style={styles.txt3}>Choose Your Hobbies</Text>
-                        <ScrollView style={{ marginBottom: 240 }}>
-                            <View style={styles.bodyTypeContainer}>
-                                {hobbies.map((hobby) => (
-                                    <TouchableOpacity
-                                        key={hobby}
-                                        style={[
-                                            styles.bodyTypeButton,
-                                            userhobbies.includes(hobby) && styles.selectedBodyTypeButton,
-                                        ]}
-                                        onPress={() => handleHHobbies(hobby)}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.bodyTypeText,
-                                                userhobbies.includes(hobby) && styles.selectedBodyTypeText,
-                                            ]}
-                                        >
-                                            {hobby}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </ScrollView>
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={100}
+                        >
+                            <ScrollView
+                                contentContainerStyle={{
+                                    paddingHorizontal: 20,
+                                    paddingBottom: 140, // Adjust dynamically for footer space
+                                    flexGrow: 1, // Ensures the ScrollView grows with the content
+                                }}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                <Text style={styles.txt}>What Are Your Hobbies?</Text>
+                                <Text style={styles.txt1}>Select at least 3 hobbies that reflect your passions and lifestyle. Let's connect you with othes who share your interests and refined tastes.(Maximum 7 hobbies only)</Text>
+                                <Text style={styles.txt3}>Choose Your Hobbies</Text>
 
-                    </View>
+                                <View style={styles.bodyTypeContainer}>
+                                    {hobbies.map((hobby) => (
+                                        <TouchableOpacity
+                                            key={hobby}
+                                            style={[
+                                                styles.bodyTypeButton,
+                                                userhobbies.includes(hobby) && styles.selectedBodyTypeButton,
+                                            ]}
+                                            onPress={() => handleHHobbies(hobby)}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.bodyTypeText,
+                                                    userhobbies.includes(hobby) && styles.selectedBodyTypeText,
+                                                ]}
+                                            >
+                                                {hobby}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
                 )
             case 16:
                 return (
@@ -1365,49 +1452,68 @@ const ProfileSignUp = ({ navigation, route }) => {
                 )
             case 18:
                 return (
-                    <View>
-                        <Text style={styles.txt}>Luxury life, Luxe Interests!</Text>
-                        <Text style={styles.txt1}>Select at least 3 tags that best describe your {'\n'} passions and interests. Let's match you with {'\n'} someone who shares your luxury lifestyle and {'\n'} refined tastes.(Maximum 7 tags only)</Text>
-                        <Text style={styles.txt3}>Choose Your Interests</Text>
-                        <ScrollView style={{ marginBottom: 240 }}>
-                            <View style={styles.bodyTypeContainer}>
-                                {interests.map((interest) => (
-                                    <TouchableOpacity
-                                        key={interest}
-                                        style={[
-                                            styles.bodyTypeButton,
-                                            userinterest.includes(interest) && styles.selectedBodyTypeButton,
-                                        ]}
-                                        onPress={() => handleInterests(interest)}
-                                    >
-                                        <Text
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={100}
+                        >
+                            <ScrollView
+                                contentContainerStyle={{
+                                    paddingHorizontal: 20,
+                                    paddingBottom: 140, // Adjust dynamically for footer space
+                                    flexGrow: 1, // Ensures the ScrollView grows with the content
+                                }}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                <Text style={styles.txt}>Luxury life, Luxe Interests!</Text>
+                                <Text style={styles.txt1}>Select at least 3 tags that best describe your passions and interests. Let's match you with someone who shares your luxury lifestyle and refined tastes.(Maximum 7 tags only)</Text>
+                                <Text style={styles.txt3}>Choose Your Interests</Text>
+
+                                <View style={styles.bodyTypeContainer}>
+                                    {interests.map((interest) => (
+                                        <TouchableOpacity
+                                            key={interest}
                                             style={[
-                                                styles.bodyTypeText,
-                                                userinterest.includes(interest) && styles.selectedBodyTypeText,
+                                                styles.bodyTypeButton,
+                                                userinterest.includes(interest) && styles.selectedBodyTypeButton,
                                             ]}
+                                            onPress={() => handleInterests(interest)}
                                         >
-                                            {interest}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </ScrollView>
-                    </View>
+                                            <Text
+                                                style={[
+                                                    styles.bodyTypeText,
+                                                    userinterest.includes(interest) && styles.selectedBodyTypeText,
+                                                ]}
+                                            >
+                                                {interest}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
                 )
             case 19:
                 return (
-                    <KeyboardAvoidingView
-                        style={{ flex: 1 }}
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // Handles behavior for iOS and Android
-                        keyboardVerticalOffset={100} // Adjust this value for your specific UI
-                    >
-                        <ScrollView contentContainerStyle={{ paddingBottom: 220 }}>
-                            <View>
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={100}
+                        >
+                            <ScrollView
+                                contentContainerStyle={{
+                                    paddingHorizontal: 20,
+                                    paddingBottom: 140, // Adjust dynamically for footer space
+                                    flexGrow: 1, // Ensures the ScrollView grows with the content
+                                }}
+                                showsVerticalScrollIndicator={false}
+                            >
                                 <Text style={styles.txt}>What Are You Looking for in a Partner?</Text>
-                                <Text style={styles.txt1}>
-                                    Tell us more about the qualities and traits you {'\n'} desire in a partner. Whether you're looking for {'\n'}
-                                    someone with shared interests, a similar lifestyle, or {'\n'} specific values, this will help us recommend
-                                    the {'\n'} best matches.
+                                <Text style={styles.txt1}>Tell us more about the qualities and traits you desire in a partner. Whether you're looking for someone with shared interests, a similar lifestyle, or specific values, this will help us recommend the best matches.
                                 </Text>
                                 <TextInput
                                     style={styles.textArea}
@@ -1421,73 +1527,95 @@ const ProfileSignUp = ({ navigation, route }) => {
                                 <Text style={styles.wordCount}>
                                     {aboutpartner.length} / 4000
                                 </Text>
-                            </View>
-                        </ScrollView>
-                    </KeyboardAvoidingView>
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
                 );
             case 20:
                 return (
-                    <View>
-                        {renderLottieModal()}
-                        <Text style={styles.txt}>Show Us Your Best Side!</Text>
-                        <Text style={styles.txt1}>Upload at least 3 photos to complete your profile {'\n'} and give potential matches a glimpse of who you are.</Text>
-                        <Text style={[styles.txt3, { bottom: 20 }]}>Minimum Selection: 3 Photos</Text>
-                        <Text style={[styles.txt3, { bottom: 40 }]}>Upload Profile Photo</Text>
-                        <ScrollView style={{ marginBottom: 300 }}>
-                            <View style={styles.uploadBox}>
-                                <TouchableOpacity style={[styles.photoBox, { height: 257, width: 190 }]} onPress={() => handlePhotoSelection(0)}>
-                                    {photos[0] ? (
-                                        <Image source={{ uri: photos[0] }} style={styles.photo} resizeMode='cover' />
-                                    ) : (
-                                        <Image source={images.add} style={[styles.addIcon, { height: 40, width: 40 }]} />
-                                    )}
-                                </TouchableOpacity>
-                            </View>
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={100}
+                        >
+                            <ScrollView
+                                contentContainerStyle={{
+                                    paddingHorizontal: 20,
+                                    paddingBottom: 140, // Adjust dynamically for footer space
+                                    flexGrow: 1, // Ensures the ScrollView grows with the content
+                                }}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                {renderLottieModal()}
+                                <Text style={styles.txt}>Show Us Your Best Side!</Text>
+                                <Text style={styles.txt1}>Upload at least 3 photos to complete your profile and give potential matches a glimpse of who you are.</Text>
+                                <Text style={[styles.txt3, { bottom: 20 }]}>Minimum Selection: 3 Photos</Text>
+                                <Text style={[styles.txt3, { bottom: 40 }]}>Upload Profile Photo</Text>
 
-                            {/* Upload Public Photo */}
-                            <Text style={styles.sectionTitle}>Upload Public Photo</Text>
-                            <View style={styles.photoGrid}>
-                                {[...Array(6)].map((_, index) => (
-                                    <TouchableOpacity key={index} style={styles.photoBox} onPress={() => handlePhotoSelection(index + 1)}>
-                                        {photos[index + 1] ? (
-                                            <Image source={{ uri: photos[index + 1] }} style={styles.photo} />
+                                <View style={styles.uploadBox}>
+                                    <TouchableOpacity style={[styles.photoBox, { height: 257, width: 190 }]} onPress={() => handlePhotoSelection(0)}>
+                                        {photos[0] ? (
+                                            <Image source={{ uri: photos[0] }} style={styles.photo} resizeMode='cover' />
                                         ) : (
-                                            <Image source={images.add} style={styles.addIcon} />
+                                            <Image source={images.add} style={[styles.addIcon, { height: 40, width: 40 }]} />
                                         )}
                                     </TouchableOpacity>
-                                ))}
-                            </View>
+                                </View>
 
-                            {/* Private Public Photo */}
-                            <Text style={styles.sectionTitle}>
-                                Private Public Photo <Text style={styles.optional}>(optional)</Text>
-                            </Text>
-                            <View style={styles.photoGrid}>
-                                {[...Array(6)].map((_, index) => (
-                                    <TouchableOpacity key={index} style={styles.photoBox} onPress={() => handlePhotoSelection(index + 7)}>
-                                        {photos[index + 7] ? (
-                                            <Image source={{ uri: photos[index + 7] }} style={styles.photo} />
-                                        ) : (
-                                            <Image source={images.lock} style={styles.lockIcon} />
-                                        )}
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </ScrollView>
+                                {/* Upload Public Photo */}
+                                <Text style={styles.sectionTitle}>Upload Public Photo</Text>
+                                <View style={styles.photoGrid}>
+                                    {[...Array(6)].map((_, index) => (
+                                        <TouchableOpacity key={index} style={styles.photoBox} onPress={() => handlePhotoSelection(index + 1)}>
+                                            {photos[index + 1] ? (
+                                                <Image source={{ uri: photos[index + 1] }} style={styles.photo} />
+                                            ) : (
+                                                <Image source={images.add} style={styles.addIcon} />
+                                            )}
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
 
-                    </View>
+                                {/* Private Public Photo */}
+                                <Text style={styles.sectionTitle}>
+                                    Private Public Photo <Text style={styles.optional}>(optional)</Text>
+                                </Text>
+                                <View style={styles.photoGrid}>
+                                    {[...Array(6)].map((_, index) => (
+                                        <TouchableOpacity key={index} style={styles.photoBox} onPress={() => handlePhotoSelection(index + 7)}>
+                                            {photos[index + 7] ? (
+                                                <Image source={{ uri: photos[index + 7] }} style={styles.photo} />
+                                            ) : (
+                                                <Image source={images.lock} style={styles.lockIcon} />
+                                            )}
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
                 )
             case 21:
                 return (
-                    <KeyboardAvoidingView
-                        style={{ flex: 1 }}
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // Handles behavior for iOS and Android
-                        keyboardVerticalOffset={100} // Adjust this value for your specific UI
-                    >
-                        <ScrollView contentContainerStyle={{ paddingBottom: 150 }}>
-                            <View>
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={100}
+                        >
+                            <ScrollView
+                                contentContainerStyle={{
+                                    paddingHorizontal: 20,
+                                    paddingBottom: 140, // Adjust dynamically for footer space
+                                    flexGrow: 1, // Ensures the ScrollView grows with the content
+                                }}
+                                showsVerticalScrollIndicator={false}
+                            >
                                 <Text style={styles.txt}>Create a Catchy Heading for Your Profile</Text>
-                                <Text style={styles.txt1}>Your headline is the first thing people will see - {'\n'} make it count! Share something unique about {'\n'} yourself or a fun fact that captures your essence.</Text>
+                                <Text style={styles.txt1}>Your headline is the first thing people will see - make it count! Share something unique about yourself or a fun fact that captures your essence.</Text>
                                 <TextInput
                                     style={[styles.textArea, { width: '100%', height: 100, fontSize: 13 }]}
                                     placeholder="Example Ideas: Adventure seeker looking for my next journey."
@@ -1500,21 +1628,28 @@ const ProfileSignUp = ({ navigation, route }) => {
                                 <Text style={styles.wordCount}>
                                     {profileheading.length} / 50
                                 </Text>
-                            </View>
-                        </ScrollView>
-                    </KeyboardAvoidingView>
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
                 )
             case 22:
                 return (
-                    <KeyboardAvoidingView
-                        style={{ flex: 1 }}
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // Handles behavior for iOS and Android
-                        keyboardVerticalOffset={100} // Adjust this value for your specific UI
-                    >
-                        <ScrollView contentContainerStyle={{ paddingBottom: 210 }}>
-                            <View>
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={100}
+                        >
+                            <ScrollView
+                                contentContainerStyle={{
+                                    paddingHorizontal: 20,
+                                    paddingBottom: 140, // Adjust dynamically for footer space
+                                    flexGrow: 1, // Ensures the ScrollView grows with the content
+                                }}
+                                showsVerticalScrollIndicator={false}
+                            >
                                 <Text style={styles.txt}>Describe Yourself in a Few Words</Text>
-                                <Text style={styles.txt1}>This is your chance to let others know what makes {'\n'} you unique. Share a brief description of your {'\n'} personality, interests, and what you're looking for in {'\n'} a partner. </Text>
+                                <Text style={styles.txt1}>This is your chance to let others know what makes you unique. Share a brief description of your personality, interests, and what you're looking for in a partner. </Text>
                                 <TextInput
                                     style={styles.textArea}
                                     placeholder="Create Your Personal Intro."
@@ -1527,51 +1662,79 @@ const ProfileSignUp = ({ navigation, route }) => {
                                 <Text style={styles.wordCount}>
                                     {aboutyou.length} / 4000
                                 </Text>
-                            </View>
-                        </ScrollView>
-                    </KeyboardAvoidingView>
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
                 )
             case 23:
                 return (
 
-                    <View>
-                        <Text style={styles.txt}>Verify Your Profile with a Selfie</Text>
-                        <Text style={styles.txt1}>To maintain a safe and genuine community, we {'\n'} require a quick selfie verification. This ensures that {'\n'} all profile on our platform are real and trustworthy.</Text>
-                        <ScrollView style={{ marginBottom: 120 }}>
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={100}
+                        >
+                            <ScrollView
+                                contentContainerStyle={{
+                                    // paddingHorizontal: 20,
+                                    paddingBottom: 140, // Adjust dynamically for footer space
+                                    flexGrow: 1, // Ensures the ScrollView grows with the content
+                                }}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                <Text style={styles.txt}>Verify Your Profile with a Selfie</Text>
+                                <Text style={styles.txt1}>To maintain a safe and genuine community, we require a quick selfie verification. This ensures that all profile on our platform are real and trustworthy.</Text>
 
-                            <Image source={images.selfie} style={styles.img} />
-                            <View style={styles.cont}>
-                                <Image source={images.eyebrow} style={styles.img1} />
-                                <View style={{ marginLeft: 20 }}>
-                                    <Text style={styles.txt5}>100% Private</Text>
-                                    <Text style={styles.txt6}>Your selfie is strictly for {'\n'}verification-it will never be {'\n'}visible to others.</Text>
-                                </View>
-                            </View>
 
-                            <View style={styles.cont}>
-                                <Image source={images.authencity} style={styles.img1} />
-                                <View style={{ marginLeft: 20 }}>
-                                    <Text style={styles.txt5}>Show Authencity</Text>
-                                    <Text style={styles.txt6}>Demonstrate you're the real person {'\n'}behind your profile pictures.</Text>
+                                <Image source={images.selfie} style={styles.img} />
+                                <View style={styles.cont}>
+                                    <Image source={images.eyebrow} style={styles.img1} />
+                                    <View style={{ marginLeft: 20 }}>
+                                        <Text style={styles.txt5}>100% Private</Text>
+                                        <Text style={styles.txt6}>Your selfie is strictly for {'\n'}verification-it will never be {'\n'}visible to others.</Text>
+                                    </View>
                                 </View>
-                            </View>
 
-                            <View style={styles.cont}>
-                                <Image source={images.safety} style={styles.img1} />
-                                <View style={{ marginLeft: 20 }}>
-                                    <Text style={styles.txt5}>Elevate Safety</Text>
-                                    <Text style={styles.txt6}>Contribute to a trusted environment {'\n'}for genuine and secure connections.</Text>
+                                <View style={styles.cont}>
+                                    <Image source={images.authencity} style={styles.img1} />
+                                    <View style={{ marginLeft: 20 }}>
+                                        <Text style={styles.txt5}>Show Authencity</Text>
+                                        <Text style={styles.txt6}>Demonstrate you're the real person {'\n'}behind your profile pictures.</Text>
+                                    </View>
                                 </View>
-                            </View>
-                        </ScrollView>
-                    </View>
+
+                                <View style={styles.cont}>
+                                    <Image source={images.safety} style={styles.img1} />
+                                    <View style={{ marginLeft: 20 }}>
+                                        <Text style={styles.txt5}>Elevate Safety</Text>
+                                        <Text style={styles.txt6}>Contribute to a trusted environment {'\n'}for genuine and secure connections.</Text>
+                                    </View>
+                                </View>
+
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
                 )
             case 24:
                 return (
-                    <View>
+                    <SafeAreaView style={{ flex: 1 }}>
+                    <KeyboardAvoidingView
+                        style={{ flex: 1 }}
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        keyboardVerticalOffset={100}
+                    >
+                        <ScrollView
+                            contentContainerStyle={{
+                                // paddingHorizontal: 20,
+                                paddingBottom: 200, // Adjust dynamically for footer space
+                                flexGrow: 1, // Ensures the ScrollView grows with the content
+                            }}
+                            showsVerticalScrollIndicator={false}
+                        >
                         <Text style={styles.txt}>How It Works</Text>
-                        <Text style={styles.txt1}>To maintain a safe and genuine community, we {'\n'} require a quick selfie verification. This ensures that {'\n'} all profile on our platform are real and trustworthy.</Text>
-                        <ScrollView style={{ marginBottom: 120 }}>
+                        <Text style={styles.txt1}>To maintain a safe and genuine community, we require a quick selfie verification. This ensures that all profile on our platform are real and trustworthy.</Text>
+                      
                             <Image source={images.selfie1} style={styles.img} />
 
                             <View style={styles.cont1}>
@@ -1606,8 +1769,9 @@ const ProfileSignUp = ({ navigation, route }) => {
                                     <Text style={styles.txt9}>Hold steady and ensure the image is sharp.</Text>
                                 </View>
                             </View>
-                        </ScrollView>
-                    </View>
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
                 )
             case 25:
                 return (
@@ -2018,25 +2182,24 @@ const ProfileSignUp = ({ navigation, route }) => {
 
     return (
         <View style={styles.container}>
+            {/* Header Section */}
             <TouchableOpacity onPress={() => navigation.goBack('')}>
-                <View style={[styles.header, {}]}>
+                <View style={styles.header}>
                     <View style={{ flexDirection: 'row' }}>
                         <Image source={images.back} style={styles.backIcon} />
                         <Text style={styles.headerText}>Profile</Text>
                     </View>
 
-
-                    {/* Conditionally render the "Skip" button on specific steps */}
-                    {[
-                        10, 13, 14, 15, 18, 19, 21, 22, 23, 24, 25
-                    ].includes(currentStep) && (
-                            <TouchableOpacity>
-                                <Text style={styles.skipText}>Skip</Text>
-                            </TouchableOpacity>
-                        )}
+                    {/* Conditionally render the "Skip" button */}
+                    {[10, 13, 14, 15, 18, 19, 21, 22, 23, 24, 25].includes(currentStep) && (
+                        <TouchableOpacity>
+                            <Text style={styles.skipText}>Skip</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </TouchableOpacity>
 
+            {/* Progress Line */}
             <View style={styles.lineContainer}>
                 <View
                     style={[
@@ -2046,18 +2209,22 @@ const ProfileSignUp = ({ navigation, route }) => {
                 />
             </View>
 
+            {/* Step Content */}
             <View style={styles.stepContent}>{renderStepContent()}</View>
 
-            {/* Footer Buttons and Note */}
-            <View style={styles.footer}>
+            {/* Footer */}
+            <SafeAreaView style={styles.footerContainer}>
                 <Text style={styles.note}>{getStepNote()}</Text>
 
                 <View style={styles.footerButtonsContainer}>
+                    {/* Back Button */}
                     {currentStep > 4 && (
-                        <TouchableOpacity style={styles.backButton}>
+                        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                             <Text style={styles.buttonText}>Back</Text>
                         </TouchableOpacity>
                     )}
+
+                    {/* Continue Button */}
                     <TouchableOpacity
                         style={[
                             currentStep === 4 ? styles.fullWidthButton : styles.continueButton,
@@ -2073,7 +2240,7 @@ const ProfileSignUp = ({ navigation, route }) => {
                         )}
                     </TouchableOpacity>
                 </View>
-            </View>
+            </SafeAreaView>
         </View>
     );
 };
@@ -2139,12 +2306,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingBottom: height * 0.05,
     },
-    footerButtonsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        marginTop: 10,
-    },
+
     backButton: {
         width: '45%',
         height: 50,
@@ -2557,6 +2719,55 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'center',
+    },
+    footerContainer: {
+        position: 'absolute',
+        bottom: 0, // Stick to the bottom
+        width: '100%', // Full width of the screen
+        backgroundColor: 'white', // Optional background for contrast
+        paddingHorizontal: 20, // Padding for content
+        paddingBottom: 10, // Space for safe area
+        paddingTop: 10, // Space between note and buttons
+        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: '#E0E0E0', // Light border for separation
+    },
+    footerButtonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 10,
+    },
+    backButton: {
+        width: '45%',
+        height: 50,
+        backgroundColor: '#B0BEC5',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 25,
+    },
+    continueButton: {
+        width: '45%',
+        height: 50,
+        backgroundColor: '#5F3D23',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 25,
+    },
+    fullWidthButton: {
+        width: '100%',
+        height: 50,
+        backgroundColor: '#5F3D23',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 25,
+    },
+    note: {
+        fontSize: 12,
+        color: '#7A7A7A',
+        fontFamily: 'Poppins-Italic',
+        textAlign: 'center',
+        marginBottom: 10, // Space above the buttons
     },
 
 });

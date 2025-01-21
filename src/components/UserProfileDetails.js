@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
     Text,
     View,
@@ -12,6 +12,8 @@ import FastImage from "react-native-fast-image";
 import images from "./images";
 import RBSheet from "react-native-raw-bottom-sheet";
 import Modal from "react-native-modal";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 const { width } = Dimensions.get("window");
 
@@ -20,6 +22,7 @@ const UserProfileDetails = ({ navigation }) => {
     const [seek, setSeek] = useState(null)
     const [userhobbies, setUserHobbies] = useState([])
     const [isModalVisible, setModalVisible] = useState(false);
+    const [userdetails, setUserDetails] = useState(null)
     const [modalContent, setModalContent] = useState({ title: "", description: "", action: "" });
     const rbSheetRef = useRef();
     const seeking = ['Discretion', 'Flexible Schedule', 'Friends', 'No Strings Attached']
@@ -40,6 +43,36 @@ const UserProfileDetails = ({ navigation }) => {
     const openBottomSheet = () => {
         rbSheetRef.current?.open();
     };
+
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+                    getUserData()
+
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
+        };
+        fetchUserDetails();
+    }, []);
+
+    const getUserData = async () => {
+        const token = await AsyncStorage.getItem('authToken');
+        const headers = {
+            Authorization: token
+        };
+        try {
+            const resp = await axios.get(`home/get-user-profile/${userdetails?._id}`, { headers })
+            console.log('response from the user detailss>>>>', resp?.data);
+        } catch (error) {
+            console.log('error fromt he user detalss', error.response.data.message);
+        }
+    }
 
     const handleHHobbies = (hobby) => {
         if (userhobbies.includes(hobby)) {
@@ -100,8 +133,7 @@ const UserProfileDetails = ({ navigation }) => {
         setActiveIndex(index);
     };
 
-
-
+    
     return (
         <View style={styles.main}>
             {/* Header */}
