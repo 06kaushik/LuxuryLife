@@ -68,7 +68,7 @@ const UserProfileDetails = ({ navigation }) => {
         };
         try {
             const resp = await axios.get(`home/get-user-profile/${userdetails?._id}`, { headers })
-            console.log('response from the user detailss>>>>', resp?.data);
+            // console.log('response from the user detailss>>>>', resp?.data);
         } catch (error) {
             console.log('error fromt he user detalss', error.response.data.message);
         }

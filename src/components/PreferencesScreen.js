@@ -14,14 +14,24 @@ const { width } = Dimensions.get("window");
 
 const PreferencesScreen = ({ navigation }) => {
 
-
+    const [savedFilters, setSavedFilters] = useState([]);
+    const [selectedFilter, setSelectedFilter] = useState(null);
     const [locations, setLocations] = useState(["Other Location"]);
+    const [isOtherLocationSelected, setIsOtherLocationSelected] = useState(false); // Track if Othe
+    const [isLoading, setIsLoading] = useState(false);
     const [location, setLocation] = useState(null);
-    const [isOtherLocation, setIsOtherLocation] = useState(false);
     const [showSearch, setShowSearch] = useState(true);
     const [distanceRange, setDistanceRange] = useState([0, 100]);
     const [ageRange, setAgeRange] = useState([18, 60]);
-    const [selectedOptions, setSelectedOptions] = useState([]);
+    const [selectedOptions, setSelectedOptions] = useState({
+        "ID Verified": false,
+        "Premium": false,
+        "Unviewed": false,
+        "Viewed Me": false,
+        "Favorited Me": false,
+        "Photos": false,
+        "Online Now": false
+    });
     const [selectedTags, setSelectedTags] = useState([]);
     const [isSeekingVisible, setIsSeekingVisible] = useState(false);
     const [bodytype, setBodyType] = useState(false);
@@ -53,7 +63,26 @@ const PreferencesScreen = ({ navigation }) => {
     const [searchcity, setSearchCity] = useState('')
     const [suggestions, setSuggestions] = useState([]);
     const [userdetails, setUserDetails] = useState(null)
-    const [selectedlocation, setSelectedLocation] = useState('')
+    const [selectedLocation, setSelectedLocation] = useState('')
+
+
+
+
+    const mapToApiFormat = (selectedOptions) => {
+        return {
+            favorited_me: selectedOptions["Favorited Me"],
+            id_verified: selectedOptions["ID Verified"],
+            online_now: selectedOptions['Online Now'],
+            photos: selectedOptions["Photos"],
+            premium: selectedOptions["Premium"],
+            unviewed: selectedOptions["Unviewed"],
+            viewed_me: selectedOptions["Viewed Me"]
+        };
+    };
+
+    // When you're ready to send the data to the API
+    const apiData = mapToApiFormat(selectedOptions);
+
 
 
     useEffect(() => {
@@ -64,74 +93,61 @@ const PreferencesScreen = ({ navigation }) => {
         }
     }, [searchcity]);
 
+
     const fetchLocationSuggestions = async (query) => {
-        setIsLoading1(true);
+        setIsLoading(true);
         try {
             const response = await axios.get(
                 `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=AIzaSyBMSu3-s9hl4tDatsaEcTXC5Ul-IEP5J_E`
             );
             const results = response.data.results;
-            console.log('resultt', JSON.stringify(results));
             if (results.length > 0) {
-                // Extract necessary data from the first result
-                const locationData = results[0];
-                const addressComponents = locationData.address_components;
-
-                // Helper function to extract specific types (city, state, country)
-                const getAddressComponent = (type) =>
-                    addressComponents.find((component) => component.types.includes(type))?.long_name || '';
-
-                const city = getAddressComponent('locality') || getAddressComponent('administrative_area_level_2');
-                const state = getAddressComponent('administrative_area_level_1');
-                const country = getAddressComponent('country');
-                const latitude = locationData.geometry.location.lat;
-                const longitude = locationData.geometry.location.lng;
-
-                // Save data
-                setSuggestions(results); // Update suggestions list
-                console.log({
-                    city,
-                    state,
-                    country,
-                    latitude,
-                    longitude,
-                });
-
-                // Optionally, store this in state or any persistent storage
-                setSelectedLocation({ city, state, country, latitude, longitude });
+                setSuggestions(results);
             } else {
-                setSuggestions([]); // Clear suggestions if no results
+                setSuggestions([]);
             }
         } catch (error) {
             console.error("Error fetching location suggestions:", error);
         } finally {
-            setIsLoading1(false); // End loading
+            setIsLoading(false);
         }
     };
 
 
     const handleSuggestionPress = (item) => {
-        const selectedCity = item.formatted_address.split(',')[0]; // Extract the city name
+        const selectedCity = item.formatted_address.split(',')[0];
+        const latitude = item.geometry.location.lat;
+        const longitude = item.geometry.location.lng;
+
         setSearchCity(selectedCity);
         setSuggestions([]);
-        setLocations((prev) => [selectedCity, ...prev]); // Add the new city to the list
-        setLocation(selectedCity); // Set the selected location
-        setShowSearch(false); // Hide the search box
+        setLocation(selectedCity);
+        setSelectedLocation({
+            city: selectedCity,
+            latitude: latitude,
+            longitude: longitude
+        });
     };
+
+
+
 
     const handleRadioSelection = (selectedLoc) => {
         if (selectedLoc === "Other Location") {
-            setShowSearch(true);
-            setIsOtherLocation(true);
-            setLocation(null);
+            setIsOtherLocationSelected(true);
+            setLocation(""); // Clear TextInput when "Other Location" is selected
+            setSearchCity(""); // Reset the search input
+            setSelectedLocation(null); // Reset selected location
         } else {
-            setShowSearch(false);
-            setIsOtherLocation(false);
-            setLocation(selectedLoc); // Set the selected location
+            setIsOtherLocationSelected(false);
+            setLocation(userdetails?.city); // Reset to user's original city
+            setSelectedLocation({
+                city: userdetails?.city,
+                latitude: userdetails?.location.coordinates[1],
+                longitude: userdetails?.location.coordinates[0]
+            });
         }
     };
-
-
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -140,40 +156,246 @@ const PreferencesScreen = ({ navigation }) => {
                 if (data !== null) {
                     const parsedData = JSON.parse(data);
                     setUserDetails(parsedData);
-                    if (parsedData.city) {
-                        setLocations([parsedData.city, "Other Location"]);
-                        setLocation(parsedData.city);
-                        setShowSearch(false);
-                    }
+                    setLocation(parsedData.city); // Set the default location to user’s city
+                    setSelectedLocation({
+                        city: parsedData.city,
+                        latitude: parsedData.location.coordinates[1],
+                        longitude: parsedData.location.coordinates[0]
+                    });
                 }
             } catch (error) {
                 console.log('Error fetching user data:', error);
             }
         };
         fetchUserDetails();
+        getUserSearch()
     }, []);
 
-    ///////// API INTEGRATION ////////// 
+    const getUserSearch = async () => {
+        const token = await AsyncStorage.getItem('authToken');
+        const headers = { Authorization: token };
+        try {
+            const resp = await axios.get('home/get-user-filter', { headers });
+            const filters = resp.data.data || [];
+            const validFilters = filters.filter(filter => filter.filterName && filter.filterName.trim() !== "");
+            setSavedFilters(validFilters);
+            // console.log('Saved filters:', JSON.stringify(validFilters));
+        } catch (error) {
+            console.log('Error from get search', error.response?.data?.message);
+        }
+    };
+
+    const updateUserSearch = async (userId) => {
+        console.log('iddd to updatee', userId);
+
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            type: "UPSERT_FILTER",
+            filterName: searchName,
+            userNameSearchText: userdetails?.userName,
+            otherLocation: isOtherLocationSelected,
+            maxDistance: distanceRange[1],
+            location: {
+                longitude: selectedLocation?.longitude || userdetails?.location?.coordinates[0],
+                latitude: selectedLocation?.latitude || userdetails?.location?.coordinates[1],
+                city: selectedLocation?.city || userdetails?.city,
+                state: selectedLocation?.state || userdetails?.state,
+                country: selectedLocation?.country || userdetails?.country,
+            },
+            options: apiData,
+            memberSeeking: selectedTags,
+            hobbies: [],
+            bodyType: selectedBodyTypes,
+            verification: verificationtoggle,
+            ethnicity: ethnicitytoggle,
+            languages: languagetoggle,
+            height: {
+                min: height[0],
+                max: height[1]
+            },
+            smoking: smoketoggle,
+            drinking: drinkingtoggle,
+            relationshipStatus: relationtoggle,
+            children: childrentoggle,
+            education: educationtoggle,
+            workField: [],
+            levels: leveltoggle,
+            profileText: "",
+            ageRange: {
+                min: ageRange[0],
+                max: ageRange[1]
+            },
+            gender: userdetails?.preferences?.gender
+        }
+        try {
+            const resp = await axios.put(`home/update-user-filter/${userId}`, body, { headers })
+            console.log('response of update user search', resp.data);
+            setIsModalVisible(false);
+        } catch (error) {
+            console.log('error from the user search', error.response.data.message);
+        }
+    }
+
+    const handleDeleteFilter = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        try {
+            const resp = await axios.delete(`home/delete-user-filter/${id}`, { headers })
+            console.log('response from the delete api filter', resp.data);
+            getUserSearch()
+        } catch (error) {
+            console.log('error from the delete filter api', error);
+
+
+        }
+    }
+
+    const saveUserSearch = async () => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            type: "UPSERT_FILTER",
+            filterName: searchName,
+            userNameSearchText: userdetails?.userName,
+            otherLocation: isOtherLocationSelected,
+            maxDistance: distanceRange[1],
+            location: {
+                longitude: selectedLocation?.longitude || userdetails?.location?.coordinates[0],
+                latitude: selectedLocation?.latitude || userdetails?.location?.coordinates[1],
+                city: selectedLocation?.city || userdetails?.city,
+                state: selectedLocation?.state || userdetails?.state,
+                country: selectedLocation?.country || userdetails?.country,
+            },
+            options: apiData,
+            memberSeeking: selectedTags,
+            hobbies: [],
+            bodyType: selectedBodyTypes,
+            verification: verificationtoggle,
+            ethnicity: ethnicitytoggle,
+            languages: languagetoggle,
+            height: {
+                min: height[0],
+                max: height[1]
+            },
+            smoking: smoketoggle,
+            drinking: drinkingtoggle,
+            relationshipStatus: relationtoggle,
+            children: childrentoggle,
+            education: educationtoggle,
+            workField: [],
+            levels: leveltoggle,
+            profileText: "",
+            ageRange: {
+                min: ageRange[0],
+                max: ageRange[1]
+            },
+            gender: userdetails?.preferences?.gender
+        }
+        console.log('body of saved filter', body);
+
+        try {
+            const resp = await axios.post('home/save-user-filter', body, { headers })
+            console.log('resonse from save filter', resp.data);
+            getUserSearch();
+            setIsModalVisible(false);
+        } catch (error) {
+            console.log('error from the save filters', error.response.data.message);
+        }
+    }
+
+    const handleFilterSelection = (filter) => {
+        setSearchName(filter?.filterName)
+        setSelectedFilter(filter);
+        const savedTags = filter.memberSeeking || [];
+        setSelectedTags(savedTags);
+        const savedBodyTypes = filter.bodyType || [];
+        setSelectedBodyTypes(savedBodyTypes);
+        const savedVerification = filter.verification || [];
+        setVerificationToggle(savedVerification)
+        const savedLevels = filter.levels || []
+        setLevelToggle(savedLevels)
+        const savedEthnicity = filter.ethnicity || []
+        setEthnicityToggle(savedEthnicity)
+        const savedHeight = filter.height ? [filter.height.min, filter.height.max] : [137, 213];
+        setHeight(savedHeight);
+        const savedSmoking = filter.smoking || []
+        setSmokeToggle(savedSmoking)
+        const savedDrink = filter.drinking || []
+        setDrinkingToggle(savedDrink)
+        const savedRelation = filter.relationshipStatus || []
+        setRelationToggle(savedRelation)
+        const savedEducation = filter.education || []
+        setEducationToggle(savedEducation)
+        const savedChildren = filter.children || []
+        setChildrenToggle(savedChildren)
+        const savedLanguage = filter.languages || []
+        setLanguageToggle(savedLanguage)
+        const savedAge = filter.ageRange ? [filter.ageRange.min, filter.ageRange.max] : [18, 60]
+        setAgeRange(savedAge)
+        const options = filter.options || {};
+        setSelectedOptions({
+            "ID Verified": options.id_verified || false,
+            "Premium": options.premium || false,
+            "Unviewed": options.unviewed || false,
+            "Viewed Me": options.viewed_me || false,
+            "Favorited Me": options.favorited_me || false,
+            "Photos": options.photos || false,
+            "Online Now": options.online_now || false,
+        });
+        const maxDistance = filter.maxDistance || 100;
+        setDistanceRange([0, maxDistance]);
+        if (filter.otherLocation === "true") {
+            setIsOtherLocationSelected(true);
+            setSearchCity(filter.location.city);
+            setLocation(filter.location.city);
+            setSelectedLocation({
+                city: filter.location.city,
+                state: filter.location.state,
+                country: filter.location.country,
+                latitude: filter.location.latitude,
+                longitude: filter.location.longitude,
+            });
+        } else {
+            setIsOtherLocationSelected(false);
+            setLocation(userdetails?.city);
+            setSelectedLocation({
+                city: userdetails?.city,
+                latitude: userdetails?.location.coordinates[1],
+                longitude: userdetails?.location.coordinates[0],
+            });
+        }
+    };
+
 
     const getSearch = async () => {
         const token = await AsyncStorage.getItem('authToken')
         const headers = {
             Authorization: token,
         };
+        const locationData = selectedLocation || {
+            city: userdetails?.city,
+            latitude: userdetails?.location.coordinates[1],
+            longitude: userdetails?.location.coordinates[0]
+        };
         let body = {
             where: {
                 userNameSearchText: "",
                 currentCity: location,
-                otherLocation: isOtherLocation ? location : null,
+                otherLocation: isOtherLocationSelected,
                 maxDistance: distanceRange[1],
                 location: {
-                    longitude: userdetails?.location?.coordinates[0],
-                    latitude: userdetails?.location?.coordinates[1],
-                    city: userdetails?.city,
-                    state: userdetails?.state,
-                    country: userdetails?.country
+                    latitude: locationData.latitude,
+                    longitude: locationData.longitude,
+                    city: locationData.city
                 },
-                options: selectedOptions,
+                options: apiData,
                 memberSeeking: selectedTags,
                 hobbies: [],
                 bodyType: selectedBodyTypes,
@@ -218,18 +440,18 @@ const PreferencesScreen = ({ navigation }) => {
     };
 
     const handleSaveSearch = () => {
-        console.log("Search saved with name:", searchName);
-        toggleModal();
+        if (searchName.trim()) {
+            saveUserSearch();
+        } else {
+            alert('Please enter a name for the filter');
+        }
     };
 
     const toggleOption = (option) => {
-        setSelectedOptions((prevOptions) => {
-            if (prevOptions.includes(option)) {
-                return prevOptions.filter((item) => item !== option);
-            } else {
-                return [...prevOptions, option];
-            }
-        });
+        setSelectedOptions((prevOptions) => ({
+            ...prevOptions,  // Copy the previous options
+            [option]: !prevOptions[option],  // Toggle the selected option (true/false)
+        }));
     };
 
     const bodyTypeToggle = (option) => {
@@ -423,36 +645,69 @@ const PreferencesScreen = ({ navigation }) => {
                 <Image source={images.menu} style={[styles.icon, { tintColor: '#BF8500' }]} />
             </View>
 
-            <ScrollView style={styles.content}>
 
-                <TouchableOpacity onPress={toggleLanguagevisible} style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>SAVED FILTERS</Text>
-                    <Image
-                        source={IsSavedFilter ? images.dropdown : images.rightarrow}
-                        style={styles.icon}
-                    />
-                </TouchableOpacity>
-                {/* Location */}
-                <Text style={styles.sectionTitle}>LOCATION</Text>
-                {locations.length > 0 && (
-                    <View style={styles.radioGroup}>
-                        {locations.map((loc) => (
+            <ScrollView style={styles.content}>
+                {savedFilters.length > 0 ?
+                    <TouchableOpacity style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>SAVED FILTERS</Text>
+                    </TouchableOpacity>
+                    :
+                    null}
+                {savedFilters.length > 0 && (
+                    <FlatList
+                        data={savedFilters}
+                        keyExtractor={(item) => item._id}
+                        renderItem={({ item }) => (
                             <TouchableOpacity
-                                key={loc}
-                                onPress={() => handleRadioSelection(loc)}
-                                style={styles.radioButton}
+                                style={styles.filterOption}
+                                onPress={() => handleFilterSelection(item)}
                             >
-                                <View style={styles.radioCircle}>
-                                    {location === loc && <View style={styles.radioInnerCircle} />}
+                                <View style={styles.checkboxContainer}>
+                                    {selectedFilter?._id === item._id && (
+                                        <View style={styles.selectedCheckbox} />
+                                    )}
                                 </View>
-                                <Text style={styles.radioText}>{loc}</Text>
+                                <Text style={styles.filterName}>{item.filterName}</Text>
+                                <TouchableOpacity
+                                    style={styles.deleteButton}
+                                    onPress={() => handleDeleteFilter(item._id)}
+                                >
+                                    <Image
+                                        source={images.delete}  // Use the delete image here
+                                        style={styles.deleteIcon}  // Add style for the icon
+                                    />
+                                </TouchableOpacity>
                             </TouchableOpacity>
-                        ))}
-                    </View>
+                        )}
+                    />
                 )}
 
+                {/* Location */}
+                <Text style={styles.sectionTitle}>LOCATION</Text>
+                <View style={styles.radioGroup}>
+                    <TouchableOpacity onPress={() => handleRadioSelection(userdetails?.city)}>
+                        <View style={styles.radioButton}>
+                            <View style={[styles.radioCircle, location === userdetails?.city && styles.selectedCircle]}>
+                                {location === userdetails?.city && <View style={styles.innerCircle} />}
+                            </View>
+                            <Text style={styles.radioText}>{userdetails?.city}</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={() => handleRadioSelection("Other Location")}>
+                        <View style={styles.radioButton}>
+                            <View style={[styles.radioCircle, isOtherLocationSelected && styles.selectedCircle]}>
+                                {isOtherLocationSelected && <View style={styles.innerCircle} />}
+                            </View>
+                            <Text style={styles.radioText}>Other Location</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+
+
                 {/* Search Box */}
-                {showSearch && (
+
+                {isOtherLocationSelected && (
                     <View style={styles.searchContainer}>
                         <TextInput
                             style={styles.searchBox}
@@ -461,26 +716,23 @@ const PreferencesScreen = ({ navigation }) => {
                             onChangeText={setSearchCity}
                             value={searchcity}
                         />
-                        <Image source={images.search} style={styles.searchIcon} />
                     </View>
                 )}
-                {searchcity.length >= 3 && suggestions.length > 0 && (
+
+                {searchcity.length >= 3 && !isLoading && suggestions.length > 0 && (
                     <FlatList
                         data={suggestions}
                         keyExtractor={(item, index) => index.toString()}
                         renderItem={({ item }) => (
                             <TouchableOpacity onPress={() => handleSuggestionPress(item)}>
-                                <View style={styles.suggestionItem}>
-                                    <Text style={styles.suggestionText}>{item.formatted_address}</Text>
-                                </View>
+                                <Text style={styles.suggestionText}>{item.formatted_address}</Text>
                             </TouchableOpacity>
                         )}
                     />
                 )}
-                {/* Loading indicator */}
-                {isLoading1 && <Text>Loading...</Text>}
 
-                {/* Distance Slider */}
+                {/* Loading indicator */}
+                {isLoading && <Text>Loading...</Text>}
                 <Text style={styles.sectionTitle}>MAXIMUM DISTANCE</Text>
                 <Text style={styles.sliderLabel}>{distanceRange[0]} - {distanceRange[1]} miles</Text>
                 <MultiSlider
@@ -502,17 +754,17 @@ const PreferencesScreen = ({ navigation }) => {
                 {/* Options */}
                 <Text style={styles.sectionTitle}>OPTIONS</Text>
                 <View style={styles.optionsGrid}>
-                    {["ID Verified", "Premium", "Unviewed", "Viewed Me", "Favorited Me", "Photos"].map((option) => (
+                    {["ID Verified", "Premium", "Unviewed", "Viewed Me", "Favorited Me", "Photos", "Online Now",].map((option) => (
                         <TouchableOpacity
                             key={option}
                             onPress={() => toggleOption(option)}
                             style={[
                                 styles.option,
-                                selectedOptions.includes(option) && styles.optionSelected,
+                                selectedOptions[option] && styles.optionSelected,
                             ]}
                         >
                             <View style={styles.checkboxContainer}>
-                                {selectedOptions.includes(option) && <Text style={styles.tickMark}>✔</Text>}
+                                {selectedOptions[option] && <Text style={styles.tickMark}>✔</Text>}
                             </View>
                             <Text style={styles.optionText}>{option}</Text>
                         </TouchableOpacity>
@@ -864,15 +1116,25 @@ const PreferencesScreen = ({ navigation }) => {
                         ))}
                     </View>
                 )}
+
+
             </ScrollView>
+
 
             <View style={styles.cont}>
                 <View style={styles.cont1}>
                     <Text style={styles.txt1}>Reset</Text>
                 </View>
-                <TouchableOpacity style={[styles.cont1, { width: '40%' }]} onPress={toggleModal}>
-                    <Text style={styles.txt1}>Save Search</Text>
-                </TouchableOpacity>
+                {selectedFilter === null ?
+                    <TouchableOpacity style={[styles.cont1, { width: '40%' }]} onPress={toggleModal}>
+                        <Text style={styles.txt1}>Save Search</Text>
+                    </TouchableOpacity>
+                    :
+                    <TouchableOpacity style={[styles.cont1, { width: '40%' }]} onPress={toggleModal}>
+                        <Text style={styles.txt1}>Update Search</Text>
+                    </TouchableOpacity>
+                }
+
                 <TouchableOpacity style={[styles.cont1, { width: '30%', backgroundColor: '#916008', borderColor: '#E0E2E9', }]} onPress={() => getSearch()}>
                     <Text style={[styles.txt1, { color: 'white' }]}>Apply</Text>
                 </TouchableOpacity>
@@ -893,9 +1155,15 @@ const PreferencesScreen = ({ navigation }) => {
                         value={searchName}
                         onChangeText={setSearchName}
                     />
-                    <TouchableOpacity style={styles.modalSaveButton} onPress={handleSaveSearch}>
-                        <Text style={styles.modalSaveText}>Save</Text>
-                    </TouchableOpacity>
+                    {selectedFilter === null ?
+                        <TouchableOpacity style={styles.modalSaveButton} onPress={handleSaveSearch}>
+                            <Text style={styles.modalSaveText}>Save</Text>
+                        </TouchableOpacity>
+                        :
+                        <TouchableOpacity style={styles.modalSaveButton} onPress={() => updateUserSearch(selectedFilter?._id)}>
+                            <Text style={styles.modalSaveText}>Update</Text>
+                        </TouchableOpacity>
+                    }
                 </View>
             </Modal>
         </View>
@@ -933,16 +1201,19 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: "#916008",
         justifyContent: "center",
+        alignItems: "center",
     },
-    radioInnerCircle: {
+    selectedCircle: {
+        backgroundColor: "#916008",
+    },
+    innerCircle: {
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: "#916008",
-        alignSelf: "center",
+        backgroundColor: "#fff",
     },
     radioText: {
-        marginLeft: 5,
+        marginLeft: 10,
         fontSize: 14,
         color: "#5F6368",
     },
@@ -1039,5 +1310,42 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'center',
+    },
+    filterOption: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 5,
+    },
+    checkboxContainer: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#916008",
+        justifyContent: "center",
+        alignItems: "center",
+        bottom: 1
+    },
+    selectedCheckbox: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: "#916008",
+    },
+    filterName: {
+        marginLeft: 12,
+        fontSize: 16,
+        color: "#5F3D23",
+        fontFamily: 'Poppins-Medium',
+    },
+    deleteButton: {
+        marginLeft: 'auto',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+    },
+    deleteIcon: {
+        width: 18,
+        height: 18,
+        tintColor: "black",
     },
 });
