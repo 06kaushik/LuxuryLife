@@ -55,14 +55,106 @@ const DashBoardScreen = ({ navigation }) => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [completionPercentage, setCompletionPercentage] = useState(50); // Adjust this as per actual progress
     const [userdetails, setUserDetails] = useState(null)
-
-
+    const [filterdata, setFilterData] = useState(null)
 
 
 
     useEffect(() => {
-        getUserData()
-    }, [userdetails])
+        getdatafromAsync();
+    }, []);
+
+    useEffect(() => {
+        if (filterdata) {
+            getUserFilteredData();
+        }
+    }, [filterdata]);
+
+    const getdatafromAsync = async () => {
+        try {
+            const resp = await AsyncStorage.getItem('dashboardData')
+            // console.log('reposnse from the async', resp);
+            if (resp) {
+                const parseData = JSON.parse(resp)
+                setFilterData(parseData)
+            }
+
+        } catch (error) {
+            console.log('error from the async dash data', error);
+
+
+        }
+    }
+
+    const getUserFilteredData = async () => {
+        if (!filterdata) {
+            return;
+        }
+        const token = await AsyncStorage.getItem('authToken');
+        const headers = {
+            Authorization: token,
+        };
+        let body = {
+            where: {
+                userNameSearchText: "",
+                currentCity: filterdata?.where?.currentCity || '',
+                otherLocation: filterdata?.where?.otherLocation || '',
+                maxDistance: filterdata?.where?.maxDistance || '',
+                location: {
+                    latitude: filterdata?.where?.location?.latitude || '',
+                    longitude: filterdata?.where?.location?.longitude || '',
+                    city: filterdata?.where?.location?.city || ''
+                },
+                options: filterdata?.where?.options || '',
+                memberSeeking: filterdata?.where?.memberSeeking || '',
+                hobbies: filterdata?.where?.hobbies || '',
+                bodyType: filterdata?.where?.bodyType || '',
+                verification: filterdata?.where?.verification || '',
+                ethnicity: filterdata?.where?.ethnicity || '',
+                height: {
+                    min: filterdata?.where?.height?.min || '',
+                    max: filterdata?.where?.height?.max || ''
+                },
+                smoking: filterdata?.where?.smoking || '',
+                drinking: filterdata?.where?.drinking || '',
+                relationshipStatus: filterdata?.where?.relationshipStatus || '',
+                children: filterdata?.where?.children || '',
+                education: filterdata?.where?.education || '',
+                workField: filterdata?.where?.workField || [],
+                levels: filterdata?.where?.levels || '',
+                languages: filterdata?.where?.languages || '',
+                profileText: filterdata?.where?.profileText || "",
+                ageRange: filterdata?.where?.ageRange || {},
+                gender: filterdata?.where?.gender || ''
+            },
+            requestType: "mobile",
+            pageLength: 11,
+            currentPage,
+            autopopulate: true
+        };
+        setIsLoading(true);
+        try {
+            const resp = await axios.post('home/search', body, { headers });
+            // console.log('response from the search API', resp?.data?.data);
+            if (currentPage === 0) {
+                setUserData(resp?.data?.data);
+            } else {
+                setUserData(prevData => [...prevData, ...resp?.data?.data]);
+            }
+            if (resp?.data?.data?.length < body.pageLength) {
+                setHasMoreData(false);
+            } else {
+                setHasMoreData(true);
+            }
+
+            setIsLoading(false);
+        } catch (error) {
+            console.log('error from the search API', error.response?.data?.message || error);
+            setIsLoading(false);
+        }
+    };
+
+
+
 
 
     const toggleModal = () => {
@@ -201,18 +293,7 @@ const DashBoardScreen = ({ navigation }) => {
         fetchUserDetails();
     }, []);
 
-    const getUserData = async () => {
-        const token = await AsyncStorage.getItem('authToken');
-        const headers = {
-            Authorization: token
-        };
-        try {
-            const resp = await axios.get(`home/get-user-profile/${userdetails?._id}`, { headers })
-            // console.log('response from the user detailss', resp?.data);
-        } catch (error) {
-            console.log('error fromt he user detalss', error.response.data.message);
-        }
-    }
+
 
     return (
         <View style={styles.container}>

@@ -18,7 +18,7 @@ const PreferenceTopNavigator = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <View style={styles.header}>
                         <Image source={images.back} style={styles.backIcon} />
-                        <Text style={styles.headerText}>Preference</Text>
+                        <Text style={styles.headerText}> Your Preference Results</Text>
                     </View>
                 </TouchableOpacity>
 
@@ -29,16 +29,14 @@ const PreferenceTopNavigator = ({ navigation }) => {
                 tabBarInactiveTintColor: 'black',
                 tabBarStyle: { elevation: 4, },
                 tabBarIndicatorStyle: {
-                    backgroundColor: '#916008', // Color of the line indicator
-                    height: 3, // Optional: Adjust thickness of the line
+                    backgroundColor: '#916008',
+                    height: 3,
                 },
 
             }}>
-
                 <Tab.Screen name="NEWEST" component={NewestScreen} />
                 <Tab.Screen name="RECENT" component={RecentScreen} />
                 <Tab.Screen name="NEAREST" component={RelevantScreen} />
-
             </Tab.Navigator>
         </>
     )

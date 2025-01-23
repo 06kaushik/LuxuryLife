@@ -250,8 +250,6 @@ const PreferencesScreen = ({ navigation }) => {
             getUserSearch()
         } catch (error) {
             console.log('error from the delete filter api', error);
-
-
         }
     }
 
@@ -373,7 +371,6 @@ const PreferencesScreen = ({ navigation }) => {
         }
     };
 
-
     const getSearch = async () => {
         const token = await AsyncStorage.getItem('authToken')
         const headers = {
@@ -420,16 +417,18 @@ const PreferencesScreen = ({ navigation }) => {
                 },
                 gender: userdetails?.preferences?.gender
             },
+            requestType: "mobile",
             pageLength: 11,
             currentPage: 0,
             autopopulate: true
         }
-        console.log('body of preferece', body);
+        // console.log('body of preferece', body);
 
         try {
-            // const resp = await axios.post('home/search', body, { headers })
-            // console.log('response from the get search api', resp.data);
-            // navigation.navigate('PreferenceTopScreen')
+            const resp = await axios.post('home/search', body, { headers })
+            // console.log('response from the get search api', resp?.data);
+            await AsyncStorage.setItem('dashboardData', JSON.stringify(body));
+            navigation.goBack('')
         } catch (error) {
             console.log('error from the get search api', error.response.data.message);
         }

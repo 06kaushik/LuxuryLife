@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-around",
         alignItems: "center",
         marginTop: 5,
-        marginBottom: 10,
+        marginBottom: 10, 
     },
     unhideButton: {
         backgroundColor: "white",
