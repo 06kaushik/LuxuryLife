@@ -10,7 +10,7 @@ import axios from 'axios';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import Slider from '@react-native-community/slider';
 import Toast from 'react-native-simple-toast';
-
+import { useIsFocused } from '@react-navigation/native';
 
 
 const { width, height } = Dimensions.get('window');
@@ -56,7 +56,8 @@ const ViewProfile = ({ navigation }) => {
     const [isnetworth, setIsNetworth] = useState(false)
     const [isUploading, setIsUploading] = useState(Array(6).fill(false));
     const [isDeleting, setIsDeleting] = useState(Array(6).fill(false)); // Track deletion state for each photo
-
+    const [privatepicrequests, setPrivatePicRequests] = useState([])
+    const isFocused = useIsFocused()
     const hobbies = ['Reading', 'Traveling', 'Cooking/Baking', 'Hiking/Outdoor Adventures', 'Photography', 'Painting/Drawing', 'Playing Sports', 'Writing', 'Yoga/Meditation', 'Gardening', 'Watching Movies/TV Shows', 'Dancing', 'Volunteering/Community Service', 'Collecting(eg.,stamps,coins']
     const ethnicity = ['Asian', 'Black/African descent', 'Hispanic/Latino', 'Middle Eastern', 'Native American/Indigenous', 'Pacific Islander', 'White/Caucasian', 'Mixed/Multiracial', 'Other', 'Prefer not to say']
     const bodyTypes = ['Slim', 'Athletic', 'Average', 'Curvy', 'Plus-Size', 'Petite', 'Muscular', 'Broad', 'Lean', 'Prefer not to say']
@@ -71,6 +72,13 @@ const ViewProfile = ({ navigation }) => {
     useEffect(() => {
         fetchUserDetails();
     }, []);
+    useEffect(() => {
+        getPrivatePhotoRequest()
+    }, [isFocused])
+
+    useEffect(() => {
+        getPrivatePhotoRequest()
+    }, [])
 
     const fetchUserDetails = async () => {
         try {
@@ -289,8 +297,6 @@ const ViewProfile = ({ navigation }) => {
         });
     };
 
-
-
     const handleDeletePhoto = async (index, type, item) => {
         // Show loader during deletion
         setIsDeleting(prevState => {
@@ -367,7 +373,6 @@ const ViewProfile = ({ navigation }) => {
         }
         setIsEditing(!isEditing);
     };
-
 
     const handleEditAbout = async () => {
         if (iseditabout) {
@@ -853,6 +858,105 @@ const ViewProfile = ({ navigation }) => {
         }
     }
 
+    const getPrivatePhotoRequest = async () => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            currentPage: 0
+        }
+        try {
+            const resp = await axios.post('account/get-private-pic-access-request', body, { headers })
+            console.log('response frin the get private ic request', resp.data.data.data);
+            setPrivatePicRequests(resp?.data?.data?.data)
+        } catch (error) {
+            console.log('error from get private requesr', error);
+        }
+    }
+
+    const acceptRequest = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            accessId: id,
+            type: "single",
+            status: "Accepted"
+        }
+        try {
+            const resp = await axios.put('account/updated-private-pic-access-request', body, { headers })
+            console.log('response from the Accept rewuest', resp?.data?.data);
+            getPrivatePhotoRequest()
+            Toast.show('Request Accepted', Toast.SHORT)
+
+        } catch (error) {
+            console.log('error from accept user', error?.response?.data?.message);
+        }
+    }
+
+    const rejectRequest = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            accessId: id,
+            type: "single",
+            status: "Rejected"
+        }
+        try {
+            const resp = await axios.put('account/updated-private-pic-access-request', body, { headers })
+            console.log('response from the Accept rewuest', resp?.data);
+            getPrivatePhotoRequest()
+            Toast.show('Request Rejected', Toast.SHORT)
+        } catch (error) {
+            console.log('error from accept user', error?.response?.data?.message);
+        }
+    }
+
+    const renderRequest = ({ item }) => {
+        return (
+            <View style={{
+                borderWidth: 1,
+                height: 80,
+                width: '90%',
+                alignSelf: 'center',
+                borderRadius: 5,
+                borderColor: '#D9D9D9',
+                padding: 10,
+                justifyContent: 'center',
+                marginTop: 20
+            }}>
+                <View style={{
+                    flexDirection: "row",
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Image source={{ uri: item?.targetUserId?.profilePicture }} style={{ height: 60, width: 60, borderRadius: 30, marginRight: 10 }} />
+                        <View style={{ marginTop: 5 }}>
+                            <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 16, color: '#000', }}>{item?.targetUserId?.userName}, {item?.targetUserId?.age}</Text>
+                            <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 14, color: '#7B7B7B' }}>{item?.targetUserId?.city},{item?.targetUserId?.country}</Text>
+                        </View>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 12, color: '#7B7B7B', marginBottom: 5 }}>2 hours</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <TouchableOpacity onPress={() => rejectRequest(item?._id)} style={{ marginRight: 10, borderWidth: 1, height: 30, width: 30, justifyContent: 'center', borderRadius: 100, backgroundColor: 'black', borderColor: 'black' }}>
+                                <Image source={images.cross} style={{ height: 15, width: 15, alignSelf: 'center', tintColor: 'white' }} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => acceptRequest(item?._id)} style={{ borderWidth: 1, height: 30, width: 30, justifyContent: 'center', borderRadius: 100, backgroundColor: "#916008", borderColor: "#916008" }}>
+                                <Image source={images.tick1} style={{ height: 20, width: 20, alignSelf: 'center', tintColor: 'white' }} />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </View>
+        )
+    }
+
     return (
         <View style={styles.main}>
             <TouchableOpacity style={{ flexDirection: 'row', marginTop: 20, marginLeft: 16 }} onPress={() => navigation.goBack('')}>
@@ -901,8 +1005,6 @@ const ViewProfile = ({ navigation }) => {
                     </TouchableOpacity>
                 </View>
 
-
-
                 {selectedButton === 'Public Photo' ? (
                     <View style={styles.photoGrid}>
                         {photos.public.map((photo, index) => renderItem(photo, index, 'public', userdetails?.publicPhotos && userdetails.publicPhotos.includes(photo)))}
@@ -924,83 +1026,18 @@ const ViewProfile = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
                 )}
-                <Text style={[styles.txt4, { marginLeft: 16, marginTop: 20 }]}>Request Private Photos</Text>
-                <View style={{
-                    borderWidth: 1,
-                    height: 80,
-                    width: '90%',
-                    alignSelf: 'center',
-                    borderRadius: 5,
-                    borderColor: '#D9D9D9',
-                    padding: 10,
-                    justifyContent: 'center',
-                }}>
-                    <View style={{
-                        flexDirection: "row",
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                    }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Image source={images.profilePic} style={{ height: 60, width: 60, borderRadius: 30, marginRight: 10 }} />
-                            <View style={{ marginTop: 5 }}>
-                                <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 16, color: '#000', }}>StunningMiss,33</Text>
-                                <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 14, color: '#7B7B7B' }}>New Delhi</Text>
-                            </View>
-                        </View>
+                <Text style={[styles.txt4, { marginLeft: 16, marginTop: 20 }]}>Request Private Photos ({privatepicrequests.length})</Text>
+                <FlatList
+                    data={privatepicrequests.slice(0, 2)}
+                    renderItem={renderRequest}
 
-                        <View style={{ alignItems: 'flex-end' }}>
-                            <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 12, color: '#7B7B7B', marginBottom: 5 }}>2 hours</Text>
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <TouchableOpacity style={{ marginRight: 10, borderWidth: 1, height: 30, width: 30, justifyContent: 'center', borderRadius: 100, backgroundColor: 'black', borderColor: 'black' }}>
-                                    <Image source={images.cross} style={{ height: 15, width: 15, alignSelf: 'center', tintColor: 'white' }} />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={{ borderWidth: 1, height: 30, width: 30, justifyContent: 'center', borderRadius: 100, backgroundColor: "#916008", borderColor: "#916008" }}>
-                                    <Image source={images.tick1} style={{ height: 20, width: 20, alignSelf: 'center', tintColor: 'white' }} />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </View>
-                <View style={{
-                    borderWidth: 1,
-                    height: 80,
-                    width: '90%',
-                    alignSelf: 'center',
-                    borderRadius: 5,
-                    borderColor: '#D9D9D9',
-                    padding: 10,
-                    justifyContent: 'center',
-                    marginTop: 20
-                }}>
-                    <View style={{
-                        flexDirection: "row",
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                    }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Image source={images.profilePic} style={{ height: 60, width: 60, borderRadius: 30, marginRight: 10 }} />
-                            <View style={{ marginTop: 5 }}>
-                                <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 16, color: '#000', }}>StunningMiss,33</Text>
-                                <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 14, color: '#7B7B7B' }}>New Delhi</Text>
-                            </View>
-                        </View>
-
-                        <View style={{ alignItems: 'flex-end' }}>
-                            <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 12, color: '#7B7B7B', marginBottom: 5 }}>2 hours</Text>
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <TouchableOpacity style={{ marginRight: 10, borderWidth: 1, height: 30, width: 30, justifyContent: 'center', borderRadius: 100, backgroundColor: 'black', borderColor: 'black' }}>
-                                    <Image source={images.cross} style={{ height: 15, width: 15, alignSelf: 'center', tintColor: 'white' }} />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={{ borderWidth: 1, height: 30, width: 30, justifyContent: 'center', borderRadius: 100, backgroundColor: "#916008", borderColor: "#916008" }}>
-                                    <Image source={images.tick1} style={{ height: 20, width: 20, alignSelf: 'center', tintColor: 'white' }} />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </View>
-                <TouchableOpacity onPress={() => navigation.navigate('ViewRequest')}>
-                    <Text style={{ marginLeft: 16, color: '#916008', fontFamily: 'Poppins-Regular', fontSize: 16, marginTop: 20 }}>View All</Text>
-                </TouchableOpacity>
+                />
+                {privatepicrequests.length === 0 ?
+                    null
+                    :
+                    <TouchableOpacity onPress={() => navigation.navigate('ViewRequest')}>
+                        <Text style={{ marginLeft: 16, color: '#916008', fontFamily: 'Poppins-Regular', fontSize: 16, marginTop: 20 }}>View All</Text>
+                    </TouchableOpacity>}
 
 
                 <View style={styles.cont5}>

@@ -79,15 +79,15 @@ const FavouriteMeScreen = ({ navigation }) => {
         }
     };
 
-    useEffect(() => {
-        getViewMeData(currentPage);
-    }, []);
+    // useEffect(() => {
+    //     getViewMeData(currentPage);
+    // }, []);
 
     const loadMoreData = () => {
         if (!isLoadingMore && hasMoreData) {
             setIsLoadingMore(true);
             setCurrentPage((prev) => prev + 1);
-            getViewMeData(currentPage + 1);
+            // getViewMeData(currentPage + 1);
         }
     };
 

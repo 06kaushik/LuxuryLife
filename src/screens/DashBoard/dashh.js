@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
     View,
     Text,
@@ -8,10 +8,17 @@ import {
     Dimensions,
     Image,
     ScrollView,
-    TouchableOpacity
+    TouchableOpacity,
+    FlatList,
+    ActivityIndicator
 } from "react-native";
 import LinearGradient from 'react-native-linear-gradient';
 import images from "../../components/images";
+import Modal from 'react-native-modal';
+import ProgressCircle from 'react-native-progress/Circle';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import moment from 'moment';
 
 
 const { width, height } = Dimensions.get("window");
@@ -48,11 +55,411 @@ const DashBoardScreen = ({ navigation }) => {
     const [userhobbies, setUserHobbies] = useState([])
     const seeking = ['Discretion', 'Flexible Schedule', 'Friends', 'No Strings Attached']
     const getHobbies = ['Travel', 'Sport', 'Cinema', 'Cooking', 'Adventure']
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [completionPercentage, setCompletionPercentage] = useState(50); // Adjust this as per actual progress
+    const [userdetails, setUserDetails] = useState(null)
+    const [filterdata, setFilterData] = useState(null)
+    const [currentPage, setCurrentPage] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isPaginationLoading, setIsPaginationLoading] = useState(false);
+    const [hasMoreData, setHasMoreData] = useState(true);
+    const [userData, setUserData] = useState([])
+    console.log('datauserrrrrr', JSON.stringify(userData));
 
+
+    useEffect(() => {
+        getdatafromAsync();
+    }, []);
+
+    useEffect(() => {
+        if (filterdata) {
+            getUserFilteredData();
+        }
+    }, [filterdata]);
+
+    const getdatafromAsync = async () => {
+        try {
+            const resp = await AsyncStorage.getItem('dashboardData')
+            console.log('reposnse from the async', resp);
+            if (resp) {
+                const parseData = JSON.parse(resp)
+                setFilterData(parseData)
+            }
+
+        } catch (error) {
+            console.log('error from the async dash data', error);
+        }
+    }
+
+    const getUserFilteredData = async () => {
+        if (!filterdata) {
+            return;
+        }
+        const token = await AsyncStorage.getItem('authToken');
+        const headers = {
+            Authorization: token,
+        };
+        let body = {
+            where: {
+                userNameSearchText: "",
+                currentCity: filterdata?.where?.currentCity || '',
+                otherLocation: filterdata?.where?.otherLocation || '',
+                maxDistance: filterdata?.where?.maxDistance || '',
+                location: {
+                    latitude: filterdata?.where?.location?.latitude || '',
+                    longitude: filterdata?.where?.location?.longitude || '',
+                    city: filterdata?.where?.location?.city || ''
+                },
+                options: filterdata?.where?.options || '',
+                memberSeeking: filterdata?.where?.memberSeeking || '',
+                hobbies: filterdata?.where?.hobbies || '',
+                bodyType: filterdata?.where?.bodyType || '',
+                verification: filterdata?.where?.verification || '',
+                ethnicity: filterdata?.where?.ethnicity || '',
+                tall: {
+                    min: filterdata?.where?.height?.min || '',
+                    max: filterdata?.where?.height?.max || ''
+                },
+                smoking: filterdata?.where?.smoking || '',
+                drinking: filterdata?.where?.drinking || '',
+                relationshipStatus: filterdata?.where?.relationshipStatus || '',
+                children: filterdata?.where?.children || '',
+                education: filterdata?.where?.education || '',
+                workField: filterdata?.where?.workField || [],
+                levels: filterdata?.where?.levels || '',
+                languages: filterdata?.where?.languages || '',
+                profileText: filterdata?.where?.profileText || "",
+                ageRange: filterdata?.where?.ageRange || {},
+                gender: filterdata?.where?.gender || ''
+            },
+            requestType: "mobile",
+            pageLength: 11,
+            currentPage,
+            autopopulate: true
+        };
+        console.log('body of searchhhh', body);
+
+        setIsLoading(true);
+        try {
+            const resp = await axios.post('home/search', body, { headers });
+            console.log('response from the search API', resp?.data?.data);
+            if (currentPage === 0) {
+                setUserData(resp?.data?.data);
+            } else {
+                setUserData(prevData => [...prevData, ...resp?.data?.data]);
+            }
+            if (resp?.data?.data?.length < body.pageLength) {
+                setHasMoreData(false);
+            } else {
+                setHasMoreData(true);
+            }
+
+            setIsLoading(false);
+        } catch (error) {
+            console.log('error from the search API', error.response?.data?.message || error);
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (currentPage > 0) {
+            getUserFilteredData();
+        }
+    }, [currentPage]);
+
+    useEffect(() => {
+        if (!isPaginationLoading && currentPage > 0) {
+            setIsPaginationLoading(false);
+        }
+    }, [userData]);
+
+    const handleEndReached = () => {
+        if (!isPaginationLoading && hasMoreData) {
+            setIsPaginationLoading(true);
+            setCurrentPage(prevPage => prevPage + 1);
+        }
+    };
+
+
+    // const renderNewest = ({ item, index }) => {
+    //     const memberSince = moment(item.createdAt).fromNow();
+
+    //     const isCurrent = index === currentIndex.current;
+    //     return (
+    //         <Animated.View
+    //             key={item._id}
+    //             style={[
+    //                 styles.card,
+    //                 isCurrent && {
+    //                     transform: [
+    //                         { translateX: position.x },
+    //                         { translateY: position.y },
+    //                         { rotate: rotate },
+    //                     ],
+    //                 },
+    //             ]}
+    //             {...(isCurrent ? panResponder.panHandlers : {})}
+    //         >
+    //             <Animated.ScrollView
+    //                 style={styles.scrollView}
+    //                 contentContainerStyle={styles.scrollContent}
+    //                 onScroll={Animated.event(
+    //                     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    //                     { useNativeDriver: false }
+    //                 )}
+    //                 scrollEventThrottle={16}
+    //             >
+    //                 <TouchableOpacity style={{}} onPress={() => {
+    //                     console.log("Image clicked");
+    //                     navigation.navigate("UserProfileDetails");
+    //                 }}>
+    //                     <Animated.Image
+    //                         source={{ uri: item?.publicPhotos[0] }}
+    //                         style={[styles.image, {
+    //                             height: imageHeight,
+    //                             opacity: imageOpacity,
+    //                         }]}
+    //                         resizeMode="cover"
+    //                     />
+    //                     <LinearGradient
+    //                         colors={["transparent", "rgba(0,0,0,2)", "rgba(0,0,0,2)"]}
+    //                         locations={[0.1, 0.6, 1]}
+    //                         style={styles.gradient}
+    //                     >
+    //                     </LinearGradient>
+    //                 </TouchableOpacity>
+    //                 <View style={styles.details}>
+    //                     <View style={styles.contentContainer}>
+    //                         <View style={styles.cont1}>
+    //                             <Text style={styles.onlineText}>Online</Text>
+    //                         </View>
+    //                         <View style={styles.cont2}>
+    //                             <Text style={styles.txt}>PREMIUM</Text>
+    //                         </View>
+    //                     </View>
+    //                     <View style={styles.cont3}>
+    //                         <Text style={styles.txt1}>{item?.userName}, {item?.age} </Text>
+    //                         <Image source={item?.isIdVerified === false ? null : images.verified} style={styles.img1} />
+    //                     </View>
+    //                     <Text style={styles.txt2}>{item.city}, {item?.country}</Text>
+    //                     <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>{item?.distance} miles</Text>
+    //                     <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>An obedient disciple in search of a young guru!</Text>
+
+    //                     <View style={styles.cont4}>
+    //                         <View style={styles.cont5}>
+    //                             <View style={{ flexDirection: 'row', }}>
+    //                                 <Image source={images.star} style={styles.icon1} />
+    //                                 <Text style={styles.txt3}>Member Since</Text>
+    //                             </View>
+    //                             <Text style={styles.txt4}>{memberSince}</Text>
+    //                         </View>
+
+    //                         <View style={styles.cont5}>
+    //                             <View style={{ flexDirection: 'row', }}>
+    //                                 <Image source={images.heart} style={styles.icon1} />
+    //                                 <Text style={styles.txt3}>Relationship status</Text>
+    //                             </View>
+    //                             <Text style={styles.txt4}>{item?.relationshipStatus}</Text>
+    //                         </View>
+
+    //                         <View style={styles.cont5}>
+    //                             <View style={{ flexDirection: 'row', }}>
+    //                                 <Image source={images.body} style={styles.icon1} />
+    //                                 <Text style={styles.txt3}>Body</Text>
+    //                             </View>
+    //                             <Text style={styles.txt4}>{item?.bodyType}</Text>
+    //                         </View>
+
+    //                         <View style={styles.cont5}>
+    //                             <View style={{ flexDirection: 'row', }}>
+    //                                 <Image source={images.height} style={styles.icon1} />
+    //                                 <Text style={styles.txt3}>Height</Text>
+    //                             </View>
+    //                             <Text style={styles.txt4}>173 cm</Text>
+    //                         </View>
+    //                     </View>
+
+    //                     <View style={styles.cont6}>
+    //                         <Text style={styles.txt5}>Photos</Text>
+    //                         <Image source={images.rightarrow} style={styles.arrow} />
+    //                     </View>
+
+    //                     <View style={styles.cont6}>
+    //                         <Text style={styles.txt5}>Private Photo</Text>
+    //                         <Image source={images.rightarrow} style={styles.arrow} />
+    //                     </View>
+
+    //                     <Text style={styles.about}>About</Text>
+    //                     <Text style={styles.abouttxt}>I want a submissive partner for me. Don't want to talk about myself much.I'm dominant by nature, but can switch too. I love to explore new experinces, I like open minded an non-judgemental people.</Text>
+
+    //                     <Text style={styles.about}>What I am Seeking</Text>
+    //                     <Text style={styles.abouttxt}>I want you to open up like you never did before, be up for exploring whatever you want to try. Its very very important to know about each other first ..!</Text>
+    //                     <View style={styles.bodyTypeContainer}>
+    //                         {seeking.map((type) => (
+    //                             <TouchableOpacity
+    //                                 key={type}
+    //                                 style={[
+    //                                     styles.bodyTypeButton,
+    //                                     seek === type && styles.selectedBodyTypeButton,
+    //                                 ]}
+    //                                 onPress={() => handleSeeking(type)}
+    //                             >
+    //                                 <Text
+    //                                     style={[
+    //                                         styles.bodyTypeText,
+    //                                         seek === type && styles.selectedBodyTypeText,
+    //                                     ]}
+    //                                 >
+    //                                     {type}
+    //                                 </Text>
+    //                             </TouchableOpacity>
+    //                         ))}
+    //                     </View>
+
+    //                     <Text style={styles.about}>Hobbies</Text>
+    //                     <View style={styles.bodyTypeContainer}>
+    //                         {getHobbies.map((hobby) => (
+    //                             <TouchableOpacity
+    //                                 key={hobby}
+    //                                 style={[
+    //                                     styles.bodyTypeButton,
+    //                                     userhobbies.includes(hobby) && styles.selectedBodyTypeButton,
+    //                                 ]}
+    //                                 onPress={() => handleHHobbies(hobby)}
+    //                             >
+    //                                 <Text
+    //                                     style={[
+    //                                         styles.bodyTypeText,
+    //                                         userhobbies.includes(hobby) && styles.selectedBodyTypeText,
+    //                                     ]}
+    //                                 >
+    //                                     {hobby}
+    //                                 </Text>
+    //                             </TouchableOpacity>
+    //                         ))}
+    //                     </View>
+    //                     <View style={{ marginBottom: 100 }}>
+    //                         <View style={styles.cont7}>
+    //                             <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+    //                                 <Image source={images.face} style={styles.face} />
+    //                                 <Text style={styles.txt6}>Ethnicity</Text>
+    //                             </View>
+    //                             <Text style={styles.txt7}>Black / African Descent</Text>
+    //                         </View>
+
+    //                         <View style={styles.cont7}>
+    //                             <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+    //                                 <Image source={images.child} style={styles.face} />
+    //                                 <Text style={styles.txt6}>Children</Text>
+    //                             </View>
+    //                             <Text style={styles.txt7}>Prefer Not To Say</Text>
+    //                         </View>
+
+    //                         <View style={styles.cont7}>
+    //                             <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+    //                                 <Image source={images.smoke} style={styles.face} />
+    //                                 <Text style={styles.txt6}>Do you smoke?</Text>
+    //                             </View>
+    //                             <Text style={styles.txt7}>Non - Smoker</Text>
+    //                         </View>
+
+    //                         <View style={styles.cont7}>
+    //                             <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+    //                                 <Image source={images.drink} style={styles.face} />
+    //                                 <Text style={styles.txt6}>Do you drink?</Text>
+    //                             </View>
+    //                             <Text style={styles.txt7}>Social Drinker</Text>
+    //                         </View>
+
+    //                         <View style={styles.cont7}>
+    //                             <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+    //                                 <Image source={images.education} style={styles.face} />
+    //                                 <Text style={styles.txt6}>Education</Text>
+    //                             </View>
+    //                             <Text style={styles.txt7}>Graduate Degree</Text>
+    //                         </View>
+
+    //                         <View style={styles.cont7}>
+    //                             <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+    //                                 <Image source={images.face} style={styles.face} />
+    //                                 <Text style={styles.txt6}>Occupation</Text>
+    //                             </View>
+    //                             <Text style={styles.txt7}>Building Maintenance</Text>
+    //                         </View>
+
+    //                         <View style={styles.cont7}>
+    //                             <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+    //                                 <Image source={images.income} style={styles.face} />
+    //                                 <Text style={styles.txt6}>Annual Income</Text>
+    //                             </View>
+    //                             <Text style={styles.txt7}>$150,000</Text>
+    //                         </View>
+
+    //                         <View style={styles.cont7}>
+    //                             <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+    //                                 <Image source={images.networth} style={styles.face} />
+    //                                 <Text style={styles.txt6}>Net Worth</Text>
+    //                             </View>
+    //                             <Text style={styles.txt7}>$100,000</Text>
+    //                         </View>
+
+    //                     </View>
+    //                 </View>
+    //             </Animated.ScrollView>
+    //             {/* Action Buttons */}
+
+    //             <Animated.View style={{
+    //                 position: "absolute",
+    //                 bottom: profileDetailsBottom,  // Interpolated to move it out of view
+    //                 opacity: profileDetailsOpacity,  // Interpolated to fade it out
+    //                 width: "100%"
+    //             }}>
+    //                 <View style={{ bottom: 30, left: 16 }}>
+    //                     <View style={styles.onlineBadge}>
+    //                         <Text style={styles.onlineText1}>Online</Text>
+    //                     </View>
+    //                     <Text style={styles.cardName}>{item.name}, {item.age}</Text>
+    //                     <Text style={styles.cardLocation}>{item.location}</Text>
+    //                     <Text style={styles.cardDistance}>{item.distance}</Text>
+    //                 </View>
+
+    //                 {/* Action Buttons */}
+    //                 <View style={styles.buttonContainer}>
+    //                     <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={handleCrossSwipe}>
+    //                         <Image source={images.cross} style={styles.buttonIcon} />
+    //                     </TouchableOpacity>
+    //                     <TouchableOpacity onPress={handleHeartSwipe} style={[styles.circleButton, styles.heartButton]}>
+    //                         <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
+    //                     </TouchableOpacity>
+    //                     <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
+    //                         <Image source={images.chat} style={styles.buttonIcon} />
+    //                     </TouchableOpacity>
+    //                 </View>
+    //             </Animated.View>
+    //         </Animated.View>
+    //     );
+
+    // }
+    const toggleModal = () => {
+        setIsModalVisible(!isModalVisible);
+    };
 
     const handleSeeking = (type) => {
         setSeek(type);
     };
+
+
+    const profileDetailsBottom = scrollY.interpolate({
+        inputRange: [0, 100],  // Track scrolling from the start
+        outputRange: [50, -150],  // Move the profile details up as user scrolls
+        extrapolate: 'clamp',  // Ensure the value doesn't go beyond the range
+    });
+
+    const profileDetailsOpacity = scrollY.interpolate({
+        inputRange: [0, 100],  // Track scrolling from the start
+        outputRange: [1, 0],  // Fade out the profile details as user scrolls
+        extrapolate: 'clamp',
+    });
 
     const handleHHobbies = (hobby) => {
         if (userhobbies.includes(hobby)) {
@@ -114,6 +521,26 @@ const DashBoardScreen = ({ navigation }) => {
         position.setValue({ x: 0, y: 0 });
     };
 
+    const handleHeartSwipe = () => {
+        Animated.timing(position, {
+            toValue: { x: width + 100, y: 0 },
+            duration: 300,
+            useNativeDriver: true,
+        }).start(() => {
+            handleSwipe("right");
+        });
+    };
+
+    const handleCrossSwipe = () => {
+        Animated.timing(position, {
+            toValue: { x: -width - 100, y: 0 },
+            duration: 300,
+            useNativeDriver: true,
+        }).start(() => {
+            handleSwipe("left");
+        });
+    };
+
     const rotate = position.x.interpolate({
         inputRange: [-width / 2, 0, width / 2],
         outputRange: ["-15deg", "0deg", "15deg"],
@@ -133,20 +560,52 @@ const DashBoardScreen = ({ navigation }) => {
         extrapolate: "clamp",
     });
 
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
+        };
+        fetchUserDetails();
+    }, []);
+
+
+
     return (
         <View style={styles.container}>
             {/* Header Section */}
             <View style={styles.header}>
                 <Image source={images.dashlogo} style={styles.logo} />
-                <Text style={styles.headerText}>Discover for you</Text>
+                <Text style={styles.headerText}>Just for you</Text>
                 <TouchableOpacity onPress={() => navigation.navigate("Preference")}>
                     <Image source={images.menu} style={styles.menuIcon} />
                 </TouchableOpacity>
             </View>
+
+            {/* <FlatList
+                data={data}
+                renderItem={renderNewest}
+                keyExtractor={(item) => item._id}
+                numColumns={2}
+                style={{ marginTop: 20 }}
+                onEndReached={handleEndReached}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={isPaginationLoading && hasMoreData ? (
+                    <View style={styles.paginationLoader}>
+                        <ActivityIndicator size="small" color="#0000ff" />
+                    </View>
+                ) : null}
+            /> */}
             {data
                 .map((item, index) => {
                     const isCurrent = index === currentIndex.current;
-
                     return (
                         <Animated.View
                             key={item.id}
@@ -171,34 +630,26 @@ const DashBoardScreen = ({ navigation }) => {
                                 )}
                                 scrollEventThrottle={16}
                             >
-                                <Animated.Image
-                                    source={item.image}
-                                    style={[styles.image, {
-                                        height: imageHeight,
-                                        opacity: imageOpacity,
-                                    }]}
-                                    resizeMode="cover"
-                                />
-                                <LinearGradient
-                                    colors={["transparent", "rgba(0,0,0,2)", "rgba(0,0,0,2)"]}
-                                    locations={[0.1, 0.6, 1]} // Smooth gradient effect
-                                    style={styles.gradient}
-                                >
-                                    <View style={styles.overlayContent}>
-                                        <View style={styles.onlineBadge}>
-                                            <Text style={styles.onlineText}>Online</Text>
-                                        </View>
-                                        <Text style={styles.cardName}>{item.name}, {item.age}</Text>
-                                        <Text style={styles.cardLocation}>{item.location}</Text>
-                                        <Text style={styles.cardDistance}>{item.distance}</Text>
-                                    </View>
-                                </LinearGradient>
-
-
-
+                                <TouchableOpacity style={{}} onPress={() => {
+                                    console.log("Image clicked");
+                                    navigation.navigate("UserProfileDetails");
+                                }}>
+                                    <Animated.Image
+                                        source={item.image}
+                                        style={[styles.image, {
+                                            height: imageHeight,
+                                            opacity: imageOpacity,
+                                        }]}
+                                        resizeMode="cover"
+                                    />
+                                    <LinearGradient
+                                        colors={["transparent", "rgba(0,0,0,2)", "rgba(0,0,0,2)"]}
+                                        locations={[0.1, 0.6, 1]}
+                                        style={styles.gradient}
+                                    >
+                                    </LinearGradient>
+                                </TouchableOpacity>
                                 <View style={styles.details}>
-
-                                    {/* Content Section */}
                                     <View style={styles.contentContainer}>
                                         <View style={styles.cont1}>
                                             <Text style={styles.onlineText}>Online</Text>
@@ -308,7 +759,7 @@ const DashBoardScreen = ({ navigation }) => {
                                             </TouchableOpacity>
                                         ))}
                                     </View>
-                                    <View style={{marginBottom:100}}>
+                                    <View style={{ marginBottom: 100 }}>
                                         <View style={styles.cont7}>
                                             <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
                                                 <Image source={images.face} style={styles.face} />
@@ -377,21 +828,87 @@ const DashBoardScreen = ({ navigation }) => {
                                 </View>
                             </Animated.ScrollView>
                             {/* Action Buttons */}
-                            <View style={styles.buttonContainer}>
-                                <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
-                                    <Image source={images.cross} style={styles.buttonIcon} />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={[styles.circleButton, styles.heartButton]}>
-                                    <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
-                                    <Image source={images.chat} style={styles.buttonIcon} />
-                                </TouchableOpacity>
-                            </View>
+
+                            <Animated.View style={{
+                                position: "absolute",
+                                bottom: profileDetailsBottom,  // Interpolated to move it out of view
+                                opacity: profileDetailsOpacity,  // Interpolated to fade it out
+                                width: "100%"
+                            }}>
+                                <View style={{ bottom: 30, left: 16 }}>
+                                    <View style={styles.onlineBadge}>
+                                        <Text style={styles.onlineText1}>Online</Text>
+                                    </View>
+                                    <Text style={styles.cardName}>{item.name}, {item.age}</Text>
+                                    <Text style={styles.cardLocation}>{item.location}</Text>
+                                    <Text style={styles.cardDistance}>{item.distance}</Text>
+                                </View>
+
+                                {/* Action Buttons */}
+                                <View style={styles.buttonContainer}>
+                                    <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={handleCrossSwipe}>
+                                        <Image source={images.cross} style={styles.buttonIcon} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={handleHeartSwipe} style={[styles.circleButton, styles.heartButton]}>
+                                        <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
+                                        <Image source={images.chat} style={styles.buttonIcon} />
+                                    </TouchableOpacity>
+                                </View>
+                            </Animated.View>
                         </Animated.View>
                     );
                 })
                 .reverse()}
+
+            <Modal
+                isVisible={isModalVisible}
+                onBackdropPress={toggleModal}
+                onBackButtonPress={toggleModal}
+                style={styles.modalContainer}
+            >
+                <View style={styles.modalContent}>
+                    {/* Circle Progress Bar */}
+                    <ProgressCircle
+                        size={150}
+                        progress={completionPercentage / 100}
+                        showsText={true}
+                        textStyle={styles.progressText}
+                        borderWidth={8}
+                        color={'#DAA520'}
+                        unfilledColor={'#F0F0F0'}
+                    />
+                    {/* Completion Text */}
+                    <Text style={styles.completionText}>{completionPercentage}% Complete</Text>
+                    {/* Title */}
+                    <Text style={styles.title}>Complete Your Profile for the Best Matches!</Text>
+                    {/* Description */}
+                    <Text style={styles.description}>
+                        You’re almost there! A fully completed profile increases your chances of finding the perfect match and makes you stand out from other members.
+                    </Text>
+
+                    {/* Why Complete Your Profile Section */}
+                    <View style={styles.listContainer}>
+                        <Text style={styles.subtitle}>Why Complete Your Profile?</Text>
+                        <View style={styles.listItem}>
+                            <Text style={styles.listItemText}>✅ Get matched with people who align with your preferences.</Text>
+                        </View>
+                        <View style={styles.listItem}>
+                            <Text style={styles.listItemText}>✅ Boost your profile visibility and credibility.</Text>
+                        </View>
+                        <View style={styles.listItem}>
+                            <Text style={styles.listItemText}>✅ Show potential matches who you truly are.</Text>
+                        </View>
+                    </View>
+
+                    {/* Footer Button */}
+                    <TouchableOpacity style={styles.button} onPress={toggleModal}>
+                        <Text style={styles.buttonText}>Complete My Profile Now</Text>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
+
         </View>
     );
 };
@@ -412,13 +929,15 @@ const styles = StyleSheet.create({
         // elevation: 4,
     },
     logo: {
-        width: 60,
-        height: 28,
+        width: 75,
+        height: 35,
+        top: 10
     },
     headerText: {
         fontSize: 24,
         fontFamily: "Playfair_9pt-BoldItalic",
         color: "black",
+        right: 5
     },
     menuIcon: {
         width: 24,
@@ -426,67 +945,72 @@ const styles = StyleSheet.create({
     },
     card: {
         width: "100%",
-        height: 663, // Set the height to 663
+        height: '85%',
         position: "absolute",
-        bottom: 0, // Align it to the bottom
-        borderTopLeftRadius: 20, // Optional: Add some border radius
-        borderTopRightRadius: 20, // Optional: Add some border radius
-        backgroundColor: "white", // Ensure it has a background color
-        overflow: "hidden", // Keep content inside rounded corners
+        bottom: 0,
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        backgroundColor: "white",
+        overflow: "hidden",
     },
 
     image: {
         width: "100%",
     },
     gradient: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    height: "40%", // Covers bottom 40% of the image
-    justifyContent: "flex-end",
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-},
+        position: "absolute",
+        bottom: 0,
+        width: "100%",
+        height: "40%",
+        justifyContent: "flex-end",
+        paddingHorizontal: 16,
+        paddingBottom: 20,
+        marginBottom: 1500
+    },
 
-overlayContent: {
-    position: "absolute",
-    bottom: 40, // Position overlay text appropriately
-    left: 16,
-},
+    overlayContent: {
+        position: "absolute",
+        bottom: 200,
+        left: 16,
+    },
 
-onlineBadge: {
-    backgroundColor: "#4caf50",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginBottom: 8,
-},
+    onlineBadge: {
+        borderWidth: 1,
+        height: 19,
+        width: 55,
+        backgroundColor: '#4caf50',
+        borderColor: '#4caf50',
+        borderRadius: 20,
+        justifyContent: 'center',
+        bottom: 10
 
-onlineText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "bold",
-},
+    },
+    onlineText1: {
+        textAlign: 'center',
+        color: 'white',
+        fontSize: 10,
+        fontFamily: 'Poppins-Bold',
+        top: 1
+    },
+    cardName: {
+        color: "#fff",
+        fontSize: 28,
+        fontWeight: "bold",
+        top: 5
+    },
+    cardLocation: {
+        color: "#fff",
+        fontSize: 16,
+        opacity: 0.8,
+        top: 10
+    },
 
-cardName: {
-    color: "#fff",
-    fontSize: 28,
-    fontWeight: "bold",
-},
-
-cardLocation: {
-    color: "#fff",
-    fontSize: 16,
-    opacity: 0.8,
-},
-
-cardDistance: {
-    color: "#fff",
-    fontSize: 16,
-    opacity: 0.8,
-},
-
-
+    cardDistance: {
+        color: "#fff",
+        fontSize: 16,
+        opacity: 0.8,
+        top: 15
+    },
     scrollView: {
         flex: 1,
     },
@@ -512,9 +1036,9 @@ cardDistance: {
     buttonContainer: {
         flexDirection: "row",
         justifyContent: "space-around",
-        position: "absolute",
-        bottom: 20,
-        width: "100%",
+        // position: "absolute",
+        // bottom: 20,
+        // width: "100%",
     },
     circleButton: {
         width: 50,
@@ -739,5 +1263,77 @@ cardDistance: {
         width: 15,
         alignSelf: 'center',
         tintColor: '#916008'
-    }
+    },
+    modalContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        alignItems: 'center',
+        width: '80%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    progressText: {
+        fontSize: 20,
+        color: '#DAA520',
+    },
+    completionText: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#DAA520',
+        marginTop: 10,
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginTop: 20,
+        marginBottom: 10,
+        color: 'black',
+    },
+    description: {
+        fontSize: 14,
+        textAlign: 'center',
+        marginTop: 10,
+        marginBottom: 20,
+        color: '#C4C4C4',
+    },
+    listContainer: {
+        marginTop: 20,
+        marginBottom: 30,
+    },
+    subtitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#DAA520',
+    },
+    listItem: {
+        flexDirection: 'row',
+        marginVertical: 5,
+        alignItems: 'center',
+    },
+    listItemText: {
+        fontSize: 14,
+        color: '#000',
+        marginLeft: 10,
+    },
+    button: {
+        backgroundColor: '#DAA520',
+        paddingVertical: 15,
+        paddingHorizontal: 30,
+        borderRadius: 30,
+        marginTop: 20,
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });

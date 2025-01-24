@@ -34,8 +34,8 @@ const PreferenceTopNavigator = ({ navigation }) => {
                 },
 
             }}>
-                <Tab.Screen name="NEWEST" component={NewestScreen} />
                 <Tab.Screen name="RECENT" component={RecentScreen} />
+                <Tab.Screen name="NEWEST" component={NewestScreen} />
                 <Tab.Screen name="NEAREST" component={RelevantScreen} />
             </Tab.Navigator>
         </>

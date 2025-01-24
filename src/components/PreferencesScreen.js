@@ -212,7 +212,7 @@ const PreferencesScreen = ({ navigation }) => {
             verification: verificationtoggle,
             ethnicity: ethnicitytoggle,
             languages: languagetoggle,
-            height: {
+            tall: {
                 min: height[0],
                 max: height[1]
             },
@@ -278,7 +278,7 @@ const PreferencesScreen = ({ navigation }) => {
             verification: verificationtoggle,
             ethnicity: ethnicitytoggle,
             languages: languagetoggle,
-            height: {
+            tall: {
                 min: height[0],
                 max: height[1]
             },
@@ -398,7 +398,7 @@ const PreferencesScreen = ({ navigation }) => {
                 bodyType: selectedBodyTypes,
                 verification: verificationtoggle,
                 ethnicity: ethnicitytoggle,
-                height: {
+                tall: {
                     min: height[0],
                     max: height[1]
                 },

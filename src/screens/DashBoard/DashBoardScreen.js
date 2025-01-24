@@ -8,16 +8,16 @@ import {
     Dimensions,
     Image,
     ScrollView,
-    TouchableOpacity
+    TouchableOpacity,
+    FlatList,
+    ActivityIndicator,
+    ImageBackground
 } from "react-native";
 import LinearGradient from 'react-native-linear-gradient';
 import images from "../../components/images";
-import Modal from 'react-native-modal';
-import ProgressCircle from 'react-native-progress/Circle';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-
-
+import moment from 'moment';
 const { width, height } = Dimensions.get("window");
 
 const data = [
@@ -40,23 +40,61 @@ const data = [
         image: require("../../assets/dummy2.png"),
         details: "Tech enthusiast and food lover. Exploring the world, one bite at a time.",
     },
+    {
+        id: 3,
+        name: "ytyryr",
+        age: 19,
+        location: "New Delhi, India",
+        distance: "800 miles",
+        image: require("../../assets/dummy1.png"),
+        details:
+            "An obedient disciple in search of a young guru! I love exploring new experiences.",
+    },
+    {
+        id: 4,
+        name: "Jopodmdfjlhn",
+        age: 25,
+        location: "New York, USA",
+        distance: "1200 miles",
+        image: require("../../assets/dummy2.png"),
+        details: "Tech enthusiast and food lover. Exploring the world, one bite at a time.",
+    },
+    {
+        id: 5,
+        name: "yturybdn",
+        age: 19,
+        location: "New Delhi, India",
+        distance: "800 miles",
+        image: require("../../assets/dummy1.png"),
+        details:
+            "An obedient disciple in search of a young guru! I love exploring new experiences.",
+    },
+    {
+        id: 6,
+        name: "tryete",
+        age: 25,
+        location: "New York, USA",
+        distance: "1200 miles",
+        image: require("../../assets/dummy2.png"),
+        details: "Tech enthusiast and food lover. Exploring the world, one bite at a time.",
+    },
     // Add more profiles as needed
 ];
 
 const DashBoardScreen = ({ navigation }) => {
-    const position = useRef(new Animated.ValueXY()).current;
     const scrollY = useRef(new Animated.Value(0)).current;
-    const currentIndex = useRef(0);
-    const panActive = useRef(false);
-    const [seek, setSeek] = useState(null)
-    const [userhobbies, setUserHobbies] = useState([])
-    const seeking = ['Discretion', 'Flexible Schedule', 'Friends', 'No Strings Attached']
-    const getHobbies = ['Travel', 'Sport', 'Cinema', 'Cooking', 'Adventure']
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [completionPercentage, setCompletionPercentage] = useState(50); // Adjust this as per actual progress
+    const [seek, setSeek] = useState(null);
+    const [userhobbies, setUserHobbies] = useState([]);
+    const seeking = ['Discretion', 'Flexible Schedule', 'Friends', 'No Strings Attached'];
+    const getHobbies = ['Travel', 'Sport', 'Cinema', 'Cooking', 'Adventure'];
+    const [userData, setUserData] = useState([])
+    const positions = useRef(data?.map(() => new Animated.ValueXY({ x: 0, y: 0 }))).current;
     const [userdetails, setUserDetails] = useState(null)
     const [filterdata, setFilterData] = useState(null)
-
+    const [currentPage, setCurrentPage] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isPaginationLoading, setIsPaginationLoading] = useState(false);
+    const [hasMoreData, setHasMoreData] = useState(true);
 
 
     useEffect(() => {
@@ -72,7 +110,7 @@ const DashBoardScreen = ({ navigation }) => {
     const getdatafromAsync = async () => {
         try {
             const resp = await AsyncStorage.getItem('dashboardData')
-            // console.log('reposnse from the async', resp);
+            console.log('reposnse from the async', resp);
             if (resp) {
                 const parseData = JSON.parse(resp)
                 setFilterData(parseData)
@@ -80,8 +118,6 @@ const DashBoardScreen = ({ navigation }) => {
 
         } catch (error) {
             console.log('error from the async dash data', error);
-
-
         }
     }
 
@@ -110,7 +146,7 @@ const DashBoardScreen = ({ navigation }) => {
                 bodyType: filterdata?.where?.bodyType || '',
                 verification: filterdata?.where?.verification || '',
                 ethnicity: filterdata?.where?.ethnicity || '',
-                height: {
+                tall: {
                     min: filterdata?.where?.height?.min || '',
                     max: filterdata?.where?.height?.max || ''
                 },
@@ -131,10 +167,12 @@ const DashBoardScreen = ({ navigation }) => {
             currentPage,
             autopopulate: true
         };
+        console.log('body of searchhhh', body);
+
         setIsLoading(true);
         try {
             const resp = await axios.post('home/search', body, { headers });
-            // console.log('response from the search API', resp?.data?.data);
+            console.log('response from the search API', resp?.data?.data);
             if (currentPage === 0) {
                 setUserData(resp?.data?.data);
             } else {
@@ -145,7 +183,6 @@ const DashBoardScreen = ({ navigation }) => {
             } else {
                 setHasMoreData(true);
             }
-
             setIsLoading(false);
         } catch (error) {
             console.log('error from the search API', error.response?.data?.message || error);
@@ -153,129 +190,17 @@ const DashBoardScreen = ({ navigation }) => {
         }
     };
 
-
-
-
-
-    const toggleModal = () => {
-        setIsModalVisible(!isModalVisible);
-    };
-
-    const handleSeeking = (type) => {
-        setSeek(type);
-    };
-
-
-    const profileDetailsBottom = scrollY.interpolate({
-        inputRange: [0, 100],  // Track scrolling from the start
-        outputRange: [50, -150],  // Move the profile details up as user scrolls
-        extrapolate: 'clamp',  // Ensure the value doesn't go beyond the range
-    });
-
-    const profileDetailsOpacity = scrollY.interpolate({
-        inputRange: [0, 100],  // Track scrolling from the start
-        outputRange: [1, 0],  // Fade out the profile details as user scrolls
-        extrapolate: 'clamp',
-    });
-
-    const handleHHobbies = (hobby) => {
-        if (userhobbies.includes(hobby)) {
-            setUserHobbies(userhobbies.filter((item) => item !== hobby));
-        } else if (userhobbies.length < 7) {
-            setUserHobbies([...userhobbies, hobby]);
-        } else {
-            Toast.show('You can select upto 7 Hobbies only', Toast.SHORT);
+    useEffect(() => {
+        if (currentPage > 0) {
+            getUserFilteredData();
         }
-    };
+    }, [currentPage]);
 
-    const panResponder = PanResponder.create({
-        onMoveShouldSetPanResponder: (event, gesture) => {
-            const isHorizontal = Math.abs(gesture.dx) > Math.abs(gesture.dy);
-            if (isHorizontal) {
-                panActive.current = true;
-            }
-            return isHorizontal;
-        },
-        onPanResponderMove: (event, gesture) => {
-            if (panActive.current) {
-                position.setValue({ x: gesture.dx, y: gesture.dy });
-            }
-        },
-        onPanResponderRelease: (event, gesture) => {
-            if (panActive.current) {
-                if (gesture.dx > 120) {
-                    // Swipe right
-                    Animated.timing(position, {
-                        toValue: { x: width + 100, y: gesture.dy },
-                        duration: 300,
-                        useNativeDriver: true,
-                    }).start(() => {
-                        handleSwipe("right");
-                    });
-                } else if (gesture.dx < -120) {
-                    // Swipe left
-                    Animated.timing(position, {
-                        toValue: { x: -width - 100, y: gesture.dy },
-                        duration: 300,
-                        useNativeDriver: true,
-                    }).start(() => {
-                        handleSwipe("left");
-                    });
-                } else {
-                    // Reset position
-                    Animated.spring(position, {
-                        toValue: { x: 0, y: 0 },
-                        useNativeDriver: true,
-                    }).start();
-                }
-                panActive.current = false;
-            }
-        },
-    });
-
-    const handleSwipe = (direction) => {
-        currentIndex.current = (currentIndex.current + 1) % data.length;
-        position.setValue({ x: 0, y: 0 });
-    };
-
-    const handleHeartSwipe = () => {
-        Animated.timing(position, {
-            toValue: { x: width + 100, y: 0 },
-            duration: 300,
-            useNativeDriver: true,
-        }).start(() => {
-            handleSwipe("right");
-        });
-    };
-
-    const handleCrossSwipe = () => {
-        Animated.timing(position, {
-            toValue: { x: -width - 100, y: 0 },
-            duration: 300,
-            useNativeDriver: true,
-        }).start(() => {
-            handleSwipe("left");
-        });
-    };
-
-    const rotate = position.x.interpolate({
-        inputRange: [-width / 2, 0, width / 2],
-        outputRange: ["-15deg", "0deg", "15deg"],
-        extrapolate: "clamp",
-    });
-
-    const imageHeight = scrollY.interpolate({
-        inputRange: [0, 663 / 2], // Adjust to half of the card's height
-        outputRange: [663, 326], // Adjust to match the card height
-        extrapolate: "clamp",
-    });
-
-
-    const imageOpacity = scrollY.interpolate({
-        inputRange: [0, height / 2],
-        outputRange: [1, 0.8],
-        extrapolate: "clamp",
-    });
+    useEffect(() => {
+        if (!isPaginationLoading && currentPage > 0) {
+            setIsPaginationLoading(false);
+        }
+    }, [userData]);
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -293,11 +218,141 @@ const DashBoardScreen = ({ navigation }) => {
         fetchUserDetails();
     }, []);
 
+    const handleEndReached = () => {
+        if (!isPaginationLoading && hasMoreData) {
+            setIsPaginationLoading(true);
+            setCurrentPage(prevPage => prevPage + 1);
+        }
+    };
 
+
+    const handleSeeking = (type) => {
+        setSeek(type);
+    };
+
+    const handleHHobbies = (hobby) => {
+        if (userhobbies.includes(hobby)) {
+            setUserHobbies(userhobbies.filter((item) => item !== hobby));
+        } else if (userhobbies.length < 7) {
+            setUserHobbies([...userhobbies, hobby]);
+        } else {
+            Toast.show('You can select up to 7 Hobbies only', Toast.SHORT);
+        }
+    };
+
+    const panResponder = (index) => PanResponder.create({
+        onMoveShouldSetPanResponder: (event, gesture) => {
+            const isHorizontal = Math.abs(gesture.dx) > Math.abs(gesture.dy);
+            return isHorizontal;
+        },
+        onPanResponderMove: (event, gesture) => {
+            positions[index].setValue({ x: gesture.dx, y: gesture.dy });
+        },
+        onPanResponderRelease: (event, gesture) => {
+            if (gesture.dx > 120) {
+                // Swipe right
+                Animated.timing(positions[index], {
+                    toValue: { x: width + 100, y: gesture.dy },
+                    duration: 300,
+                    useNativeDriver: true,
+                }).start(() => {
+                    handleSwipe(index, "right");
+                });
+            } else if (gesture.dx < -120) {
+                // Swipe left
+                Animated.timing(positions[index], {
+                    toValue: { x: -width - 100, y: gesture.dy },
+                    duration: 300,
+                    useNativeDriver: true,
+                }).start(() => {
+                    handleSwipe(index, "left");
+                });
+            } else {
+                // Reset position
+                Animated.spring(positions[index], {
+                    toValue: { x: 0, y: 0 },
+                    useNativeDriver: true,
+                }).start();
+            }
+        },
+    });
+
+    const handleSwipe = (index, direction) => {
+        // Handle swipe completion and reset card position
+        positions[index].setValue({ x: 0, y: 0 });
+    };
+
+    const rotate = (index) => positions[index].x.interpolate({
+        inputRange: [-width / 2, 0, width / 2],
+        outputRange: ["-15deg", "0deg", "15deg"],
+        extrapolate: "clamp",
+    });
+
+    const imageHeight = scrollY.interpolate({
+        inputRange: [0, 663 / 2],
+        outputRange: [663, 326],
+        extrapolate: "clamp",
+    });
+
+    const imageOpacity = scrollY.interpolate({
+        inputRange: [0, height / 2],
+        outputRange: [1, 0.8],
+        extrapolate: "clamp",
+    });
+
+    const handleHeartSwipe = (index) => {
+        Animated.timing(positions[index], {
+            toValue: { x: width + 100, y: 0 },
+            duration: 300,
+            useNativeDriver: true,
+        }).start(() => {
+            handleSwipe("right");
+        });
+    };
+
+    const handleCrossSwipe = (index) => {
+        Animated.timing(positions[index], {
+            toValue: { x: -width - 100, y: 0 },
+            duration: 300,
+            useNativeDriver: true,
+        }).start(() => {
+            handleSwipe("left");
+        });
+    };
+
+    const profileDetailsBottom = scrollY.interpolate({
+        inputRange: [0, 100],  // Track scrolling from the start
+        outputRange: [50, -150],  // Move the profile details up as user scrolls
+        extrapolate: 'clamp',  // Ensure the value doesn't go beyond the range
+    });
+
+    const profileDetailsOpacity = scrollY.interpolate({
+        inputRange: [0, 100],  // Track scrolling from the start
+        outputRange: [1, 0],  // Fade out the profile details as user scrolls
+        extrapolate: 'clamp',
+    });
+
+    const requestPrivatePhoto = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            targetUserId: userdetails?._id,
+            userId: id
+        }
+        try {
+            const resp = await axios.post('home/request-private-pic-access', body, { headers })
+            console.log('response from the request photo', resp.data);
+        } catch (error) {
+            console.log('error from the request photo', error?.response?.data?.message);
+
+
+        }
+    }
 
     return (
         <View style={styles.container}>
-            {/* Header Section */}
             <View style={styles.header}>
                 <Image source={images.dashlogo} style={styles.logo} />
                 <Text style={styles.headerText}>Just for you</Text>
@@ -305,318 +360,284 @@ const DashBoardScreen = ({ navigation }) => {
                     <Image source={images.menu} style={styles.menuIcon} />
                 </TouchableOpacity>
             </View>
-
-            {data
-                .map((item, index) => {
-                    const isCurrent = index === currentIndex.current;
-                    return (
-                        <Animated.View
-                            key={item.id}
-                            style={[
-                                styles.card,
-                                isCurrent && {
-                                    transform: [
-                                        { translateX: position.x },
-                                        { translateY: position.y },
-                                        { rotate: rotate },
-                                    ],
-                                },
-                            ]}
-                            {...(isCurrent ? panResponder.panHandlers : {})}
+            {userData
+                .map((item, index) => (
+                    <Animated.View
+                        key={item._id}
+                        style={[
+                            styles.card,
+                            {
+                                transform: [
+                                    { translateX: positions[index].x },
+                                    { translateY: positions[index].y },
+                                    { rotate: rotate(index) },
+                                ],
+                            },
+                        ]}
+                        {...panResponder(index).panHandlers}
+                    >
+                        <Animated.ScrollView
+                            style={styles.scrollView}
+                            contentContainerStyle={styles.scrollContent}
+                            onScroll={Animated.event(
+                                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                                { useNativeDriver: false }
+                            )}
+                            scrollEventThrottle={16}
                         >
-                            <Animated.ScrollView
-                                style={styles.scrollView}
-                                contentContainerStyle={styles.scrollContent}
-                                onScroll={Animated.event(
-                                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                                    { useNativeDriver: false }
-                                )}
-                                scrollEventThrottle={16}
-                            >
-                                <TouchableOpacity style={{}} onPress={() => {
-                                    console.log("Image clicked");
-                                    navigation.navigate("UserProfileDetails");
-                                }}>
-                                    <Animated.Image
-                                        source={item.image}
-                                        style={[styles.image, {
-                                            height: imageHeight,
-                                            opacity: imageOpacity,
-                                        }]}
-                                        resizeMode="cover"
-                                    />
-                                    <LinearGradient
-                                        colors={["transparent", "rgba(0,0,0,2)", "rgba(0,0,0,2)"]}
-                                        locations={[0.1, 0.6, 1]}
-                                        style={styles.gradient}
-                                    >
-                                    </LinearGradient>
-                                </TouchableOpacity>
-                                <View style={styles.details}>
-                                    <View style={styles.contentContainer}>
-                                        <View style={styles.cont1}>
-                                            <Text style={styles.onlineText}>Online</Text>
-                                        </View>
-                                        <View style={styles.cont2}>
-                                            <Text style={styles.txt}>PREMIUM</Text>
-                                        </View>
-                                    </View>
-                                    <View style={styles.cont3}>
-                                        <Text style={styles.txt1}>Leilanig, 19 </Text>
-                                        <Image source={images.verified} style={styles.img1} />
-                                    </View>
-                                    <Text style={styles.txt2}>New Delhi, India</Text>
-                                    <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>800 miles</Text>
-                                    <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>An obedient disciple in search of a young guru!</Text>
-
-                                    <View style={styles.cont4}>
-                                        <View style={styles.cont5}>
-                                            <View style={{ flexDirection: 'row', }}>
-                                                <Image source={images.star} style={styles.icon1} />
-                                                <Text style={styles.txt3}>Member Since</Text>
-                                            </View>
-                                            <Text style={styles.txt4}>2 Years</Text>
-                                        </View>
-
-                                        <View style={styles.cont5}>
-                                            <View style={{ flexDirection: 'row', }}>
-                                                <Image source={images.heart} style={styles.icon1} />
-                                                <Text style={styles.txt3}>Relationship status</Text>
-                                            </View>
-                                            <Text style={styles.txt4}>Single</Text>
-                                        </View>
-
-                                        <View style={styles.cont5}>
-                                            <View style={{ flexDirection: 'row', }}>
-                                                <Image source={images.body} style={styles.icon1} />
-                                                <Text style={styles.txt3}>Body</Text>
-                                            </View>
-                                            <Text style={styles.txt4}>Curvy</Text>
-                                        </View>
-
-                                        <View style={styles.cont5}>
-                                            <View style={{ flexDirection: 'row', }}>
-                                                <Image source={images.height} style={styles.icon1} />
-                                                <Text style={styles.txt3}>Height</Text>
-                                            </View>
-                                            <Text style={styles.txt4}>173 cm</Text>
-                                        </View>
-                                    </View>
-
-                                    <View style={styles.cont6}>
-                                        <Text style={styles.txt5}>Photos</Text>
-                                        <Image source={images.rightarrow} style={styles.arrow} />
-                                    </View>
-
-                                    <View style={styles.cont6}>
-                                        <Text style={styles.txt5}>Private Photo</Text>
-                                        <Image source={images.rightarrow} style={styles.arrow} />
-                                    </View>
-
-                                    <Text style={styles.about}>About</Text>
-                                    <Text style={styles.abouttxt}>I want a submissive partner for me. Don't want to talk about myself much.I'm dominant by nature, but can switch too. I love to explore new experinces, I like open minded an non-judgemental people.</Text>
-
-                                    <Text style={styles.about}>What I am Seeking</Text>
-                                    <Text style={styles.abouttxt}>I want you to open up like you never did before, be up for exploring whatever you want to try. Its very very important to know about each other first ..!</Text>
-                                    <View style={styles.bodyTypeContainer}>
-                                        {seeking.map((type) => (
-                                            <TouchableOpacity
-                                                key={type}
-                                                style={[
-                                                    styles.bodyTypeButton,
-                                                    seek === type && styles.selectedBodyTypeButton,
-                                                ]}
-                                                onPress={() => handleSeeking(type)}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.bodyTypeText,
-                                                        seek === type && styles.selectedBodyTypeText,
-                                                    ]}
-                                                >
-                                                    {type}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-
-                                    <Text style={styles.about}>Hobbies</Text>
-                                    <View style={styles.bodyTypeContainer}>
-                                        {getHobbies.map((hobby) => (
-                                            <TouchableOpacity
-                                                key={hobby}
-                                                style={[
-                                                    styles.bodyTypeButton,
-                                                    userhobbies.includes(hobby) && styles.selectedBodyTypeButton,
-                                                ]}
-                                                onPress={() => handleHHobbies(hobby)}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.bodyTypeText,
-                                                        userhobbies.includes(hobby) && styles.selectedBodyTypeText,
-                                                    ]}
-                                                >
-                                                    {hobby}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                    <View style={{ marginBottom: 100 }}>
-                                        <View style={styles.cont7}>
-                                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                <Image source={images.face} style={styles.face} />
-                                                <Text style={styles.txt6}>Ethnicity</Text>
-                                            </View>
-                                            <Text style={styles.txt7}>Black / African Descent</Text>
-                                        </View>
-
-                                        <View style={styles.cont7}>
-                                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                <Image source={images.child} style={styles.face} />
-                                                <Text style={styles.txt6}>Children</Text>
-                                            </View>
-                                            <Text style={styles.txt7}>Prefer Not To Say</Text>
-                                        </View>
-
-                                        <View style={styles.cont7}>
-                                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                <Image source={images.smoke} style={styles.face} />
-                                                <Text style={styles.txt6}>Do you smoke?</Text>
-                                            </View>
-                                            <Text style={styles.txt7}>Non - Smoker</Text>
-                                        </View>
-
-                                        <View style={styles.cont7}>
-                                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                <Image source={images.drink} style={styles.face} />
-                                                <Text style={styles.txt6}>Do you drink?</Text>
-                                            </View>
-                                            <Text style={styles.txt7}>Social Drinker</Text>
-                                        </View>
-
-                                        <View style={styles.cont7}>
-                                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                <Image source={images.education} style={styles.face} />
-                                                <Text style={styles.txt6}>Education</Text>
-                                            </View>
-                                            <Text style={styles.txt7}>Graduate Degree</Text>
-                                        </View>
-
-                                        <View style={styles.cont7}>
-                                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                <Image source={images.face} style={styles.face} />
-                                                <Text style={styles.txt6}>Occupation</Text>
-                                            </View>
-                                            <Text style={styles.txt7}>Building Maintenance</Text>
-                                        </View>
-
-                                        <View style={styles.cont7}>
-                                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                <Image source={images.income} style={styles.face} />
-                                                <Text style={styles.txt6}>Annual Income</Text>
-                                            </View>
-                                            <Text style={styles.txt7}>$150,000</Text>
-                                        </View>
-
-                                        <View style={styles.cont7}>
-                                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                <Image source={images.networth} style={styles.face} />
-                                                <Text style={styles.txt6}>Net Worth</Text>
-                                            </View>
-                                            <Text style={styles.txt7}>$100,000</Text>
-                                        </View>
-
-                                    </View>
-                                </View>
-                            </Animated.ScrollView>
-                            {/* Action Buttons */}
-
-                            <Animated.View style={{
-                                position: "absolute",
-                                bottom: profileDetailsBottom,  // Interpolated to move it out of view
-                                opacity: profileDetailsOpacity,  // Interpolated to fade it out
-                                width: "100%"
+                            <TouchableOpacity style={{}} onPress={() => {
+                                console.log("Image clicked");
+                                navigation.navigate("UserProfileDetails", { item: item });
                             }}>
-                                <View style={{ bottom: 30, left: 16 }}>
-                                    <View style={styles.onlineBadge}>
-                                        <Text style={styles.onlineText1}>Online</Text>
+                                <Animated.Image
+                                    source={{ uri: item?.profilePicture }}
+                                    style={[styles.image, {
+                                        height: imageHeight,
+                                        opacity: imageOpacity,
+                                    }]}
+                                    resizeMode="cover"
+                                />
+                                <LinearGradient
+                                    colors={["transparent", "rgba(0,0,0,2)", "rgba(0,0,0,2)"]}
+                                    locations={[0.1, 0.6, 1]}
+                                    style={styles.gradient}
+                                >
+                                </LinearGradient>
+                            </TouchableOpacity>
+                            <View style={styles.details}>
+                                <View style={styles.contentContainer}>
+                                    <View style={styles.cont1}>
+                                        <Text style={styles.onlineText}>Online</Text>
                                     </View>
-                                    <Text style={styles.cardName}>{item.name}, {item.age}</Text>
-                                    <Text style={styles.cardLocation}>{item.location}</Text>
-                                    <Text style={styles.cardDistance}>{item.distance}</Text>
+                                    <View style={styles.cont2}>
+                                        <Text style={styles.txt}>PREMIUM</Text>
+                                    </View>
+                                </View>
+                                <View style={styles.cont3}>
+                                    <Text style={styles.txt1}>{item?.userName || NaN}, {item?.age || NaN} </Text>
+                                    <Image source={item?.isIdVerified === false ? null : images.verified} style={styles.img1} />
+                                </View>
+                                <Text style={styles.txt2}>{item?.city || NaN}, {item?.country || NaN}</Text>
+                                <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>{item?.distance || NaN} miles</Text>
+                                <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>{item?.myHeading || NaN}</Text>
+
+                                <View style={styles.cont4}>
+                                    <View style={styles.cont5}>
+                                        <View style={{ flexDirection: 'row', }}>
+                                            <Image source={images.star} style={styles.icon1} />
+                                            <Text style={styles.txt3}>Member Since</Text>
+                                        </View>
+                                        <Text style={styles.txt4}>{moment(item?.createdAt)?.fromNow() || NaN}</Text>
+                                    </View>
+
+                                    <View style={styles.cont5}>
+                                        <View style={{ flexDirection: 'row', }}>
+                                            <Image source={images.heart} style={styles.icon1} />
+                                            <Text style={styles.txt3}>Relationship status</Text>
+                                        </View>
+                                        <Text style={styles.txt4}>{item?.currentRelationshipStatus || NaN}</Text>
+                                    </View>
+
+                                    <View style={styles.cont5}>
+                                        <View style={{ flexDirection: 'row', }}>
+                                            <Image source={images.body} style={styles.icon1} />
+                                            <Text style={styles.txt3}>Body</Text>
+                                        </View>
+                                        <Text style={styles.txt4}>{item?.bodyType || NaN}</Text>
+                                    </View>
+
+                                    <View style={styles.cont5}>
+                                        <View style={{ flexDirection: 'row', }}>
+                                            <Image source={images.height} style={styles.icon1} />
+                                            <Text style={styles.txt3}>Height</Text>
+                                        </View>
+                                        <Text style={styles.txt4}>{Math.round(item?.tall?.cm) || 'NaN'} cm</Text>
+                                    </View>
                                 </View>
 
-                                {/* Action Buttons */}
-                                <View style={styles.buttonContainer}>
-                                    <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={handleCrossSwipe}>
-                                        <Image source={images.cross} style={styles.buttonIcon} />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={handleHeartSwipe} style={[styles.circleButton, styles.heartButton]}>
-                                        <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
-                                        <Image source={images.chat} style={styles.buttonIcon} />
-                                    </TouchableOpacity>
+                                <View style={styles.cont6}>
+                                    <Text style={styles.txt5}>Photos</Text>
+                                    {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
                                 </View>
-                            </Animated.View>
+                                <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                                    {item.publicPhotos.map((photo, index) => (
+                                        <View key={index} style={{ margin: 5 }}>
+                                            <Image
+                                                source={{ uri: photo }}
+                                                style={{ width: 105, height: 150, borderRadius: 10 }}
+                                            />
+                                        </View>
+                                    ))}
+                                </View>
+
+                                <View style={styles.cont6}>
+                                    <Text style={styles.txt5}>Private Photo</Text>
+                                    {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
+                                </View>
+                                <TouchableOpacity onPress={() => requestPrivatePhoto(item?.userId)}>
+                                    <ImageBackground
+                                        source={images.dummy1}
+                                        style={{ height: 150, width: 105, borderRadius: 10, marginLeft: 8, top: 5 }}
+                                        imageStyle={{ borderRadius: 10 }}
+                                        blurRadius={30}
+                                    >
+                                        <View style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            bottom: 0,
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                            borderRadius: 10,
+                                        }}>
+                                            <Text style={{
+                                                color: 'white',
+                                                fontSize: 16,
+                                                textAlign: 'center',
+                                            }}>Request to Unlock</Text>
+                                            <TouchableOpacity style={styles.lockIconContainer}>
+                                                <Image
+                                                    source={images.lock}
+                                                    style={{
+                                                        width: 24,
+                                                        height: 24, marginTop: 10
+                                                    }}
+                                                />
+                                            </TouchableOpacity>
+                                        </View>
+
+                                    </ImageBackground>
+                                </TouchableOpacity>
+
+                                <Text style={styles.about}>About</Text>
+                                <Text style={styles.abouttxt}>{item?.aboutUsDescription || NaN}</Text>
+
+                                <Text style={styles.about}>What I am Seeking</Text>
+                                <Text style={styles.abouttxt}>{item?.preferences?.aboutPartnerDescription || NaN}</Text>
+
+
+                                <Text style={styles.about}>Hobbies</Text>
+                                <View style={styles.bodyTypeContainer}>
+                                    {item?.hobbies?.map((hobby) => (
+                                        <TouchableOpacity
+                                            key={hobby}
+                                            style={[
+                                                styles.bodyTypeButton,
+                                                // styles.selectedBodyTypeButton,
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.bodyTypeText,
+                                                    //    styles.selectedBodyTypeText,
+                                                ]}
+                                            >
+                                                {hobby}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                                <View style={{ marginBottom: 100 }}>
+                                    <View style={styles.cont7}>
+                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                            <Image source={images.face} style={styles.face} />
+                                            <Text style={styles.txt6}>Ethnicity</Text>
+                                        </View>
+                                        <Text style={styles.txt7}>{item?.ethnicity || NaN}</Text>
+                                    </View>
+
+                                    <View style={styles.cont7}>
+                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                            <Image source={images.child} style={styles.face} />
+                                            <Text style={styles.txt6}>Children</Text>
+                                        </View>
+                                        <Text style={styles.txt7}>{item?.children}</Text>
+                                    </View>
+
+                                    <View style={styles.cont7}>
+                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                            <Image source={images.smoke} style={styles.face} />
+                                            <Text style={styles.txt6}>Do you smoke?</Text>
+                                        </View>
+                                        <Text style={styles.txt7}>{item?.smoke || NaN}</Text>
+                                    </View>
+
+                                    <View style={styles.cont7}>
+                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                            <Image source={images.drink} style={styles.face} />
+                                            <Text style={styles.txt6}>Do you drink?</Text>
+                                        </View>
+                                        <Text style={styles.txt7}>{item?.drink || NaN}</Text>
+                                    </View>
+
+                                    <View style={styles.cont7}>
+                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                            <Image source={images.education} style={styles.face} />
+                                            <Text style={styles.txt6}>Education</Text>
+                                        </View>
+                                        <Text style={styles.txt7}>{item?.highestEducation || NaN}</Text>
+                                    </View>
+
+                                    <View style={styles.cont7}>
+                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                            <Image source={images.face} style={styles.face} />
+                                            <Text style={styles.txt6}>Occupation</Text>
+                                        </View>
+                                        <Text style={styles.txt7}>{item?.workField || NaN}</Text>
+                                    </View>
+
+                                    <View style={styles.cont7}>
+                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                            <Image source={images.networth} style={styles.face} />
+                                            <Text style={styles.txt6}>Net Worth</Text>
+                                        </View>
+                                        <Text style={styles.txt7}>{item?.netWorthRange || NaN}</Text>
+                                    </View>
+
+                                </View>
+                            </View>
+                        </Animated.ScrollView>
+                        {/* Action Buttons */}
+                        <Animated.View style={{
+                            position: "absolute",
+                            bottom: profileDetailsBottom,
+                            opacity: profileDetailsOpacity,
+                            width: "100%"
+                        }}>
+                            <View style={{ bottom: 30, left: 16 }}>
+                                <View style={styles.onlineBadge}>
+                                    <Text style={styles.onlineText1}>Online</Text>
+                                </View>
+                                <Text style={styles.cardName}>{item.userName}, {item.age}</Text>
+                                <Text style={styles.cardLocation}>{item.city}</Text>
+                                <Text style={styles.cardDistance}>{item.distance} miles</Text>
+                            </View>
+
+                            {/* Action Buttons */}
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={handleCrossSwipe}>
+                                    <Image source={images.cross} style={styles.buttonIcon} />
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={handleHeartSwipe} style={[styles.circleButton, styles.heartButton]}>
+                                    <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
+                                </TouchableOpacity>
+                                <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
+                                    <Image source={images.chat} style={styles.buttonIcon} />
+                                </TouchableOpacity>
+                            </View>
                         </Animated.View>
-                    );
-                })
-                .reverse()}
 
-            <Modal
-                isVisible={isModalVisible}
-                onBackdropPress={toggleModal}
-                onBackButtonPress={toggleModal}
-                style={styles.modalContainer}
-            >
-                <View style={styles.modalContent}>
-                    {/* Circle Progress Bar */}
-                    <ProgressCircle
-                        size={150}
-                        progress={completionPercentage / 100}
-                        showsText={true}
-                        textStyle={styles.progressText}
-                        borderWidth={8}
-                        color={'#DAA520'}
-                        unfilledColor={'#F0F0F0'}
-                    />
-                    {/* Completion Text */}
-                    <Text style={styles.completionText}>{completionPercentage}% Complete</Text>
-                    {/* Title */}
-                    <Text style={styles.title}>Complete Your Profile for the Best Matches!</Text>
-                    {/* Description */}
-                    <Text style={styles.description}>
-                        You’re almost there! A fully completed profile increases your chances of finding the perfect match and makes you stand out from other members.
-                    </Text>
-
-                    {/* Why Complete Your Profile Section */}
-                    <View style={styles.listContainer}>
-                        <Text style={styles.subtitle}>Why Complete Your Profile?</Text>
-                        <View style={styles.listItem}>
-                            <Text style={styles.listItemText}>✅ Get matched with people who align with your preferences.</Text>
-                        </View>
-                        <View style={styles.listItem}>
-                            <Text style={styles.listItemText}>✅ Boost your profile visibility and credibility.</Text>
-                        </View>
-                        <View style={styles.listItem}>
-                            <Text style={styles.listItemText}>✅ Show potential matches who you truly are.</Text>
-                        </View>
-                    </View>
-
-                    {/* Footer Button */}
-                    <TouchableOpacity style={styles.button} onPress={toggleModal}>
-                        <Text style={styles.buttonText}>Complete My Profile Now</Text>
-                    </TouchableOpacity>
-                </View>
-            </Modal>
-
+                    </Animated.View>
+                ))}
         </View>
     );
 };
 
 export default DashBoardScreen;
+
+
 
 const styles = StyleSheet.create({
     container: {
@@ -696,20 +717,20 @@ const styles = StyleSheet.create({
         top: 1
     },
     cardName: {
-        color: "#fff",
+        color: "black",
         fontSize: 28,
         fontWeight: "bold",
         top: 5
     },
     cardLocation: {
-        color: "#fff",
+        color: "black",
         fontSize: 16,
         opacity: 0.8,
         top: 10
     },
 
     cardDistance: {
-        color: "#fff",
+        color: "black",
         fontSize: 16,
         opacity: 0.8,
         top: 15

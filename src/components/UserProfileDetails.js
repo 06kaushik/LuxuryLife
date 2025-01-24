@@ -6,7 +6,8 @@ import {
     TouchableOpacity,
     Dimensions,
     ScrollView,
-    Image
+    Image,
+    ImageBackground
 } from "react-native";
 import FastImage from "react-native-fast-image";
 import images from "./images";
@@ -14,10 +15,16 @@ import RBSheet from "react-native-raw-bottom-sheet";
 import Modal from "react-native-modal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import moment from "moment";
 
 const { width } = Dimensions.get("window");
 
-const UserProfileDetails = ({ navigation }) => {
+const UserProfileDetails = ({ navigation, route }) => {
+
+    const { item } = route.params
+    console.log('response from', item);
+
+
     const [activeIndex, setActiveIndex] = useState(0);
     const [seek, setSeek] = useState(null)
     const [userhobbies, setUserHobbies] = useState([])
@@ -28,21 +35,8 @@ const UserProfileDetails = ({ navigation }) => {
     const seeking = ['Discretion', 'Flexible Schedule', 'Friends', 'No Strings Attached']
     const getHobbies = ['Travel', 'Sport', 'Cinema', 'Cooking', 'Adventure']
 
-    // Array of images
-    const imageList = [
-        { id: 1, url: images.dummy1 },
-        { id: 2, url: images.dummy2 },
-        { id: 3, url: images.dummy3 },
-        { id: 4, url: images.dummy4 },
 
-    ];
 
-    const handleSeeking = (type) => {
-        setSeek(type);
-    };
-    const openBottomSheet = () => {
-        rbSheetRef.current?.open();
-    };
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -51,8 +45,6 @@ const UserProfileDetails = ({ navigation }) => {
                 if (data !== null) {
                     const parsedData = JSON.parse(data);
                     setUserDetails(parsedData);
-                    getUserData()
-
                 }
             } catch (error) {
                 console.log('Error fetching user data:', error);
@@ -61,28 +53,126 @@ const UserProfileDetails = ({ navigation }) => {
         fetchUserDetails();
     }, []);
 
-    const getUserData = async () => {
-        const token = await AsyncStorage.getItem('authToken');
+    const userLike = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
         const headers = {
             Authorization: token
-        };
+        }
+        let body = {
+            targetUserId: id,
+            action: "LIKE"
+        }
         try {
-            const resp = await axios.get(`home/get-user-profile/${userdetails?._id}`, { headers })
-            // console.log('response from the user detailss>>>>', resp?.data);
+            const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
+            console.log('response from the like button', resp.data);
+            getUserFilteredData()
+
         } catch (error) {
-            console.log('error fromt he user detalss', error.response.data.message);
+            console.log('error from the like ', error);
         }
     }
 
-    const handleHHobbies = (hobby) => {
-        if (userhobbies.includes(hobby)) {
-            setUserHobbies(userhobbies.filter((item) => item !== hobby));
-        } else if (userhobbies.length < 7) {
-            setUserHobbies([...userhobbies, hobby]);
-        } else {
-            Toast.show('You can select upto 7 Hobbies only', Toast.SHORT);
+    const userDisLike = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
         }
+        let body = {
+            targetUserId: id,
+            action: "UNLIKE"
+        }
+        try {
+            const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
+            console.log('response from the DISLIKE button', resp.data);
+            getUserFilteredData()
+
+        } catch (error) {
+            console.log('error from the DISLIKE ', error);
+        }
+    }
+    const hasLiked = item.activity_logs.some(log => log.action === "LIKE" && log.userId === userdetails?._id);
+
+    const userBlock = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            targetUserId: id,
+            action: "BLOCK"
+        }
+        try {
+            const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
+            console.log('response from the BLOCK button', resp.data);
+            getUserFilteredData()
+
+        } catch (error) {
+            console.log('error from the BLOCK ', error);
+        }
+    }
+
+    const userHide = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            targetUserId: id,
+            action: "HIDE"
+        }
+        try {
+            const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
+            console.log('response from the hide button', resp.data);
+            getUserFilteredData()
+
+        } catch (error) {
+            console.log('error from the hide ', error);
+        }
+    }
+
+    const userReport = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            targetUserId: id,
+            action: "HIDE"
+        }
+        try {
+            const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
+            console.log('response from the report button', resp.data);
+            getUserFilteredData()
+
+        } catch (error) {
+            console.log('error from the report ', error);
+        }
+    }
+
+    const requestPrivatePhoto = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            targetUserId: userdetails?._id,
+            userId: id
+        }
+        try {
+            const resp = await axios.post('home/request-private-pic-access', body, { headers })
+            console.log('response from the request photo', resp.data);
+        } catch (error) {
+            console.log('error from the request photo', error?.response?.data?.message);
+
+
+        }
+    }
+
+
+    const openBottomSheet = () => {
+        rbSheetRef.current?.open();
     };
+
 
     const openModal = (type) => {
         switch (type) {
@@ -121,11 +211,18 @@ const UserProfileDetails = ({ navigation }) => {
     };
 
     const handleAction = () => {
-        console.log(`${modalContent.action} executed`);
-        // Add your logic for Hide, Block, or Report
+
+        if (modalContent.action === "Block") {
+            userBlock(item?.userId);
+        }
+        if (modalContent.action === "Hide") {
+            userHide(item?.userId);
+        }
+        if (modalContent.action === "Report") {
+            userReport(item?.userId);
+        }
         closeModal();
     };
-
 
     const onScroll = (event) => {
         const offsetX = event.nativeEvent.contentOffset.x;
@@ -133,7 +230,6 @@ const UserProfileDetails = ({ navigation }) => {
         setActiveIndex(index);
     };
 
-    
     return (
         <View style={styles.main}>
             {/* Header */}
@@ -145,7 +241,7 @@ const UserProfileDetails = ({ navigation }) => {
                     <FastImage source={images.back} style={styles.icon} />
                 </TouchableOpacity>
                 <View style={styles.dotsContainer}>
-                    {imageList.map((_, index) => (
+                    {item.publicPhotos.map((_, index) => (
                         <View
                             key={index}
                             style={[
@@ -201,12 +297,12 @@ const UserProfileDetails = ({ navigation }) => {
                     onScroll={onScroll}
                     scrollEventThrottle={16}
                 >
-                    {imageList.map((item) => (
-                        <View key={item.id} style={styles.imageContainer}>
+                    {item.publicPhotos.map((item, index) => (
+                        <View key={index} style={styles.imageContainer}>
                             <FastImage
-                                source={item.url}
+                                source={{ uri: item }}
                                 style={styles.img}
-                                resizeMode={FastImage.resizeMode.cover}
+                                resizeMode={FastImage.resizeMode.contain}
                             />
                         </View>
                     ))}
@@ -223,12 +319,12 @@ const UserProfileDetails = ({ navigation }) => {
                     </View>
                 </View>
                 <View style={styles.cont3}>
-                    <Text style={styles.txt1}>Leilanig, 19 </Text>
-                    <Image source={images.verified} style={styles.img1} />
+                    <Text style={styles.txt1}>{item?.userName || NaN}, {item?.age || NaN} </Text>
+                    <Image source={item?.isIdVerified === false ? null : images.verified} style={styles.img1} />
                 </View>
-                <Text style={styles.txt2}>New Delhi, India</Text>
-                <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>800 miles</Text>
-                <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>An obedient disciple in search of a young guru!</Text>
+                <Text style={styles.txt2}>{item?.city || NaN}, {item?.country || NaN}</Text>
+                <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>{item?.distance || NaN} miles</Text>
+                <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>{item?.myHeading || NaN}</Text>
 
                 <View style={styles.cont4}>
                     <View style={styles.cont5}>
@@ -236,7 +332,7 @@ const UserProfileDetails = ({ navigation }) => {
                             <Image source={images.star} style={styles.icon1} />
                             <Text style={styles.txt3}>Member Since</Text>
                         </View>
-                        <Text style={styles.txt4}>2 Years</Text>
+                        <Text style={styles.txt4}>{moment(item?.createdAt)?.fromNow() || NaN}</Text>
                     </View>
 
                     <View style={styles.cont5}>
@@ -244,7 +340,7 @@ const UserProfileDetails = ({ navigation }) => {
                             <Image source={images.heart} style={styles.icon1} />
                             <Text style={styles.txt3}>Relationship status</Text>
                         </View>
-                        <Text style={styles.txt4}>Single</Text>
+                        <Text style={styles.txt4}>{item?.currentRelationshipStatus || NaN}</Text>
                     </View>
 
                     <View style={styles.cont5}>
@@ -252,7 +348,7 @@ const UserProfileDetails = ({ navigation }) => {
                             <Image source={images.body} style={styles.icon1} />
                             <Text style={styles.txt3}>Body</Text>
                         </View>
-                        <Text style={styles.txt4}>Curvy</Text>
+                        <Text style={styles.txt4}>{item?.bodyType || NaN}</Text>
                     </View>
 
                     <View style={styles.cont5}>
@@ -260,62 +356,83 @@ const UserProfileDetails = ({ navigation }) => {
                             <Image source={images.height} style={styles.icon1} />
                             <Text style={styles.txt3}>Height</Text>
                         </View>
-                        <Text style={styles.txt4}>173 cm</Text>
+                        <Text style={styles.txt4}>{Math.round(item?.tall?.cm) || 'NaN'} cm</Text>
                     </View>
                 </View>
 
                 <View style={styles.cont6}>
                     <Text style={styles.txt5}>Photos</Text>
-                    <Image source={images.rightarrow} style={styles.arrow} />
+                    {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginLeft: 16 }}>
+                    {item.publicPhotos.map((photo, index) => (
+                        <View key={index} style={{ margin: 5 }}>
+                            <Image
+                                source={{ uri: photo }}
+                                style={{ width: 105, height: 150, borderRadius: 10 }}
+                            />
+                        </View>
+                    ))}
                 </View>
 
                 <View style={styles.cont6}>
                     <Text style={styles.txt5}>Private Photo</Text>
-                    <Image source={images.rightarrow} style={styles.arrow} />
+                    {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
                 </View>
+                <TouchableOpacity onPress={() => requestPrivatePhoto(item?.userId)}>
+                    <ImageBackground
+                        source={images.dummy1}
+                        style={{ height: 150, width: 105, borderRadius: 10, marginLeft: 8, top: 5, marginLeft: 16 }}
+                        imageStyle={{ borderRadius: 10 }}
+                        blurRadius={30}
+                    >
+                        <View style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            borderRadius: 10,
+                        }}>
+                            <Text style={{
+                                color: 'white',
+                                fontSize: 16,
+                                textAlign: 'center',
+                            }}>Request to Unlock</Text>
+                            <TouchableOpacity style={styles.lockIconContainer}>
+                                <Image
+                                    source={images.lock}
+                                    style={{
+                                        width: 24,
+                                        height: 24, marginTop: 10
+                                    }}
+                                />
+                            </TouchableOpacity>
+                        </View>
 
+                    </ImageBackground>
+                </TouchableOpacity>
                 <Text style={styles.about}>About</Text>
-                <Text style={styles.abouttxt}>I want a submissive partner for me. Don't want to talk about myself much.I'm dominant by nature, but can switch too. I love to explore new experinces, I like open minded an non-judgemental people.</Text>
+                <Text style={styles.abouttxt}>{item?.aboutUsDescription || NaN}</Text>
 
                 <Text style={styles.about}>What I am Seeking</Text>
-                <Text style={styles.abouttxt}>I want you to open up like you never did before, be up for exploring whatever you want to try. Its very very important to know about each other first ..!</Text>
-                <View style={styles.bodyTypeContainer}>
-                    {seeking.map((type) => (
-                        <TouchableOpacity
-                            key={type}
-                            style={[
-                                styles.bodyTypeButton,
-                                seek === type && styles.selectedBodyTypeButton,
-                            ]}
-                            onPress={() => handleSeeking(type)}
-                        >
-                            <Text
-                                style={[
-                                    styles.bodyTypeText,
-                                    seek === type && styles.selectedBodyTypeText,
-                                ]}
-                            >
-                                {type}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                <Text style={styles.abouttxt}>{item?.preferences?.aboutPartnerDescription || NaN}</Text>
 
                 <Text style={styles.about}>Hobbies</Text>
                 <View style={styles.bodyTypeContainer}>
-                    {getHobbies.map((hobby) => (
+                    {item?.hobbies?.map((hobby) => (
                         <TouchableOpacity
                             key={hobby}
                             style={[
                                 styles.bodyTypeButton,
-                                userhobbies.includes(hobby) && styles.selectedBodyTypeButton,
                             ]}
-                            onPress={() => handleHHobbies(hobby)}
                         >
                             <Text
                                 style={[
                                     styles.bodyTypeText,
-                                    userhobbies.includes(hobby) && styles.selectedBodyTypeText,
                                 ]}
                             >
                                 {hobby}
@@ -328,7 +445,7 @@ const UserProfileDetails = ({ navigation }) => {
                         <Image source={images.face} style={styles.face} />
                         <Text style={styles.txt6}>Ethnicity</Text>
                     </View>
-                    <Text style={styles.txt7}>Black / African Descent</Text>
+                    <Text style={styles.txt7}>{item?.ethnicity || NaN}</Text>
                 </View>
 
                 <View style={styles.cont7}>
@@ -336,7 +453,7 @@ const UserProfileDetails = ({ navigation }) => {
                         <Image source={images.child} style={styles.face} />
                         <Text style={styles.txt6}>Children</Text>
                     </View>
-                    <Text style={styles.txt7}>Prefer Not To Say</Text>
+                    <Text style={styles.txt7}>{item?.children}</Text>
                 </View>
 
                 <View style={styles.cont7}>
@@ -344,7 +461,7 @@ const UserProfileDetails = ({ navigation }) => {
                         <Image source={images.smoke} style={styles.face} />
                         <Text style={styles.txt6}>Do you smoke?</Text>
                     </View>
-                    <Text style={styles.txt7}>Non - Smoker</Text>
+                    <Text style={styles.txt7}>{item?.smoke || NaN}</Text>
                 </View>
 
                 <View style={styles.cont7}>
@@ -352,7 +469,7 @@ const UserProfileDetails = ({ navigation }) => {
                         <Image source={images.drink} style={styles.face} />
                         <Text style={styles.txt6}>Do you drink?</Text>
                     </View>
-                    <Text style={styles.txt7}>Social Drinker</Text>
+                    <Text style={styles.txt7}>{item?.drink || NaN}</Text>
                 </View>
 
                 <View style={styles.cont7}>
@@ -360,7 +477,7 @@ const UserProfileDetails = ({ navigation }) => {
                         <Image source={images.education} style={styles.face} />
                         <Text style={styles.txt6}>Education</Text>
                     </View>
-                    <Text style={styles.txt7}>Graduate Degree</Text>
+                    <Text style={styles.txt7}>{item?.highestEducation || NaN}</Text>
                 </View>
 
                 <View style={styles.cont7}>
@@ -368,23 +485,16 @@ const UserProfileDetails = ({ navigation }) => {
                         <Image source={images.face} style={styles.face} />
                         <Text style={styles.txt6}>Occupation</Text>
                     </View>
-                    <Text style={styles.txt7}>Building Maintenance</Text>
+                    <Text style={styles.txt7}>{item?.workField || NaN}</Text>
                 </View>
 
-                <View style={styles.cont7}>
-                    <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                        <Image source={images.income} style={styles.face} />
-                        <Text style={styles.txt6}>Annual Income</Text>
-                    </View>
-                    <Text style={styles.txt7}>$150,000</Text>
-                </View>
 
                 <View style={styles.cont7}>
                     <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
                         <Image source={images.networth} style={styles.face} />
                         <Text style={styles.txt6}>Net Worth</Text>
                     </View>
-                    <Text style={styles.txt7}>$100,000</Text>
+                    <Text style={styles.txt7}>{item?.netWorthRange || NaN}</Text>
                 </View>
 
                 <View style={styles.contt8}>
@@ -392,9 +502,11 @@ const UserProfileDetails = ({ navigation }) => {
                         <Image source={images.cross} style={styles.cross} />
                     </View>
 
-                    <View style={[styles.cont9, { backgroundColor: '#916008', height: 55, width: 55 }]}>
-                        <Image source={images.heart} style={[styles.cross, { tintColor: 'white', height: 25, width: 25 }]} />
-                    </View>
+                    <TouchableOpacity onPress={() => hasLiked ? userDisLike(item?.userId) : userLike(item?.userId)}>
+                        <View style={[styles.cont9, { backgroundColor: '#916008', height: 55, width: 55 }]}>
+                            <Image source={hasLiked ? images.redheart : images.heart} style={[styles.cross, { tintColor: 'white', height: 25, width: 25 }]} />
+                        </View>
+                    </TouchableOpacity>
 
                     <View style={styles.cont9}>
                         <Image source={images.chat} style={[styles.cross, { height: 20, width: 20 }]} />
