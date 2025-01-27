@@ -1,157 +1,218 @@
 import React, { useState, useEffect } from "react";
-import { Text, View, StyleSheet, Image, TouchableOpacity, FlatList, ImageBackground } from 'react-native'
+import { Text, View, StyleSheet, Image, TouchableOpacity, FlatList, ImageBackground, ActivityIndicator, Dimensions } from 'react-native'
 import images from "../../components/images";
 import LinearGradient from 'react-native-linear-gradient';
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import moment from "moment";
 
-
+const { width, height } = Dimensions.get('window')
 
 const ViewedMe = ({ navigation }) => {
-    const userId = '677687b24cd0469415aa2c8a'
     const [currentPage, setCurrentPage] = useState(0);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isPaginationLoading, setIsPaginationLoading] = useState(false);
     const [hasMoreData, setHasMoreData] = useState(true);
-    const [viewedme, setViewedMe] = useState([
-        {
-            id: "1",
-            name: "Leilanig",
-            age: 19,
-            location: "New Delhi, India",
-            distance: "800 miles",
-            status: "Online",
-            image: images.dummy,
-        },
-        {
-            id: "2",
-            name: "Leilanig",
-            age: 19,
-            location: "New Delhi, India",
-            distance: "800 miles",
-            status: "Offline",
-            image: images.dummy,
-        },
-        {
-            id: "3",
-            name: "Leilanig",
-            age: 19,
-            location: "New Delhi, India",
-            distance: "800 miles",
-            status: "Online",
-            image: images.dummy,
-        },
-        {
-            id: "4",
-            name: "Leilanig",
-            age: 19,
-            location: "New Delhi, India",
-            distance: "800 miles",
-            status: "Offline",
-            image: images.dummy,
-        },
-    ]);
+    const [userdetails, setUserDetails] = useState(null);
+    const [viewedme, setViewedMe] = useState([]);
 
-    ///// API INTEGRATION /////////
-
-    const getViewMeData = async (page = 0) => {
-        const token = await AsyncStorage.getItem('verifcationToken');
-        const headers = {
-            Authorization: token,
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
         };
+        fetchUserDetails();
+    }, []);
+
+    const getViewMeData = async () => {
+        if (!userdetails?.location?.coordinates) return;
+
+        const token = await AsyncStorage.getItem('authToken');
+        const headers = { Authorization: token };
         const body = {
-            currentPage: page,
+            currentPage,
             pageLength: 20,
-            longitude: 77.3812,
-            latitude: 28.6210,
+            where: {
+                longitude: userdetails?.location?.coordinates[0],
+                latitude: userdetails?.location?.coordinates[1]
+            },
+            sortBy: "age",
         };
 
+        setIsLoading(true);
         try {
-            const resp = await axios.post(`home/get-favorite/viewed/${userId}`, body, { headers });
+            const resp = await axios.post('home/get-favorite/viewed', body, { headers });
             console.log('Response from the viewed me data:', resp.data.data);
 
-            if (resp.data.data > 0) {
-                setViewedMe((prev) => [...prev, ...resp.data.data]);
-                setHasMoreData(true);
-            } else {
+            setViewedMe(prevData => currentPage === 0 ? resp?.data?.data : [...prevData, ...resp?.data?.data]);
+            if (resp?.data?.data?.length < body.pageLength) {
                 setHasMoreData(false);
+            } else {
+                setHasMoreData(true);
             }
+
+            setIsLoading(false);
         } catch (error) {
             console.error('Error from get viewed data:', error);
-        } finally {
-            setIsLoadingMore(false);
+            setIsLoading(false);
         }
     };
 
-    // useEffect(() => {
-    //     getViewMeData(currentPage);
-    // }, []);
+    useEffect(() => {
+        if (userdetails) {
+            getViewMeData();
+        }
+    }, [userdetails]);
 
-    const loadMoreData = () => {
-        if (!isLoadingMore && hasMoreData) {
-            setIsLoadingMore(true);
-            setCurrentPage((prev) => prev + 1);
-            // getViewMeData(currentPage + 1);
+    const handleEndReached = () => {
+        if (!isPaginationLoading && hasMoreData) {
+            setIsPaginationLoading(true);
+            setCurrentPage(prevPage => prevPage + 1);
         }
     };
 
+    useEffect(() => {
+        if (currentPage >= 0) {
+            getViewMeData();
+        }
+    }, [currentPage]);
 
-    const renderViewedMe = ({ item }) => (
-        <View style={styles.card}>
-            <ImageBackground source={item.image} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
-                <LinearGradient
-                    colors={["transparent", "rgba(0, 0, 0, 0.7)"]}
-                    style={styles.gradientOverlay}
-                />
-                {item.status === "Online" && (
-                    <View style={styles.statusBadge}>
-                        <Text style={styles.statusText}>Online</Text>
+    useEffect(() => {
+        if (!isPaginationLoading && currentPage > 0) {
+            setIsPaginationLoading(false);
+        }
+    }, [viewedme]);
+
+    const userLike = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            targetUserId: id,
+            action: "LIKE"
+        }
+        try {
+            const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
+            console.log('response from the like button', resp.data);
+            getViewMeData()
+
+        } catch (error) {
+            console.log('error from the like ', error);
+        }
+    }
+
+    const userDisLike = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            targetUserId: id,
+            action: "UNLIKE"
+        }
+        try {
+            const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
+            console.log('response from the like button', resp.data);
+            getViewMeData()
+
+        } catch (error) {
+            console.log('error from the like ', error);
+        }
+    }
+
+    const userHide = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            targetUserId: id,
+            action: 'HIDE'
+        }
+        try {
+            const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
+            console.log('response from the HIDE', resp?.data);
+            getViewMeData()
+        } catch (error) {
+            console.log('error from the hde api ', error.response.data.message);
+
+
+        }
+
+    }
+
+
+    const renderViewedMe = ({ item }) => {
+        const lastActive = moment(item?.user?.lastActive).fromNow();
+        const hasLiked = item.userLikeActionCount === 1;
+
+        return (
+            <View style={styles.card}>
+                <ImageBackground source={{ uri: item?.user?.profilePicture }} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
+                    <LinearGradient colors={["transparent", "rgba(0, 0, 0, 0.7)"]} style={styles.gradientOverlay} />
+                    {item.status === "Online" && (
+                        <View style={styles.statusBadge}>
+                            <Text style={styles.statusText}>Online</Text>
+                        </View>
+                    )}
+                    <View style={styles.overlayContainer}>
+                        <Text style={styles.memberName}>{`${item.user?.userName}, ${item?.user?.age}`}</Text>
+                        <Text style={styles.memberLocation}>{item.city}, {item?.country}</Text>
+                        <Text style={styles.memberDistance}>{item.distance} miles</Text>
                     </View>
-                )}
-                <View style={styles.overlayContainer}>
-                    <Text style={styles.memberName}>{`${item.name}, ${item.age}`}</Text>
-                    <Text style={styles.memberLocation}>{item.location}</Text>
-                    <Text style={styles.memberDistance}>{item.distance}</Text>
+                </ImageBackground>
+                <Text style={styles.timeAgo}>{lastActive}</Text>
+                <View style={styles.actionRow}>
+                    <TouchableOpacity onPress={() => userHide(item?.userId)} style={styles.unhideButton}>
+                        <Text style={styles.unhideText}>Hide</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.iconButton}>
+                        <Image source={images.chat} style={styles.icon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => hasLiked ? userDisLike(item?.userId) : userLike(item?.userId)}
+                        style={styles.iconButton} >
+                        <Image source={hasLiked ? images.redheart : images.heart} style={[styles.icon, { height: 20, width: 20, top: 1 }]} />
+                    </TouchableOpacity>
+
                 </View>
-            </ImageBackground>
-            <Text style={styles.timeAgo}>7 hours ago</Text>
-            <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.unhideButton}>
-                    <Text style={styles.unhideText}>Hide</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 36, width: 36, justifyContent: 'center' }}>
-                    <Image source={images.chat} style={styles.icon} />
-                </TouchableOpacity>
-                <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 36, width: 36, justifyContent: 'center' }}>
-                    <Image source={images.heart} style={styles.icon} />
-                </TouchableOpacity>
             </View>
-        </View>
-    );
+        );
+    };
 
     return (
-
-
         <View style={styles.main}>
-            <FlatList
-                data={viewedme}
-                renderItem={renderViewedMe}
-                keyExtractor={(item, index) => index.toString()}
-                numColumns={2}
-                style={{ marginTop: 20 }}
-                contentContainerStyle={styles.gridContent}
-                onEndReached={loadMoreData}
-                onEndReachedThreshold={0.5} // Trigger load more when 50% from the bottom
-                ListFooterComponent={
-                    isLoadingMore && (
-                        <Text style={{ textAlign: 'center', marginVertical: 10 }}>Loading more...</Text>
-                    )
-                }
-            />
-
+            {isLoading ? (
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color="#0000ff" />
+                </View>
+            ) : (
+                <FlatList
+                    data={viewedme}
+                    renderItem={renderViewedMe}
+                    keyExtractor={(item) => item._id}
+                    numColumns={2}
+                    style={{ marginTop: 20 }}
+                    onEndReached={handleEndReached}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={isPaginationLoading && hasMoreData ? (
+                        <View style={styles.paginationLoader}>
+                            <ActivityIndicator size="small" color="#0000ff" />
+                        </View>
+                    ) : null}
+                />
+            )}
         </View>
-    )
-}
-
+    );
+};
 
 export default ViewedMe;
 
@@ -161,15 +222,12 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         paddingHorizontal: 20
     },
-    gridContent: {
-        paddingBottom: 20,
-    },
     card: {
-        flex: 1,
+        // flex: 1,
+        width: width * 0.4,
         margin: 8,
         borderRadius: 10,
         backgroundColor: "#FFF",
-        // elevation: 2,
         overflow: "hidden",
     },
     imageBackground: {
@@ -237,39 +295,28 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#3C4043",
     },
+    iconButton: {
+        borderWidth: 1,
+        borderColor: '#E0E2E9',
+        borderRadius: 100,
+        height: 36,
+        width: 36,
+        justifyContent: 'center',
+    },
     icon: {
         width: 15,
         height: 15,
-        tintColor: "#3C4043",
+        // tintColor: "#3C4043",
         alignSelf: 'center'
     },
-    emptyContainer: {
-        alignItems: "center",
-        justifyContent: "center",
+    loaderContainer: {
         flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    emptyImage: {
-        height: 150,
-        width: 104,
-    },
-    emptyText: {
-        textAlign: "center",
-        fontFamily: "Poppins-Medium",
-        fontSize: 16,
-        color: "#3C4043",
-        marginTop: 20,
-    },
-    browseButton: {
-        backgroundColor: "#916008",
-        borderRadius: 100,
+    paginationLoader: {
         paddingVertical: 10,
-        paddingHorizontal: 20,
-        marginTop: 20,
-    },
-    browseText: {
-        color: "white",
-        fontFamily: "Poppins-SemiBold",
-        fontSize: 15,
+        alignItems: 'center',
     },
     gradientOverlay: {
         position: "absolute",
@@ -279,4 +326,4 @@ const styles = StyleSheet.create({
         height: "50%",
         borderRadius: 10,
     },
-})
+});

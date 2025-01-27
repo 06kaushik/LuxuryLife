@@ -27,18 +27,14 @@ const InterestTopNavigator = ({ navigation }) => {
                 tabBarActiveTintColor: '#916008',
                 tabBarInactiveTintColor: 'black',
                 tabBarStyle: { elevation: 4, },
-                tabBarIndicatorStyle: { 
+                tabBarIndicatorStyle: {
                     backgroundColor: '#916008', // Color of the line indicator
                     height: 3, // Optional: Adjust thickness of the line
-                  },
-
-
+                },
             }}>
-
                 <Tab.Screen name="VIEWED ME" component={ViewedMe} />
                 <Tab.Screen name="FAVORITES" component={FavouriteScreen} />
                 <Tab.Screen name="FAVORITED ME" component={FavouriteMeScreen} />
-
             </Tab.Navigator>
         </>
     )
@@ -63,12 +59,12 @@ const styles = StyleSheet.create({
     backIcon: {
         height: 20,
         width: 20,
-        bottom:30
+        bottom: 30
     },
     headerText: {
         fontSize: 20,
         fontFamily: "Poppins-Medium",
         marginLeft: 10,
-        bottom:27
+        bottom: 27
     },
 })

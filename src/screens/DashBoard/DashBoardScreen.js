@@ -7,10 +7,7 @@ import {
     StyleSheet,
     Dimensions,
     Image,
-    ScrollView,
     TouchableOpacity,
-    FlatList,
-    ActivityIndicator,
     ImageBackground
 } from "react-native";
 import LinearGradient from 'react-native-linear-gradient';
@@ -18,189 +15,31 @@ import images from "../../components/images";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import moment from 'moment';
+import { useIsFocused } from '@react-navigation/native';
+import LaodingScreen from "../../components/LoadingScreen";
+
 const { width, height } = Dimensions.get("window");
 
-const data = [
-    {
-        id: 1,
-        name: "Leilanig",
-        age: 19,
-        location: "New Delhi, India",
-        distance: "800 miles",
-        image: require("../../assets/dummy1.png"),
-        details:
-            "An obedient disciple in search of a young guru! I love exploring new experiences.",
-    },
-    {
-        id: 2,
-        name: "John",
-        age: 25,
-        location: "New York, USA",
-        distance: "1200 miles",
-        image: require("../../assets/dummy2.png"),
-        details: "Tech enthusiast and food lover. Exploring the world, one bite at a time.",
-    },
-    {
-        id: 3,
-        name: "ytyryr",
-        age: 19,
-        location: "New Delhi, India",
-        distance: "800 miles",
-        image: require("../../assets/dummy1.png"),
-        details:
-            "An obedient disciple in search of a young guru! I love exploring new experiences.",
-    },
-    {
-        id: 4,
-        name: "Jopodmdfjlhn",
-        age: 25,
-        location: "New York, USA",
-        distance: "1200 miles",
-        image: require("../../assets/dummy2.png"),
-        details: "Tech enthusiast and food lover. Exploring the world, one bite at a time.",
-    },
-    {
-        id: 5,
-        name: "yturybdn",
-        age: 19,
-        location: "New Delhi, India",
-        distance: "800 miles",
-        image: require("../../assets/dummy1.png"),
-        details:
-            "An obedient disciple in search of a young guru! I love exploring new experiences.",
-    },
-    {
-        id: 6,
-        name: "tryete",
-        age: 25,
-        location: "New York, USA",
-        distance: "1200 miles",
-        image: require("../../assets/dummy2.png"),
-        details: "Tech enthusiast and food lover. Exploring the world, one bite at a time.",
-    },
-    // Add more profiles as needed
-];
+
 
 const DashBoardScreen = ({ navigation }) => {
     const scrollY = useRef(new Animated.Value(0)).current;
     const [seek, setSeek] = useState(null);
     const [userhobbies, setUserHobbies] = useState([]);
-    const seeking = ['Discretion', 'Flexible Schedule', 'Friends', 'No Strings Attached'];
-    const getHobbies = ['Travel', 'Sport', 'Cinema', 'Cooking', 'Adventure'];
     const [userData, setUserData] = useState([])
-    const positions = useRef(data?.map(() => new Animated.ValueXY({ x: 0, y: 0 }))).current;
+    console.log('userdatalength', userData.length);
+    // const positions = useRef(userData?.map(() => new Animated.ValueXY({ x: 0, y: 0 }))).current;
     const [userdetails, setUserDetails] = useState(null)
     const [filterdata, setFilterData] = useState(null)
     const [currentPage, setCurrentPage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [isPaginationLoading, setIsPaginationLoading] = useState(false);
     const [hasMoreData, setHasMoreData] = useState(true);
+    const isFocused = useIsFocused()
+    const positions = useRef([]).current;
+    const [swipedItems, setSwipedItems] = useState([]);
 
 
-    useEffect(() => {
-        getdatafromAsync();
-    }, []);
-
-    useEffect(() => {
-        if (filterdata) {
-            getUserFilteredData();
-        }
-    }, [filterdata]);
-
-    const getdatafromAsync = async () => {
-        try {
-            const resp = await AsyncStorage.getItem('dashboardData')
-            console.log('reposnse from the async', resp);
-            if (resp) {
-                const parseData = JSON.parse(resp)
-                setFilterData(parseData)
-            }
-
-        } catch (error) {
-            console.log('error from the async dash data', error);
-        }
-    }
-
-    const getUserFilteredData = async () => {
-        if (!filterdata) {
-            return;
-        }
-        const token = await AsyncStorage.getItem('authToken');
-        const headers = {
-            Authorization: token,
-        };
-        let body = {
-            where: {
-                userNameSearchText: "",
-                currentCity: filterdata?.where?.currentCity || '',
-                otherLocation: filterdata?.where?.otherLocation || '',
-                maxDistance: filterdata?.where?.maxDistance || '',
-                location: {
-                    latitude: filterdata?.where?.location?.latitude || '',
-                    longitude: filterdata?.where?.location?.longitude || '',
-                    city: filterdata?.where?.location?.city || ''
-                },
-                options: filterdata?.where?.options || '',
-                memberSeeking: filterdata?.where?.memberSeeking || '',
-                hobbies: filterdata?.where?.hobbies || '',
-                bodyType: filterdata?.where?.bodyType || '',
-                verification: filterdata?.where?.verification || '',
-                ethnicity: filterdata?.where?.ethnicity || '',
-                tall: {
-                    min: filterdata?.where?.height?.min || '',
-                    max: filterdata?.where?.height?.max || ''
-                },
-                smoking: filterdata?.where?.smoking || '',
-                drinking: filterdata?.where?.drinking || '',
-                relationshipStatus: filterdata?.where?.relationshipStatus || '',
-                children: filterdata?.where?.children || '',
-                education: filterdata?.where?.education || '',
-                workField: filterdata?.where?.workField || [],
-                levels: filterdata?.where?.levels || '',
-                languages: filterdata?.where?.languages || '',
-                profileText: filterdata?.where?.profileText || "",
-                ageRange: filterdata?.where?.ageRange || {},
-                gender: filterdata?.where?.gender || ''
-            },
-            requestType: "mobile",
-            pageLength: 11,
-            currentPage,
-            autopopulate: true
-        };
-        console.log('body of searchhhh', body);
-
-        setIsLoading(true);
-        try {
-            const resp = await axios.post('home/search', body, { headers });
-            console.log('response from the search API', resp?.data?.data);
-            if (currentPage === 0) {
-                setUserData(resp?.data?.data);
-            } else {
-                setUserData(prevData => [...prevData, ...resp?.data?.data]);
-            }
-            if (resp?.data?.data?.length < body.pageLength) {
-                setHasMoreData(false);
-            } else {
-                setHasMoreData(true);
-            }
-            setIsLoading(false);
-        } catch (error) {
-            console.log('error from the search API', error.response?.data?.message || error);
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (currentPage > 0) {
-            getUserFilteredData();
-        }
-    }, [currentPage]);
-
-    useEffect(() => {
-        if (!isPaginationLoading && currentPage > 0) {
-            setIsPaginationLoading(false);
-        }
-    }, [userData]);
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -218,13 +57,134 @@ const DashBoardScreen = ({ navigation }) => {
         fetchUserDetails();
     }, []);
 
+
+    useEffect(() => {
+        if (userData.length > 0) {
+            positions.length = userData.length;
+            for (let i = 0; i < userData.length; i++) {
+                if (!positions[i]) {
+                    positions[i] = new Animated.ValueXY({ x: 0, y: 0 });
+                }
+            }
+            console.log("positionsss", positions);
+        }
+    }, [userData]);
+
+    useEffect(() => {
+        getdatafromAsync();
+    }, [userdetails]);
+
+    useEffect(() => {
+        if (userdetails && userdetails.location && userdetails.location.coordinates) {
+            getUserFilteredData();
+        }
+    }, [userdetails]);
+
+    const getdatafromAsync = async () => {
+        try {
+            const resp = await AsyncStorage.getItem('dashboardData')
+            console.log('reposnse from the async', resp);
+            if (resp) {
+                const parseData = JSON.parse(resp)
+                setFilterData(parseData)
+            }
+
+        } catch (error) {
+            console.log('error from the async dash data', error);
+        }
+    }
+
+    const getUserFilteredData = async () => {
+
+        const token = await AsyncStorage.getItem('authToken');
+        const headers = {
+            Authorization: token,
+        };
+        let body = {
+            where: {
+                userNameSearchText: "",
+                currentCity: filterdata?.where?.currentCity || '',
+                otherLocation: filterdata?.where?.otherLocation || '',
+                maxDistance: filterdata?.where?.maxDistance || 100,
+                location: {
+                    latitude: filterdata?.where?.location?.latitude || userdetails?.location?.coordinates[1],
+                    longitude: filterdata?.where?.location?.longitude || userdetails?.location?.coordinates[0],
+                    city: filterdata?.where?.location?.city || ''
+                },
+                options: filterdata?.where?.options || {},
+                memberSeeking: filterdata?.where?.memberSeeking || [],
+                hobbies: filterdata?.where?.hobbies || [],
+                bodyType: filterdata?.where?.bodyType || [],
+                verification: filterdata?.where?.verification || [],
+                ethnicity: filterdata?.where?.ethnicity || [],
+                tall: {
+                    min: filterdata?.where?.tall?.min || 152,
+                    max: filterdata?.where?.tall?.max || 182,
+                },
+                smoking: filterdata?.where?.smoking || [],
+                drinking: filterdata?.where?.drinking || [],
+                relationshipStatus: filterdata?.where?.relationshipStatus || [],
+                children: filterdata?.where?.children || [],
+                education: filterdata?.where?.education || [],
+                workField: filterdata?.where?.workField || [],
+                levels: filterdata?.where?.levels || [],
+                languages: filterdata?.where?.languages || [],
+                profileText: filterdata?.where?.profileText || "",
+                ageRange: {
+                    min: filterdata?.where?.ageRange?.min || userdetails?.preferences?.ageRange?.min,
+                    max: filterdata?.where?.ageRange?.max || userdetails?.preferences?.ageRange?.max
+                },
+                gender: filterdata?.where?.gender || userdetails?.preferences?.gender
+            },
+            requestType: "mobile",
+            pageLength: 11,
+            currentPage,
+            autopopulate: true
+        };
+        // console.log('body of search', body);
+
+        setIsLoading(true);
+        try {
+            const resp = await axios.post('home/search', body, { headers });
+            // console.log('response from the search API', resp?.data?.data);
+            if (currentPage === 0) {
+                setUserData(resp?.data?.data);
+            } else {
+                setUserData(prevData => [...prevData, ...resp?.data?.data]);
+            }
+            if (resp?.data?.data?.length < body.pageLength) {
+                setHasMoreData(false);
+            } else {
+                setHasMoreData(true);
+            }
+            setIsLoading(false);
+        } catch (error) {
+            console.log('error from the search API', error.response?.data?.message || error);
+            setIsLoading(false);
+        }
+    };
+
+
+
+    useEffect(() => {
+        if (currentPage > 0) {
+            getUserFilteredData();
+        }
+    }, [currentPage]);
+
+    useEffect(() => {
+        if (!isPaginationLoading && currentPage > 0) {
+            setIsPaginationLoading(false);
+        }
+    }, [userData]);
+
+
     const handleEndReached = () => {
         if (!isPaginationLoading && hasMoreData) {
             setIsPaginationLoading(true);
             setCurrentPage(prevPage => prevPage + 1);
         }
     };
-
 
     const handleSeeking = (type) => {
         setSeek(type);
@@ -243,50 +203,57 @@ const DashBoardScreen = ({ navigation }) => {
     const panResponder = (index) => PanResponder.create({
         onMoveShouldSetPanResponder: (event, gesture) => {
             const isHorizontal = Math.abs(gesture.dx) > Math.abs(gesture.dy);
-            return isHorizontal;
+            return isHorizontal || Math.abs(gesture.dx) > 10;
         },
         onPanResponderMove: (event, gesture) => {
-            positions[index].setValue({ x: gesture.dx, y: gesture.dy });
+            if (positions[index]) {
+                positions[index]?.setValue({ x: gesture.dx, y: gesture.dy });
+            }
         },
         onPanResponderRelease: (event, gesture) => {
-            if (gesture.dx > 120) {
-                // Swipe right
-                Animated.timing(positions[index], {
-                    toValue: { x: width + 100, y: gesture.dy },
-                    duration: 300,
-                    useNativeDriver: true,
-                }).start(() => {
-                    handleSwipe(index, "right");
-                });
-            } else if (gesture.dx < -120) {
-                // Swipe left
-                Animated.timing(positions[index], {
-                    toValue: { x: -width - 100, y: gesture.dy },
-                    duration: 300,
-                    useNativeDriver: true,
-                }).start(() => {
-                    handleSwipe(index, "left");
-                });
-            } else {
-                // Reset position
-                Animated.spring(positions[index], {
-                    toValue: { x: 0, y: 0 },
-                    useNativeDriver: true,
-                }).start();
+            if (positions[index]) {
+                if (gesture.dx > 120) {
+                    // Swipe right
+                    Animated.timing(positions[index], {
+                        toValue: { x: width + 100, y: gesture.dy },
+                        duration: 300,
+                        useNativeDriver: true,
+                    }).start(() => handleSwipe(index, "right"));
+                } else if (gesture.dx < -120) {
+                    // Swipe left
+                    Animated.timing(positions[index], {
+                        toValue: { x: -width - 100, y: gesture.dy },
+                        duration: 300,
+                        useNativeDriver: true,
+                    }).start(() => handleSwipe(index, "left"));
+                } else {
+                    // Reset position if swipe is too small
+                    Animated.spring(positions[index], {
+                        toValue: { x: 0, y: 0 },
+                        useNativeDriver: true,
+                    }).start();
+                }
             }
         },
     });
 
+
     const handleSwipe = (index, direction) => {
-        // Handle swipe completion and reset card position
         positions[index].setValue({ x: 0, y: 0 });
     };
 
-    const rotate = (index) => positions[index].x.interpolate({
-        inputRange: [-width / 2, 0, width / 2],
-        outputRange: ["-15deg", "0deg", "15deg"],
-        extrapolate: "clamp",
-    });
+    const rotate = (index) => {
+        const position = positions[index];
+        if (position) {
+            return position.x.interpolate({
+                inputRange: [-width / 2, 0, width / 2],
+                outputRange: ["-15deg", "0deg", "15deg"],
+                extrapolate: "clamp",
+            });
+        }
+        // If position is not initialized, return a default value
+        return "0deg";
+    };
 
     const imageHeight = scrollY.interpolate({
         inputRange: [0, 663 / 2],
@@ -301,29 +268,34 @@ const DashBoardScreen = ({ navigation }) => {
     });
 
     const handleHeartSwipe = (index) => {
-        Animated.timing(positions[index], {
-            toValue: { x: width + 100, y: 0 },
-            duration: 300,
-            useNativeDriver: true,
-        }).start(() => {
-            handleSwipe("right");
-        });
+        if (positions[index]) {
+            Animated.timing(positions[index], {
+                toValue: { x: width + 100, y: 0 },
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                handleSwipe(index, "right");
+            });
+        }
     };
 
     const handleCrossSwipe = (index) => {
+        console.log('indexxx crosss', index);
+
         Animated.timing(positions[index], {
-            toValue: { x: -width - 100, y: 0 },
+            toValue: { x: -width - 100, y: 0 }, // Move card to the left
             duration: 300,
             useNativeDriver: true,
         }).start(() => {
-            handleSwipe("left");
+            handleSwipe(index, "left");
         });
     };
 
+
     const profileDetailsBottom = scrollY.interpolate({
-        inputRange: [0, 100],  // Track scrolling from the start
-        outputRange: [50, -150],  // Move the profile details up as user scrolls
-        extrapolate: 'clamp',  // Ensure the value doesn't go beyond the range
+        inputRange: [0, 100],
+        outputRange: [50, -150],
+        extrapolate: 'clamp',
     });
 
     const profileDetailsOpacity = scrollY.interpolate({
@@ -343,294 +315,308 @@ const DashBoardScreen = ({ navigation }) => {
         }
         try {
             const resp = await axios.post('home/request-private-pic-access', body, { headers })
-            console.log('response from the request photo', resp.data);
+            // console.log('response from the request photo', resp.data);
         } catch (error) {
             console.log('error from the request photo', error?.response?.data?.message);
-
 
         }
     }
 
+
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Image source={images.dashlogo} style={styles.logo} />
-                <Text style={styles.headerText}>Just for you</Text>
-                <TouchableOpacity onPress={() => navigation.navigate("Preference")}>
-                    <Image source={images.menu} style={styles.menuIcon} />
-                </TouchableOpacity>
-            </View>
-            {userData
-                .map((item, index) => (
-                    <Animated.View
-                        key={item._id}
-                        style={[
-                            styles.card,
-                            {
-                                transform: [
-                                    { translateX: positions[index].x },
-                                    { translateY: positions[index].y },
-                                    { rotate: rotate(index) },
-                                ],
-                            },
-                        ]}
-                        {...panResponder(index).panHandlers}
-                    >
-                        <Animated.ScrollView
-                            style={styles.scrollView}
-                            contentContainerStyle={styles.scrollContent}
-                            onScroll={Animated.event(
-                                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                                { useNativeDriver: false }
-                            )}
-                            scrollEventThrottle={16}
-                        >
-                            <TouchableOpacity style={{}} onPress={() => {
-                                console.log("Image clicked");
-                                navigation.navigate("UserProfileDetails", { item: item });
-                            }}>
-                                <Animated.Image
-                                    source={{ uri: item?.profilePicture }}
-                                    style={[styles.image, {
-                                        height: imageHeight,
-                                        opacity: imageOpacity,
-                                    }]}
-                                    resizeMode="cover"
-                                />
-                                <LinearGradient
-                                    colors={["transparent", "rgba(0,0,0,2)", "rgba(0,0,0,2)"]}
-                                    locations={[0.1, 0.6, 1]}
-                                    style={styles.gradient}
+        <View style={{ flex: 1 }}>
+            {isLoading ? (
+                <LaodingScreen />
+            ) : (
+                <View style={styles.container}>
+                    <View style={styles.header}>
+                        <Image source={images.dashlogo} style={styles.logo} />
+                        <Text style={styles.headerText}>Just for you</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate("Preference")}>
+                            <Image source={images.menu} style={styles.menuIcon} />
+                        </TouchableOpacity>
+                    </View>
+                    {userData
+                        .map((item, index) => (
+                            <Animated.View
+                                key={item._id}
+                                style={[
+                                    styles.card,
+                                    {
+                                        transform: [
+                                            {
+                                                translateX: positions[index] ? positions[index].x : new Animated.Value(0),
+                                            },
+                                            {
+                                                translateY: positions[index] ? positions[index].y : new Animated.Value(0),
+                                            },
+                                            {
+                                                rotate: rotate(index),
+                                            },
+                                        ]
+
+
+                                    },
+                                ]}
+                                {...panResponder(index).panHandlers}
+                            >
+                                <Animated.ScrollView
+                                    style={styles.scrollView}
+                                    contentContainerStyle={styles.scrollContent}
+                                    onScroll={Animated.event(
+                                        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                                        { useNativeDriver: false }
+                                    )}
+                                    scrollEventThrottle={16}
                                 >
-                                </LinearGradient>
-                            </TouchableOpacity>
-                            <View style={styles.details}>
-                                <View style={styles.contentContainer}>
-                                    <View style={styles.cont1}>
-                                        <Text style={styles.onlineText}>Online</Text>
-                                    </View>
-                                    <View style={styles.cont2}>
-                                        <Text style={styles.txt}>PREMIUM</Text>
-                                    </View>
-                                </View>
-                                <View style={styles.cont3}>
-                                    <Text style={styles.txt1}>{item?.userName || NaN}, {item?.age || NaN} </Text>
-                                    <Image source={item?.isIdVerified === false ? null : images.verified} style={styles.img1} />
-                                </View>
-                                <Text style={styles.txt2}>{item?.city || NaN}, {item?.country || NaN}</Text>
-                                <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>{item?.distance || NaN} miles</Text>
-                                <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>{item?.myHeading || NaN}</Text>
-
-                                <View style={styles.cont4}>
-                                    <View style={styles.cont5}>
-                                        <View style={{ flexDirection: 'row', }}>
-                                            <Image source={images.star} style={styles.icon1} />
-                                            <Text style={styles.txt3}>Member Since</Text>
-                                        </View>
-                                        <Text style={styles.txt4}>{moment(item?.createdAt)?.fromNow() || NaN}</Text>
-                                    </View>
-
-                                    <View style={styles.cont5}>
-                                        <View style={{ flexDirection: 'row', }}>
-                                            <Image source={images.heart} style={styles.icon1} />
-                                            <Text style={styles.txt3}>Relationship status</Text>
-                                        </View>
-                                        <Text style={styles.txt4}>{item?.currentRelationshipStatus || NaN}</Text>
-                                    </View>
-
-                                    <View style={styles.cont5}>
-                                        <View style={{ flexDirection: 'row', }}>
-                                            <Image source={images.body} style={styles.icon1} />
-                                            <Text style={styles.txt3}>Body</Text>
-                                        </View>
-                                        <Text style={styles.txt4}>{item?.bodyType || NaN}</Text>
-                                    </View>
-
-                                    <View style={styles.cont5}>
-                                        <View style={{ flexDirection: 'row', }}>
-                                            <Image source={images.height} style={styles.icon1} />
-                                            <Text style={styles.txt3}>Height</Text>
-                                        </View>
-                                        <Text style={styles.txt4}>{Math.round(item?.tall?.cm) || 'NaN'} cm</Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.cont6}>
-                                    <Text style={styles.txt5}>Photos</Text>
-                                    {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
-                                </View>
-                                <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                                    {item.publicPhotos.map((photo, index) => (
-                                        <View key={index} style={{ margin: 5 }}>
-                                            <Image
-                                                source={{ uri: photo }}
-                                                style={{ width: 105, height: 150, borderRadius: 10 }}
-                                            />
-                                        </View>
-                                    ))}
-                                </View>
-
-                                <View style={styles.cont6}>
-                                    <Text style={styles.txt5}>Private Photo</Text>
-                                    {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
-                                </View>
-                                <TouchableOpacity onPress={() => requestPrivatePhoto(item?.userId)}>
-                                    <ImageBackground
-                                        source={images.dummy1}
-                                        style={{ height: 150, width: 105, borderRadius: 10, marginLeft: 8, top: 5 }}
-                                        imageStyle={{ borderRadius: 10 }}
-                                        blurRadius={30}
-                                    >
-                                        <View style={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            right: 0,
-                                            bottom: 0,
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                            borderRadius: 10,
-                                        }}>
-                                            <Text style={{
-                                                color: 'white',
-                                                fontSize: 16,
-                                                textAlign: 'center',
-                                            }}>Request to Unlock</Text>
-                                            <TouchableOpacity style={styles.lockIconContainer}>
-                                                <Image
-                                                    source={images.lock}
-                                                    style={{
-                                                        width: 24,
-                                                        height: 24, marginTop: 10
-                                                    }}
-                                                />
-                                            </TouchableOpacity>
-                                        </View>
-
-                                    </ImageBackground>
-                                </TouchableOpacity>
-
-                                <Text style={styles.about}>About</Text>
-                                <Text style={styles.abouttxt}>{item?.aboutUsDescription || NaN}</Text>
-
-                                <Text style={styles.about}>What I am Seeking</Text>
-                                <Text style={styles.abouttxt}>{item?.preferences?.aboutPartnerDescription || NaN}</Text>
-
-
-                                <Text style={styles.about}>Hobbies</Text>
-                                <View style={styles.bodyTypeContainer}>
-                                    {item?.hobbies?.map((hobby) => (
-                                        <TouchableOpacity
-                                            key={hobby}
-                                            style={[
-                                                styles.bodyTypeButton,
-                                                // styles.selectedBodyTypeButton,
-                                            ]}
+                                    <TouchableOpacity style={{}} onPress={() => {
+                                        console.log("Image clicked");
+                                        navigation.navigate("UserProfileDetails", { item: item });
+                                    }}>
+                                        <Animated.Image
+                                            source={{ uri: item?.profilePicture }}
+                                            style={[styles.image, {
+                                                height: imageHeight,
+                                                opacity: imageOpacity,
+                                            }]}
+                                            resizeMode="cover"
+                                        />
+                                        <LinearGradient
+                                            colors={["transparent", "rgba(0,0,0,2)", "rgba(0,0,0,2)"]}
+                                            locations={[0.1, 0.6, 1]}
+                                            style={styles.gradient}
                                         >
-                                            <Text
-                                                style={[
-                                                    styles.bodyTypeText,
-                                                    //    styles.selectedBodyTypeText,
-                                                ]}
+                                        </LinearGradient>
+                                    </TouchableOpacity>
+                                    <View style={styles.details}>
+                                        <View style={styles.contentContainer}>
+                                            <View style={styles.cont1}>
+                                                <Text style={styles.onlineText}>Online</Text>
+                                            </View>
+                                            <View style={styles.cont2}>
+                                                <Text style={styles.txt}>PREMIUM</Text>
+                                            </View>
+                                        </View>
+                                        <View style={styles.cont3}>
+                                            <Text style={styles.txt1}>{item?.userName || NaN}, {item?.age || NaN} </Text>
+                                            <Image source={item?.isIdVerified === false ? null : images.verified} style={styles.img1} />
+                                        </View>
+                                        <Text style={styles.txt2}>{item?.city || NaN}, {item?.country || NaN}</Text>
+                                        <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>{item?.distance || NaN} miles</Text>
+                                        <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>{item?.myHeading || NaN}</Text>
+
+                                        <View style={styles.cont4}>
+                                            <View style={styles.cont5}>
+                                                <View style={{ flexDirection: 'row', }}>
+                                                    <Image source={images.star} style={styles.icon1} />
+                                                    <Text style={styles.txt3}>Member Since</Text>
+                                                </View>
+                                                <Text style={styles.txt4}>{moment(item?.createdAt)?.fromNow() || NaN}</Text>
+                                            </View>
+
+                                            <View style={styles.cont5}>
+                                                <View style={{ flexDirection: 'row', }}>
+                                                    <Image source={images.heart} style={styles.icon1} />
+                                                    <Text style={styles.txt3}>Relationship status</Text>
+                                                </View>
+                                                <Text style={styles.txt4}>{item?.currentRelationshipStatus || NaN}</Text>
+                                            </View>
+
+                                            <View style={styles.cont5}>
+                                                <View style={{ flexDirection: 'row', }}>
+                                                    <Image source={images.body} style={styles.icon1} />
+                                                    <Text style={styles.txt3}>Body</Text>
+                                                </View>
+                                                <Text style={styles.txt4}>{item?.bodyType || NaN}</Text>
+                                            </View>
+
+                                            <View style={styles.cont5}>
+                                                <View style={{ flexDirection: 'row', }}>
+                                                    <Image source={images.height} style={styles.icon1} />
+                                                    <Text style={styles.txt3}>Height</Text>
+                                                </View>
+                                                <Text style={styles.txt4}>{Math.round(item?.tall?.cm) || 'NaN'} cm</Text>
+                                            </View>
+                                        </View>
+
+                                        <View style={styles.cont6}>
+                                            <Text style={styles.txt5}>Photos</Text>
+                                            {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
+                                        </View>
+                                        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                                            {item.publicPhotos.map((photo, index) => (
+                                                <View key={index} style={{ margin: 5 }}>
+                                                    <Image
+                                                        source={{ uri: photo }}
+                                                        style={{ width: 105, height: 150, borderRadius: 10 }}
+                                                    />
+                                                </View>
+                                            ))}
+                                        </View>
+
+                                        <View style={styles.cont6}>
+                                            <Text style={styles.txt5}>Private Photo</Text>
+                                            {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
+                                        </View>
+                                        <TouchableOpacity onPress={() => requestPrivatePhoto(item?.userId)}>
+                                            <ImageBackground
+                                                source={images.dummy1}
+                                                style={{ height: 150, width: 105, borderRadius: 10, marginLeft: 8, top: 5 }}
+                                                imageStyle={{ borderRadius: 10 }}
+                                                blurRadius={30}
                                             >
-                                                {hobby}
-                                            </Text>
+                                                <View style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    bottom: 0,
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                                    borderRadius: 10,
+                                                }}>
+                                                    <Text style={{
+                                                        color: 'white',
+                                                        fontSize: 16,
+                                                        textAlign: 'center',
+                                                    }}>Request to Unlock</Text>
+                                                    <TouchableOpacity style={styles.lockIconContainer}>
+                                                        <Image
+                                                            source={images.lock}
+                                                            style={{
+                                                                width: 24,
+                                                                height: 24, marginTop: 10
+                                                            }}
+                                                        />
+                                                    </TouchableOpacity>
+                                                </View>
+
+                                            </ImageBackground>
                                         </TouchableOpacity>
-                                    ))}
-                                </View>
-                                <View style={{ marginBottom: 100 }}>
-                                    <View style={styles.cont7}>
-                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                            <Image source={images.face} style={styles.face} />
-                                            <Text style={styles.txt6}>Ethnicity</Text>
+
+                                        <Text style={styles.about}>About</Text>
+                                        <Text style={styles.abouttxt}>{item?.aboutUsDescription || NaN}</Text>
+
+                                        <Text style={styles.about}>What I am Seeking</Text>
+                                        <Text style={styles.abouttxt}>{item?.preferences?.aboutPartnerDescription || NaN}</Text>
+
+
+                                        <Text style={styles.about}>Hobbies</Text>
+                                        <View style={styles.bodyTypeContainer}>
+                                            {item?.hobbies?.map((hobby) => (
+                                                <TouchableOpacity
+                                                    key={hobby}
+                                                    style={[
+                                                        styles.bodyTypeButton,
+                                                        // styles.selectedBodyTypeButton,
+                                                    ]}
+                                                >
+                                                    <Text
+                                                        style={[
+                                                            styles.bodyTypeText,
+                                                            //    styles.selectedBodyTypeText,
+                                                        ]}
+                                                    >
+                                                        {hobby}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ))}
                                         </View>
-                                        <Text style={styles.txt7}>{item?.ethnicity || NaN}</Text>
+                                        <View style={{ marginBottom: 100 }}>
+                                            <View style={styles.cont7}>
+                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                                    <Image source={images.face} style={styles.face} />
+                                                    <Text style={styles.txt6}>Ethnicity</Text>
+                                                </View>
+                                                <Text style={styles.txt7}>{item?.ethnicity || NaN}</Text>
+                                            </View>
+
+                                            <View style={styles.cont7}>
+                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                                    <Image source={images.child} style={styles.face} />
+                                                    <Text style={styles.txt6}>Children</Text>
+                                                </View>
+                                                <Text style={styles.txt7}>{item?.children}</Text>
+                                            </View>
+
+                                            <View style={styles.cont7}>
+                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                                    <Image source={images.smoke} style={styles.face} />
+                                                    <Text style={styles.txt6}>Do you smoke?</Text>
+                                                </View>
+                                                <Text style={styles.txt7}>{item?.smoke || NaN}</Text>
+                                            </View>
+
+                                            <View style={styles.cont7}>
+                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                                    <Image source={images.drink} style={styles.face} />
+                                                    <Text style={styles.txt6}>Do you drink?</Text>
+                                                </View>
+                                                <Text style={styles.txt7}>{item?.drink || NaN}</Text>
+                                            </View>
+
+                                            <View style={styles.cont7}>
+                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                                    <Image source={images.education} style={styles.face} />
+                                                    <Text style={styles.txt6}>Education</Text>
+                                                </View>
+                                                <Text style={styles.txt7}>{item?.highestEducation || NaN}</Text>
+                                            </View>
+
+                                            <View style={styles.cont7}>
+                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                                    <Image source={images.face} style={styles.face} />
+                                                    <Text style={styles.txt6}>Occupation</Text>
+                                                </View>
+                                                <Text style={styles.txt7}>{item?.workField || NaN}</Text>
+                                            </View>
+
+                                            <View style={styles.cont7}>
+                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                                    <Image source={images.networth} style={styles.face} />
+                                                    <Text style={styles.txt6}>Net Worth</Text>
+                                                </View>
+                                                <Text style={styles.txt7}>{item?.netWorthRange || NaN}</Text>
+                                            </View>
+
+                                        </View>
+                                    </View>
+                                </Animated.ScrollView>
+                                {/* Action Buttons */}
+                                <Animated.View style={{
+                                    position: "absolute",
+                                    bottom: profileDetailsBottom,
+                                    opacity: profileDetailsOpacity,
+                                    width: "100%"
+                                }}>
+                                    <View style={{ bottom: 30, left: 16 }}>
+                                        <View style={styles.onlineBadge}>
+                                            <Text style={styles.onlineText1}>Online</Text>
+                                        </View>
+                                        <Text style={styles.cardName}>{item.userName}, {item.age}</Text>
+                                        <Text style={styles.cardLocation}>{item.city}</Text>
+                                        <Text style={styles.cardDistance}>{item.distance} miles</Text>
                                     </View>
 
-                                    <View style={styles.cont7}>
-                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                            <Image source={images.child} style={styles.face} />
-                                            <Text style={styles.txt6}>Children</Text>
-                                        </View>
-                                        <Text style={styles.txt7}>{item?.children}</Text>
+                                    {/* Action Buttons */}
+                                    <View style={styles.buttonContainer}>
+                                        <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={() => handleCrossSwipe(index)}>
+                                            <Image source={images.cross} style={styles.buttonIcon} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={() => handleHeartSwipe(index)} style={[styles.circleButton, styles.heartButton]}>
+                                            <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
+                                            <Image source={images.chat} style={styles.buttonIcon} />
+                                        </TouchableOpacity>
                                     </View>
+                                </Animated.View>
 
-                                    <View style={styles.cont7}>
-                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                            <Image source={images.smoke} style={styles.face} />
-                                            <Text style={styles.txt6}>Do you smoke?</Text>
-                                        </View>
-                                        <Text style={styles.txt7}>{item?.smoke || NaN}</Text>
-                                    </View>
-
-                                    <View style={styles.cont7}>
-                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                            <Image source={images.drink} style={styles.face} />
-                                            <Text style={styles.txt6}>Do you drink?</Text>
-                                        </View>
-                                        <Text style={styles.txt7}>{item?.drink || NaN}</Text>
-                                    </View>
-
-                                    <View style={styles.cont7}>
-                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                            <Image source={images.education} style={styles.face} />
-                                            <Text style={styles.txt6}>Education</Text>
-                                        </View>
-                                        <Text style={styles.txt7}>{item?.highestEducation || NaN}</Text>
-                                    </View>
-
-                                    <View style={styles.cont7}>
-                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                            <Image source={images.face} style={styles.face} />
-                                            <Text style={styles.txt6}>Occupation</Text>
-                                        </View>
-                                        <Text style={styles.txt7}>{item?.workField || NaN}</Text>
-                                    </View>
-
-                                    <View style={styles.cont7}>
-                                        <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                            <Image source={images.networth} style={styles.face} />
-                                            <Text style={styles.txt6}>Net Worth</Text>
-                                        </View>
-                                        <Text style={styles.txt7}>{item?.netWorthRange || NaN}</Text>
-                                    </View>
-
-                                </View>
-                            </View>
-                        </Animated.ScrollView>
-                        {/* Action Buttons */}
-                        <Animated.View style={{
-                            position: "absolute",
-                            bottom: profileDetailsBottom,
-                            opacity: profileDetailsOpacity,
-                            width: "100%"
-                        }}>
-                            <View style={{ bottom: 30, left: 16 }}>
-                                <View style={styles.onlineBadge}>
-                                    <Text style={styles.onlineText1}>Online</Text>
-                                </View>
-                                <Text style={styles.cardName}>{item.userName}, {item.age}</Text>
-                                <Text style={styles.cardLocation}>{item.city}</Text>
-                                <Text style={styles.cardDistance}>{item.distance} miles</Text>
-                            </View>
-
-                            {/* Action Buttons */}
-                            <View style={styles.buttonContainer}>
-                                <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={handleCrossSwipe}>
-                                    <Image source={images.cross} style={styles.buttonIcon} />
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={handleHeartSwipe} style={[styles.circleButton, styles.heartButton]}>
-                                    <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
-                                    <Image source={images.chat} style={styles.buttonIcon} />
-                                </TouchableOpacity>
-                            </View>
-                        </Animated.View>
-
-                    </Animated.View>
-                ))}
+                            </Animated.View>
+                        ))}
+                </View>
+            )}
         </View>
     );
 };

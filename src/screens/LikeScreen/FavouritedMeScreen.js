@@ -1,160 +1,158 @@
 import React, { useState, useEffect } from "react";
-import { Text, View, StyleSheet, Image, TouchableOpacity, FlatList, ImageBackground } from 'react-native'
+import { Text, View, StyleSheet, Image, TouchableOpacity, FlatList, ImageBackground, ActivityIndicator, Dimensions } from 'react-native'
 import images from "../../components/images";
 import LinearGradient from 'react-native-linear-gradient';
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import moment from "moment";
+
+const { width, height } = Dimensions.get('window')
 
 const FavouriteMeScreen = ({ navigation }) => {
 
-    const userId = '677687b24cd0469415aa2c8a'
     const [currentPage, setCurrentPage] = useState(0);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isPaginationLoading, setIsPaginationLoading] = useState(false);
     const [hasMoreData, setHasMoreData] = useState(true);
-    const [favouritedme, setFavouritedMe] = useState([
-        {
-            id: "1",
-            name: "Leilanig",
-            age: 19,
-            location: "New Delhi, India",
-            distance: "800 miles",
-            status: "Online",
-            image: images.dummy,
-        },
-        {
-            id: "2",
-            name: "Leilanig",
-            age: 19,
-            location: "New Delhi, India",
-            distance: "800 miles",
-            status: "Offline",
-            image: images.dummy,
-        },
-        {
-            id: "3",
-            name: "Leilanig",
-            age: 19,
-            location: "New Delhi, India",
-            distance: "800 miles",
-            status: "Online",
-            image: images.dummy,
-        },
-        {
-            id: "4",
-            name: "Leilanig",
-            age: 19,
-            location: "New Delhi, India",
-            distance: "800 miles",
-            status: "Offline",
-            image: images.dummy,
-        },
-    ]);
+    const [userdetails, setUserDetails] = useState(null);
+    const [favouritedme, setFavouritedMe] = useState([]);
 
-    const getViewMeData = async (page = 0) => {
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
+        };
+        fetchUserDetails();
+    }, []);
+
+    const getFavouritedMeData = async () => {
+        if (!userdetails?.location?.coordinates) return;
+
         const token = await AsyncStorage.getItem('verifcationToken');
         const headers = {
             Authorization: token,
         };
         const body = {
-            currentPage: page,
+            currentPage,
             pageLength: 20,
-            longitude: 77.3812,
-            latitude: 28.6210,
+            where: {
+                longitude: userdetails?.lcoation?.coordinates[0],
+                latitude: userdetails?.location?.coordinates[1],
+            },
+            sortBy: 'age'
         };
-
+        setIsLoading(true)
         try {
-            const resp = await axios.post(`home/get-favorite/favorited/${userId}`, body, { headers });
-            console.log('Response from the viewed me data:', resp.data.data);
-
-            if (resp.data.data > 0) {
-                setViewedMe((prev) => [...prev, ...resp.data.data]);
-                setHasMoreData(true);
+            const resp = await axios.post(`home/get-favorite/favorited`, body, { headers });
+            console.log('Response from the favorited me data:', resp.data.data);
+            setFavouritedMe(prevData => currentPage === 0 ? resp?.data?.data : [...prevData, ...resp?.data?.data])
+            if (resp?.data?.data?.length < body.pageLength) {
+                setHasMoreData(false)
             } else {
-                setHasMoreData(false);
+                setHasMoreData(true)
             }
+            setIsLoading(false)
         } catch (error) {
             console.error('Error from get viewed data:', error);
-        } finally {
-            setIsLoadingMore(false);
+            setIsLoading(false)
         }
     };
 
-    // useEffect(() => {
-    //     getViewMeData(currentPage);
-    // }, []);
-
-    const loadMoreData = () => {
-        if (!isLoadingMore && hasMoreData) {
-            setIsLoadingMore(true);
-            setCurrentPage((prev) => prev + 1);
-            // getViewMeData(currentPage + 1);
+    useEffect(() => {
+        if (userdetails) {
+            getFavouritedMeData()
         }
-    };
+    }, [userdetails])
+
+    const handleEndReached = () => {
+        if (!isPaginationLoading && hasMoreData) {
+            setIsPaginationLoading(true);
+            setCurrentPage(prevPage => prevPage + 1);
+        }
+    }
+
+    useEffect(() => {
+        if (currentPage >= 0) {
+            getFavouritedMeData()
+        }
+    }, [currentPage])
+
+    useEffect(() => {
+        if (!isPaginationLoading && currentPage > 0) {
+            setIsPaginationLoading(false)
+        }
+    }, [favouritedme])
 
 
-    const renderFavouritedMe = ({ item }) => (
-        <View style={styles.card}>
-            <ImageBackground source={item.image} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
-                <LinearGradient
-                    colors={["transparent", "rgba(0, 0, 0, 0.7)"]}
-                    style={styles.gradientOverlay}
-                />
-                {item.status === "Online" && (
-                    <View style={styles.statusBadge}>
-                        <Text style={styles.statusText}>Online</Text>
-                    </View>
-                )}
-                <View style={styles.overlayContainer}>
-                    <View style={{ flexDirection: 'row', justifyContent: "space-between" }}>
-                        <View>
-                            <Text style={styles.memberName}>{`${item.name}, ${item.age}`}</Text>
-                            <Text style={styles.memberLocation}>{item.location}</Text>
-                            <Text style={styles.memberDistance}>{item.distance}</Text>
+
+    const renderFavouritedMe = ({ item }) => {
+        const lastActive = moment(item?.user?.lastActive).fromNow();
+        return (
+            <View style={styles.card}>
+                <ImageBackground source={{ uri: item?.user?.profilePicture }} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
+                    <LinearGradient colors={["transparent", "rgba(0, 0, 0, 0.7)"]} style={styles.gradientOverlay} />
+                    {item.status === "Online" && (
+                        <View style={styles.statusBadge}>
+                            <Text style={styles.statusText}>Online</Text>
                         </View>
-                        <Image source={images.heart} style={{ height: 15, width: 15, tintColor: 'white', right: 16, alignSelf: 'flex-end' }} />
+                    )}
+                    <View style={styles.overlayContainer}>
+                        <Text style={styles.memberName}>{`${item.user?.userName}, ${item?.user?.age}`}</Text>
+                        <Text style={styles.memberLocation}>{item.city}, {item?.country}</Text>
+                        <Text style={styles.memberDistance}>{item.distance} miles</Text>
                     </View>
-
+                </ImageBackground>
+                <Text style={styles.timeAgo}>{lastActive}</Text>
+                <View style={styles.actionRow}>
+                    <TouchableOpacity style={styles.unhideButton}>
+                        <Text style={styles.unhideText}>Hide</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.iconButton}>
+                        <Image source={images.chat} style={styles.icon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.iconButton}>
+                        <Image source={images.heart} style={styles.icon} />
+                    </TouchableOpacity>
                 </View>
-            </ImageBackground>
-            <Text style={styles.timeAgo}>7 hours ago</Text>
-            <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.unhideButton}>
-                    <Text style={styles.unhideText}>Hide</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 36, width: 36, justifyContent: 'center' }}>
-                    <Image source={images.chat} style={styles.icon} />
-                </TouchableOpacity>
-                <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 36, width: 36, justifyContent: 'center' }}>
-                    <Image source={images.heart} style={styles.icon} />
-                </TouchableOpacity>
             </View>
-        </View>
-    );
+        );
+    }
 
     return (
 
 
         <View style={styles.main}>
-            <FlatList
-                data={favouritedme}
-                renderItem={renderFavouritedMe}
-                keyExtractor={(item, index) => index.toString()}
-                numColumns={2}
-                style={{ marginTop: 20 }}
-                contentContainerStyle={styles.gridContent}
-                onEndReached={loadMoreData}
-                onEndReachedThreshold={0.5} // Trigger load more when 50% from the bottom
-                ListFooterComponent={
-                    isLoadingMore && (
-                        <Text style={{ textAlign: 'center', marginVertical: 10 }}>Loading more...</Text>
-                    )
-                }
-            />
-
+            {isLoading ? (
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color="#0000ff" />
+                </View>
+            ) : (
+                <FlatList
+                    data={favouritedme}
+                    renderItem={renderFavouritedMe}
+                    keyExtractor={(item) => item._id}
+                    numColumns={2}
+                    style={{ marginTop: 20 }}
+                    onEndReached={handleEndReached}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={isPaginationLoading && hasMoreData ? (
+                        <View style={styles.paginationLoader}>
+                            <ActivityIndicator size="small" color="#0000ff" />
+                        </View>
+                    ) : null}
+                />
+            )}
         </View>
     )
 }
-
+ 
 
 export default FavouriteMeScreen;
 
@@ -168,11 +166,10 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     card: {
-        flex: 1,
+        width: width * 0.4,
         margin: 8,
         borderRadius: 10,
         backgroundColor: "#FFF",
-        // elevation: 2,
         overflow: "hidden",
     },
     imageBackground: {

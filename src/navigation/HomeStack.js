@@ -24,6 +24,7 @@ import ViewProfile from "../screens/ProfileScreen/ViewProfileScreen";
 import AboutScreen from "../screens/ProfileScreen/AccountSettingScreens/AboutScreen";
 import ViewRequestScreen from "../screens/ProfileScreen/ViewRequestsScreen";
 import MembershipScreen from "../screens/ProfileScreen/AccountSettingScreens/MembershipandBilling";
+import LaodingScreen from "../components/LoadingScreen";
 
 
 const Stack = createStackNavigator();
@@ -56,6 +57,7 @@ const HomeStack = () => {
             <Stack.Screen name="About" component={AboutScreen} />
             <Stack.Screen name="ViewRequest" component={ViewRequestScreen} />
             <Stack.Screen name="Membership" component={MembershipScreen} />
+
 
 
 

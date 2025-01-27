@@ -16,6 +16,7 @@ import Modal from "react-native-modal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import moment from "moment";
+import Toast from 'react-native-simple-toast'
 
 const { width } = Dimensions.get("window");
 
@@ -84,8 +85,8 @@ const UserProfileDetails = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
             console.log('response from the DISLIKE button', resp.data);
-            getUserFilteredData()
-
+            navigation.goBack('')
+            Toast.show('User Blocked Succuessfully', Toast.SHORT)
         } catch (error) {
             console.log('error from the DISLIKE ', error);
         }
@@ -104,8 +105,8 @@ const UserProfileDetails = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
             console.log('response from the BLOCK button', resp.data);
-            getUserFilteredData()
-
+            navigation.goBack('')
+            Toast.show('User Blocked Succuessfully', Toast.SHORT)
         } catch (error) {
             console.log('error from the BLOCK ', error);
         }
@@ -123,8 +124,8 @@ const UserProfileDetails = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
             console.log('response from the hide button', resp.data);
-            getUserFilteredData()
-
+            navigation.goBack('')
+            Toast.show('User Blocked Succuessfully', Toast.SHORT)
         } catch (error) {
             console.log('error from the hide ', error);
         }
@@ -142,8 +143,8 @@ const UserProfileDetails = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
             console.log('response from the report button', resp.data);
-            getUserFilteredData()
-
+            navigation.goBack('')
+            Toast.show('User Blocked Succuessfully', Toast.SHORT)
         } catch (error) {
             console.log('error from the report ', error);
         }

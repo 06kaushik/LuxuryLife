@@ -369,29 +369,27 @@ const ProfileSignUp = ({ navigation, route }) => {
         const headers = {
             Authorization: token,
         };
-        const publicPhotos = photos.slice(1, 7).filter(Boolean);
-        const profilePicture = urls[0] || '';
 
-        if (profilePicture.length === 0) {
-            Toast.show('Please Upload Profile Picture To Proceed.', Toast.SHORT);
-            return;
-        }
+        const publicPhotos = photos.slice(1, 7).filter(Boolean);
 
         if (publicPhotos.length < 3) {
             Toast.show('Please select at least 3 public photos.', Toast.SHORT);
             return;
         }
+
         try {
-            const urls = await Promise.all(
+            // Change 'urls' to 'uploadedUrls' to avoid the reference error
+            const uploadedUrls = await Promise.all(
                 photos.map((photo, index) => {
                     if (!photo) return null;
                     const isPrivate = index >= 7;
                     return uploadPhoto(photo, isPrivate);
                 })
             );
-            const profilePicture = urls[0] || '';
-            const publicPhotos = urls.slice(1, 7).filter(Boolean);
-            const privatePhotos = urls.slice(7).filter(Boolean);
+
+            const profilePicture = uploadedUrls[0] || ''; // Use uploadedUrls here
+            const publicPhotos = uploadedUrls.slice(1, 7).filter(Boolean);
+            const privatePhotos = uploadedUrls.slice(7).filter(Boolean);
 
             const accountUpdatePayload = {
                 step: 20,
@@ -402,8 +400,10 @@ const ProfileSignUp = ({ navigation, route }) => {
                 },
             };
             console.log('Payload for account update:', accountUpdatePayload);
+
             const response = await axios.put(`auth/update-account/${userId}`, accountUpdatePayload, { headers });
             console.log('Response from account update:', response.data);
+
             if (response.status === 200) {
                 Toast.show('Photos uploaded successfully!', Toast.SHORT);
             }
@@ -416,6 +416,7 @@ const ProfileSignUp = ({ navigation, route }) => {
             Alert.alert('Error', 'Failed to upload photos. Please try again.');
         }
     };
+
 
 
     const handleSubmitSelfie = async () => {
@@ -787,14 +788,19 @@ const ProfileSignUp = ({ navigation, route }) => {
                 Toast.show('Select Photos To Continue.', Toast.SHORT);
                 return;
             }
+            const profilePhotos = photos[0]
+            if (profilePhotos === undefined) {
+                Toast.show('Please Upload Profile photo.', Toast.SHORT);
+                return;
+            }
             const publicPhotos = photos.slice(1, 7).filter(Boolean);
             if (publicPhotos.length < 3) {
                 Toast.show('Please select at least 3 public photos.', Toast.SHORT);
                 return;
             }
             try {
-                await handleSubmit(); // Ensure handleSubmit handles all the validation and upload
-                setCurrentStep(currentStep + 1); // Proceed to the next step
+                await handleSubmit();
+                setCurrentStep(currentStep + 1);
             } catch (error) {
                 console.error('Error updating Photo:', error);
                 Toast.show('There was an error updating your Photo. Please try again later.', Toast.SHORT);
@@ -1719,56 +1725,56 @@ const ProfileSignUp = ({ navigation, route }) => {
             case 24:
                 return (
                     <SafeAreaView style={{ flex: 1 }}>
-                    <KeyboardAvoidingView
-                        style={{ flex: 1 }}
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                        keyboardVerticalOffset={100}
-                    >
-                        <ScrollView
-                            contentContainerStyle={{
-                                // paddingHorizontal: 20,
-                                paddingBottom: 200, // Adjust dynamically for footer space
-                                flexGrow: 1, // Ensures the ScrollView grows with the content
-                            }}
-                            showsVerticalScrollIndicator={false}
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={100}
                         >
-                        <Text style={styles.txt}>How It Works</Text>
-                        <Text style={styles.txt1}>To maintain a safe and genuine community, we require a quick selfie verification. This ensures that all profile on our platform are real and trustworthy.</Text>
-                      
-                            <Image source={images.selfie1} style={styles.img} />
+                            <ScrollView
+                                contentContainerStyle={{
+                                    // paddingHorizontal: 20,
+                                    paddingBottom: 200, // Adjust dynamically for footer space
+                                    flexGrow: 1, // Ensures the ScrollView grows with the content
+                                }}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                <Text style={styles.txt}>How It Works</Text>
+                                <Text style={styles.txt1}>To maintain a safe and genuine community, we require a quick selfie verification. This ensures that all profile on our platform are real and trustworthy.</Text>
 
-                            <View style={styles.cont1}>
-                                <Image source={images.point} style={styles.img2} />
-                                <Text style={styles.txt7}>Instructions</Text>
-                            </View>
+                                <Image source={images.selfie1} style={styles.img} />
 
-                            <View style={styles.cont2}>
-                                <View style={styles.cont3}>
-                                    <Text style={{ textAlign: 'center' }}>1</Text>
+                                <View style={styles.cont1}>
+                                    <Image source={images.point} style={styles.img2} />
+                                    <Text style={styles.txt7}>Instructions</Text>
                                 </View>
-                                <View style={{ marginLeft: 20 }}>
-                                    <Text style={styles.txt8}>Ensure Proper Lighting</Text>
-                                    <Text style={styles.txt9}>Use natural light for a clear photo.</Text>
+
+                                <View style={styles.cont2}>
+                                    <View style={styles.cont3}>
+                                        <Text style={{ textAlign: 'center' }}>1</Text>
+                                    </View>
+                                    <View style={{ marginLeft: 20 }}>
+                                        <Text style={styles.txt8}>Ensure Proper Lighting</Text>
+                                        <Text style={styles.txt9}>Use natural light for a clear photo.</Text>
+                                    </View>
                                 </View>
-                            </View>
-                            <View style={styles.cont2}>
-                                <View style={styles.cont3}>
-                                    <Text style={{ textAlign: 'center' }}>2</Text>
+                                <View style={styles.cont2}>
+                                    <View style={styles.cont3}>
+                                        <Text style={{ textAlign: 'center' }}>2</Text>
+                                    </View>
+                                    <View style={{ marginLeft: 20 }}>
+                                        <Text style={styles.txt8}>Face Camera Directly</Text>
+                                        <Text style={styles.txt9}>Look straight and keep your face centered.</Text>
+                                    </View>
                                 </View>
-                                <View style={{ marginLeft: 20 }}>
-                                    <Text style={styles.txt8}>Face Camera Directly</Text>
-                                    <Text style={styles.txt9}>Look straight and keep your face centered.</Text>
+                                <View style={styles.cont2}>
+                                    <View style={styles.cont3}>
+                                        <Text style={{ textAlign: 'center' }}>3</Text>
+                                    </View>
+                                    <View style={{ marginLeft: 20 }}>
+                                        <Text style={styles.txt8}>Avoid Blurry Images</Text>
+                                        <Text style={styles.txt9}>Hold steady and ensure the image is sharp.</Text>
+                                    </View>
                                 </View>
-                            </View>
-                            <View style={styles.cont2}>
-                                <View style={styles.cont3}>
-                                    <Text style={{ textAlign: 'center' }}>3</Text>
-                                </View>
-                                <View style={{ marginLeft: 20 }}>
-                                    <Text style={styles.txt8}>Avoid Blurry Images</Text>
-                                    <Text style={styles.txt9}>Hold steady and ensure the image is sharp.</Text>
-                                </View>
-                            </View>
                             </ScrollView>
                         </KeyboardAvoidingView>
                     </SafeAreaView>

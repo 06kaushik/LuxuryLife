@@ -1,56 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, Image, StyleSheet, FlatList, ImageBackground } from "react-native";
+import { Text, View, StyleSheet, Image, TouchableOpacity, FlatList, ImageBackground, ActivityIndicator, Dimensions } from 'react-native'
 import images from "../../../components/images";
 import LinearGradient from 'react-native-linear-gradient';
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import moment from "moment";
+
+const { width, height } = Dimensions.get('window')
 
 const HiddenMembers = ({ navigation }) => {
 
-
     const [currentPage, setCurrentPage] = useState(0);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isPaginationLoading, setIsPaginationLoading] = useState(false);
     const [hasMoreData, setHasMoreData] = useState(true);
-    const [hiddenMembers, setHiddenMembers] = useState([
-        {
-            id: "1",
-            name: "Leilanig",
-            age: 19,
-            location: "New Delhi, India",
-            distance: "800 miles",
-            status: "Online",
-            image: images.dummy,
-        },
-        {
-            id: "2",
-            name: "Leilanig",
-            age: 19,
-            location: "New Delhi, India",
-            distance: "800 miles",
-            status: "Offline",
-            image: images.dummy,
-        },
-        {
-            id: "3",
-            name: "Leilanig",
-            age: 19,
-            location: "New Delhi, India",
-            distance: "800 miles",
-            status: "Online",
-            image: images.dummy,
-        },
-        {
-            id: "4",
-            name: "Leilanig",
-            age: 19,
-            location: "New Delhi, India",
-            distance: "800 miles",
-            status: "Offline",
-            image: images.dummy,
-        },
-    ]);
-    const [userdetails, setUserDetails] = useState(null)
-
+    const [userdetails, setUserDetails] = useState(null);
+    const [hiddenmember, setHiddenMember] = useState([]);
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -59,7 +24,6 @@ const HiddenMembers = ({ navigation }) => {
                 if (data !== null) {
                     const parsedData = JSON.parse(data);
                     setUserDetails(parsedData);
-
                 }
             } catch (error) {
                 console.log('Error fetching user data:', error);
@@ -68,77 +32,106 @@ const HiddenMembers = ({ navigation }) => {
         fetchUserDetails();
     }, []);
 
-    const getHiddenMember = async (page = 0) => {
+    const getHiddenMember = async () => {
+        if (!userdetails?.location?.coordinates) return;
+
         const token = await AsyncStorage.getItem('authToken');
         const headers = {
             Authorization: token,
         };
         const body = {
-            currentPage: page,
+            currentPage,
             pageLength: 20,
-
         };
+        setIsLoading(true)
         try {
             const resp = await axios.post(`account/get-hidden-member/${userdetails?._id}`, body, { headers });
-            console.log('Response from the viewed me data:', resp.data.data);
-
-            if (resp.data.data > 0) {
-                setHiddenMembers((prev) => [...prev, ...resp.data.data]);
-                setHasMoreData(true);
+            console.log('Response from the hidden data:', resp.data.data);
+            setHiddenMember(prevData => currentPage === 0 ? resp?.data?.data : [...prevData, ...resp?.data?.data])
+            if (resp?.data?.data?.length < body.pageLength) {
+                setHasMoreData(false)
             } else {
-                setHasMoreData(false);
+                setHasMoreData(true)
             }
+            setIsLoading(false)
         } catch (error) {
             console.error('Error from get viewed data:', error);
-        } finally {
-            setIsLoadingMore(false);
+            setIsLoading(false)
         }
     };
 
     useEffect(() => {
-        getHiddenMember(currentPage);
-    }, []);
-
-    const loadMoreData = () => {
-        if (!isLoadingMore && hasMoreData) {
-            setIsLoadingMore(true);
-            setCurrentPage((prev) => prev + 1);
-            getHiddenMember(currentPage + 1);
+        if (userdetails) {
+            getHiddenMember()
         }
-    };
+    }, [userdetails])
 
-    const renderHiddenMember = ({ item }) => (
-        <View style={styles.card}>
-            <ImageBackground source={item.image} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
-                <LinearGradient
-                    colors={["transparent", "rgba(0, 0, 0, 0.7)"]}
-                    style={styles.gradientOverlay}
-                />
-                {item.status === "Online" && (
-                    <View style={styles.statusBadge}>
-                        <Text style={styles.statusText}>Online</Text>
+    const handleEndReached = () => {
+        if (!isPaginationLoading && hasMoreData) {
+            setIsPaginationLoading(true);
+            setCurrentPage(prevPage => prevPage + 1);
+        }
+    }
+
+    useEffect(() => {
+        if (currentPage >= 0) {
+            getHiddenMember()
+        }
+    }, [currentPage])
+
+    useEffect(() => {
+        if (!isPaginationLoading && currentPage > 0) {
+            setIsPaginationLoading(false)
+        }
+    }, [hiddenmember])
+
+
+    const unhideUser = async (id) => {
+        console.log('user ifff', id);
+
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {}
+        try {
+            const resp = await axios.post(`account/unblock-unhide-member/${id}`, body, { headers })
+            console.log('response from the unhide api', resp?.data);
+            getHiddenMember()
+        } catch (error) {
+            console.log('error from the unhide api', error.response.data.message);
+        }
+    }
+
+
+    const renderHiddenMember = ({ item }) => {
+
+        const lastActive = moment(item?.user?.lastActive).fromNow();
+        return (
+            <View style={styles.card}>
+                <ImageBackground source={{ uri: item?.targetUserId?.profilePicture }} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
+                    <LinearGradient colors={["transparent", "rgba(0, 0, 0, 0.7)"]} style={styles.gradientOverlay} />
+                    {item.status === "Online" && (
+                        <View style={styles.statusBadge}>
+                            <Text style={styles.statusText}>Online</Text>
+                        </View>
+                    )}
+                    <View style={styles.overlayContainer}>
+                        <Text style={styles.memberName}>{`${item.targetUserId?.userName}`}</Text>
+                        <Text style={styles.memberLocation}>{item?.targetUserId?.city}, {item?.targetUserId?.country}</Text>
+                        <Text style={styles.memberDistance}>{item?.targetUserId?.distance} miles</Text>
                     </View>
-                )}
-                <View style={styles.overlayContainer}>
-                    <Text style={styles.memberName}>{`${item.name}, ${item.age}`}</Text>
-                    <Text style={styles.memberLocation}>{item.location}</Text>
-                    <Text style={styles.memberDistance}>{item.distance}</Text>
+                </ImageBackground>
+                <Text style={styles.timeAgo}>{lastActive}</Text>
+                <View style={styles.actionRow}>
+                    <TouchableOpacity onPress={() => unhideUser(item?._id)} style={styles.unhideButton}>
+                        <Text style={styles.unhideText}>UnHide</Text>
+                    </TouchableOpacity>
+
                 </View>
-            </ImageBackground>
-            <Text style={styles.timeAgo}>7 hours ago</Text>
-            <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.unhideButton}>
-                    <Text style={styles.unhideText}>Unhide</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 36, width: 36, justifyContent: 'center' }}>
-                    <Image source={images.chat} style={styles.icon} />
-                </TouchableOpacity>
-                <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 36, width: 36, justifyContent: 'center' }}>
-                    <Image source={images.heart} style={styles.icon} />
-                </TouchableOpacity>
             </View>
-        </View>
-    );
+        );
+    }
 
     return (
         <View style={styles.main}>
@@ -148,34 +141,39 @@ const HiddenMembers = ({ navigation }) => {
                     <Text style={styles.headerText}>Hidden Members</Text>
                 </View>
             </TouchableOpacity>
-            {hiddenMembers.length === 0 ? (
+
+            {isLoading ? ( // Show loader when data is being loaded
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color="#0000ff" />
+                </View>
+            ) : hiddenmember.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Image source={images.hidden} style={styles.emptyImage} />
-                    <Text style={styles.emptyText}>Hurray...you haven't hidden anyone.</Text>
+                    <Text style={styles.emptyText}>Hurray...you haven't UnHide anyone.</Text>
                     <View style={styles.browseButton}>
                         <Text style={styles.browseText}>Browse Members</Text>
                     </View>
                 </View>
             ) : (
                 <FlatList
-                    data={hiddenMembers}
+                    data={hiddenmember}
                     renderItem={renderHiddenMember}
-                    keyExtractor={(item, index) => index.toString()}
+                    keyExtractor={(item) => item._id}
                     numColumns={2}
-                    style={{ marginTop: 20 }}
-                    contentContainerStyle={styles.gridContent}
-                    onEndReached={loadMoreData}
-                    onEndReachedThreshold={0.5} // Trigger load more when 50% from the bottom
-                    ListFooterComponent={
-                        isLoadingMore && (
-                            <Text style={{ textAlign: 'center', marginVertical: 10 }}>Loading more...</Text>
-                        )
-                    }
+                    style={{ marginTop: 30 }}
+                    onEndReached={handleEndReached}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={isPaginationLoading && hasMoreData ? (
+                        <View style={styles.paginationLoader}>
+                            <ActivityIndicator size="small" color="#0000ff" />
+                        </View>
+                    ) : null}
                 />
             )}
         </View>
     );
-};
+}
+
 
 export default HiddenMembers;
 
@@ -198,16 +196,16 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontFamily: "Poppins-Bold",
         marginLeft: 10,
+        top: 2
     },
     gridContent: {
         paddingBottom: 20,
     },
     card: {
-        flex: 1,
+        width: width * 0.4,
         margin: 8,
         borderRadius: 10,
         backgroundColor: "#FFF",
-        // elevation: 2,
         overflow: "hidden",
     },
     imageBackground: {
@@ -255,9 +253,7 @@ const styles = StyleSheet.create({
         marginTop: 5,
     },
     actionRow: {
-        flexDirection: "row",
-        justifyContent: "space-around",
-        alignItems: "center",
+        alignSelf: "center",
         marginTop: 5,
         marginBottom: 10,
     },
@@ -268,12 +264,14 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         borderColor: '#E0E2E9',
         borderWidth: 1,
-        justifyContent: 'center'
+        justifyContent: 'center',
+        width: 150,
     },
     unhideText: {
         fontFamily: "Poppins-Medium",
         fontSize: 14,
         color: "#3C4043",
+        textAlign: 'center'
     },
     icon: {
         width: 15,
@@ -317,4 +315,4 @@ const styles = StyleSheet.create({
         height: "50%",
         borderRadius: 10,
     },
-});
+})
