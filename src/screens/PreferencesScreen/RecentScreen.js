@@ -64,7 +64,7 @@ const RecentScreen = ({ navigation }) => {
         }
     }
 
-    const getUserFilteredData = async () => {
+    const getUserFilteredData = async (page) => {
         if (!filterdata) {
             return;
         }
@@ -106,25 +106,17 @@ const RecentScreen = ({ navigation }) => {
                 gender: filterdata?.where?.gender || ''
             },
             requestType: "mobile",
-            pageLength: 11,
-            currentPage,
-            autopopulate: true
+            pageLength: 2000,
+            currentPage: 0,
+            autopopulate: true,
+            requestSource:'list'
         };
+        console.log('body of recent', body)
         setIsLoading(true);
         try {
             const resp = await axios.post('home/search', body, { headers });
-            // console.log('response from the search API', resp?.data?.data);
-            if (currentPage === 0) {
-                setUserData(resp?.data?.data);
-            } else {
-                setUserData(prevData => [...prevData, ...resp?.data?.data]);
-            }
-            if (resp?.data?.data?.length < body.pageLength) {
-                setHasMoreData(false);
-            } else {
-                setHasMoreData(true);
-            }
-
+            console.log('response from the search API', resp?.data?.data.length);
+            setUserData(resp?.data?.data);
             setIsLoading(false);
         } catch (error) {
             console.log('error from the search API', error.response?.data?.message || error);
@@ -132,12 +124,8 @@ const RecentScreen = ({ navigation }) => {
         }
     };
 
-    const handleEndReached = () => {
-        if (!isPaginationLoading && hasMoreData) {
-            setIsPaginationLoading(true);
-            setCurrentPage(prevPage => prevPage + 1);
-        }
-    };
+
+
 
     const userLike = async (id) => {
         const token = await AsyncStorage.getItem('authToken')
@@ -176,17 +164,7 @@ const RecentScreen = ({ navigation }) => {
         }
     }
 
-    useEffect(() => {
-        if (currentPage > 0) {
-            getUserFilteredData();
-        }
-    }, [currentPage]);
 
-    useEffect(() => {
-        if (!isPaginationLoading && currentPage > 0) {
-            setIsPaginationLoading(false);
-        }
-    }, [userData]);
 
     const renderNewest = ({ item }) => {
         const hasLiked = item.activity_logs.some(log => log.action === "LIKE" && log.userId === userdetails?._id);
@@ -245,13 +223,7 @@ const RecentScreen = ({ navigation }) => {
                     keyExtractor={(item) => item._id}
                     numColumns={2}
                     style={{ marginTop: 20 }}
-                    onEndReached={handleEndReached}
-                    onEndReachedThreshold={0.5}
-                    ListFooterComponent={isPaginationLoading && hasMoreData ? (
-                        <View style={styles.paginationLoader}>
-                            <ActivityIndicator size="small" color="#0000ff" />
-                        </View>
-                    ) : null}
+
                 />
             )}
         </View>

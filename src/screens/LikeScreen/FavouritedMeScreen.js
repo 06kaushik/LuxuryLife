@@ -152,7 +152,7 @@ const FavouriteMeScreen = ({ navigation }) => {
         </View>
     )
 }
- 
+
 
 export default FavouriteMeScreen;
 

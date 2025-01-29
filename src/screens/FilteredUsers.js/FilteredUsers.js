@@ -420,7 +420,8 @@ const FileredUsers = ({ navigation }) => {
             requestType: "mobile",
             pageLength: 11,
             currentPage: 0,
-            autopopulate: true
+            autopopulate: true,
+            requestSource:'list'
         }
         // console.log('body of preferece', body);
 

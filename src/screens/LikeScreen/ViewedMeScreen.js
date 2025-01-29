@@ -9,10 +9,7 @@ import moment from "moment";
 const { width, height } = Dimensions.get('window')
 
 const ViewedMe = ({ navigation }) => {
-    const [currentPage, setCurrentPage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
-    const [isPaginationLoading, setIsPaginationLoading] = useState(false);
-    const [hasMoreData, setHasMoreData] = useState(true);
     const [userdetails, setUserDetails] = useState(null);
     const [viewedme, setViewedMe] = useState([]);
 
@@ -37,8 +34,8 @@ const ViewedMe = ({ navigation }) => {
         const token = await AsyncStorage.getItem('authToken');
         const headers = { Authorization: token };
         const body = {
-            currentPage,
-            pageLength: 20,
+            currentPage: 0,
+            pageLength: 2000,
             where: {
                 longitude: userdetails?.location?.coordinates[0],
                 latitude: userdetails?.location?.coordinates[1]
@@ -49,15 +46,8 @@ const ViewedMe = ({ navigation }) => {
         setIsLoading(true);
         try {
             const resp = await axios.post('home/get-favorite/viewed', body, { headers });
-            console.log('Response from the viewed me data:', resp.data.data);
-
-            setViewedMe(prevData => currentPage === 0 ? resp?.data?.data : [...prevData, ...resp?.data?.data]);
-            if (resp?.data?.data?.length < body.pageLength) {
-                setHasMoreData(false);
-            } else {
-                setHasMoreData(true);
-            }
-
+            console.log('Response from the viewed me data:', resp.data.data.length);
+            setViewedMe(resp?.data?.data)
             setIsLoading(false);
         } catch (error) {
             console.error('Error from get viewed data:', error);
@@ -70,25 +60,6 @@ const ViewedMe = ({ navigation }) => {
             getViewMeData();
         }
     }, [userdetails]);
-
-    const handleEndReached = () => {
-        if (!isPaginationLoading && hasMoreData) {
-            setIsPaginationLoading(true);
-            setCurrentPage(prevPage => prevPage + 1);
-        }
-    };
-
-    useEffect(() => {
-        if (currentPage >= 0) {
-            getViewMeData();
-        }
-    }, [currentPage]);
-
-    useEffect(() => {
-        if (!isPaginationLoading && currentPage > 0) {
-            setIsPaginationLoading(false);
-        }
-    }, [viewedme]);
 
     const userLike = async (id) => {
         const token = await AsyncStorage.getItem('authToken')
@@ -201,13 +172,6 @@ const ViewedMe = ({ navigation }) => {
                     keyExtractor={(item) => item._id}
                     numColumns={2}
                     style={{ marginTop: 20 }}
-                    onEndReached={handleEndReached}
-                    onEndReachedThreshold={0.5}
-                    ListFooterComponent={isPaginationLoading && hasMoreData ? (
-                        <View style={styles.paginationLoader}>
-                            <ActivityIndicator size="small" color="#0000ff" />
-                        </View>
-                    ) : null}
                 />
             )}
         </View>

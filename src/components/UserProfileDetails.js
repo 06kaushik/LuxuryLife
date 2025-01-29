@@ -23,20 +23,12 @@ const { width } = Dimensions.get("window");
 const UserProfileDetails = ({ navigation, route }) => {
 
     const { item } = route.params
-    console.log('response from', item);
-
 
     const [activeIndex, setActiveIndex] = useState(0);
-    const [seek, setSeek] = useState(null)
-    const [userhobbies, setUserHobbies] = useState([])
     const [isModalVisible, setModalVisible] = useState(false);
     const [userdetails, setUserDetails] = useState(null)
     const [modalContent, setModalContent] = useState({ title: "", description: "", action: "" });
     const rbSheetRef = useRef();
-    const seeking = ['Discretion', 'Flexible Schedule', 'Friends', 'No Strings Attached']
-    const getHobbies = ['Travel', 'Sport', 'Cinema', 'Cooking', 'Adventure']
-
-
 
 
     useEffect(() => {
@@ -46,6 +38,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                 if (data !== null) {
                     const parsedData = JSON.parse(data);
                     setUserDetails(parsedData);
+
                 }
             } catch (error) {
                 console.log('Error fetching user data:', error);
@@ -53,6 +46,10 @@ const UserProfileDetails = ({ navigation, route }) => {
         };
         fetchUserDetails();
     }, []);
+
+    useEffect(() => {
+        userViewProfile()
+    }, [userdetails])
 
     const userLike = async (id) => {
         const token = await AsyncStorage.getItem('authToken')
@@ -65,9 +62,9 @@ const UserProfileDetails = ({ navigation, route }) => {
         }
         try {
             const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
-            console.log('response from the like button', resp.data);
-            getUserFilteredData()
-
+            console.log('response from the like button', resp.data.data);
+            navigation.goBack('')
+            //    Toast.show('User Liked Succuessfully', Toast.SHORT)
         } catch (error) {
             console.log('error from the like ', error);
         }
@@ -86,7 +83,7 @@ const UserProfileDetails = ({ navigation, route }) => {
             const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
             console.log('response from the DISLIKE button', resp.data);
             navigation.goBack('')
-            Toast.show('User Blocked Succuessfully', Toast.SHORT)
+            // Toast.show('User Blocked Succuessfully', Toast.SHORT)
         } catch (error) {
             console.log('error from the DISLIKE ', error);
         }
@@ -164,10 +161,28 @@ const UserProfileDetails = ({ navigation, route }) => {
             console.log('response from the request photo', resp.data);
         } catch (error) {
             console.log('error from the request photo', error?.response?.data?.message);
-
-
         }
     }
+
+    const userViewProfile = async () => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            targetUserId: item?.userId,
+            action: "VIEW"
+        }
+        console.log('body of view', body);
+
+        try {
+            const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
+            console.log('response from the View', resp.data);
+        } catch (error) {
+            console.log('error from the View ', error.response.data.message);
+        }
+    }
+
 
 
     const openBottomSheet = () => {
@@ -495,7 +510,9 @@ const UserProfileDetails = ({ navigation, route }) => {
                         <Image source={images.networth} style={styles.face} />
                         <Text style={styles.txt6}>Net Worth</Text>
                     </View>
-                    <Text style={styles.txt7}>{item?.netWorthRange || NaN}</Text>
+                    <Text style={styles.txt7}>
+                        {item?.netWorthRange ? `$${item.netWorthRange.min} - $${item.netWorthRange.max}` : 'NaN'}
+                    </Text>
                 </View>
 
                 <View style={styles.contt8}>

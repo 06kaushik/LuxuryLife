@@ -8,7 +8,8 @@ import {
     Dimensions,
     Image,
     TouchableOpacity,
-    ImageBackground
+    ImageBackground,
+    AppState
 } from "react-native";
 import LinearGradient from 'react-native-linear-gradient';
 import images from "../../components/images";
@@ -17,6 +18,7 @@ import axios from "axios";
 import moment from 'moment';
 import { useIsFocused } from '@react-navigation/native';
 import LaodingScreen from "../../components/LoadingScreen";
+import Toast from 'react-native-simple-toast'
 
 const { width, height } = Dimensions.get("window");
 
@@ -24,10 +26,8 @@ const { width, height } = Dimensions.get("window");
 
 const DashBoardScreen = ({ navigation }) => {
     const scrollY = useRef(new Animated.Value(0)).current;
-    const [seek, setSeek] = useState(null);
-    const [userhobbies, setUserHobbies] = useState([]);
     const [userData, setUserData] = useState([])
-    console.log('userdatalength', userData.length);
+    // console.log('userdatalength', userData);
     // const positions = useRef(userData?.map(() => new Animated.ValueXY({ x: 0, y: 0 }))).current;
     const [userdetails, setUserDetails] = useState(null)
     const [filterdata, setFilterData] = useState(null)
@@ -37,9 +37,29 @@ const DashBoardScreen = ({ navigation }) => {
     const [hasMoreData, setHasMoreData] = useState(true);
     const isFocused = useIsFocused()
     const positions = useRef([]).current;
-    const [swipedItems, setSwipedItems] = useState([]);
+    const [swipedCount, setSwipedCount] = useState(0);
+    const [appState, setAppState] = useState(AppState.currentState);
 
 
+    // useEffect(() => {
+    //     const subscription = AppState.addEventListener("change", (nextAppState) => {
+    //         console.log("AppState changed to", nextAppState);
+    //         setAppState(nextAppState);
+    //     });
+    //     return () => {
+    //         subscription.remove();
+    //     };
+    // }, []);
+
+    // useEffect(() => {
+    //     if (appState === 'active') {
+    //         setIsLoading(true);
+    //         setTimeout(() => {
+    //             setIsLoading(false);
+    //             getUserFilteredData();
+    //         }, 2000);
+    //     }
+    // }, [appState, currentPage]);
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -80,6 +100,7 @@ const DashBoardScreen = ({ navigation }) => {
         }
     }, [userdetails]);
 
+
     const getdatafromAsync = async () => {
         try {
             const resp = await AsyncStorage.getItem('dashboardData')
@@ -94,12 +115,19 @@ const DashBoardScreen = ({ navigation }) => {
         }
     }
 
+    useEffect(() => {
+        if (currentPage > 0) {
+            getUserFilteredData();
+        }
+    }, [currentPage]);
+
     const getUserFilteredData = async () => {
 
         const token = await AsyncStorage.getItem('authToken');
         const headers = {
             Authorization: token,
         };
+
         let body = {
             where: {
                 userNameSearchText: "",
@@ -139,23 +167,19 @@ const DashBoardScreen = ({ navigation }) => {
             requestType: "mobile",
             pageLength: 11,
             currentPage,
-            autopopulate: true
+            autopopulate: true,
+            requestSource: 'dashboard'
         };
-        // console.log('body of search', body);
+
+        console.log('body of search', body);
 
         setIsLoading(true);
         try {
             const resp = await axios.post('home/search', body, { headers });
-            // console.log('response from the search API', resp?.data?.data);
-            if (currentPage === 0) {
-                setUserData(resp?.data?.data);
-            } else {
-                setUserData(prevData => [...prevData, ...resp?.data?.data]);
-            }
-            if (resp?.data?.data?.length < body.pageLength) {
+            const newData = resp?.data?.data;
+            setUserData(newData);  // Replace previous data with new chunk
+            if (newData.length < body.pageLength) {
                 setHasMoreData(false);
-            } else {
-                setHasMoreData(true);
             }
             setIsLoading(false);
         } catch (error) {
@@ -164,41 +188,6 @@ const DashBoardScreen = ({ navigation }) => {
         }
     };
 
-
-
-    useEffect(() => {
-        if (currentPage > 0) {
-            getUserFilteredData();
-        }
-    }, [currentPage]);
-
-    useEffect(() => {
-        if (!isPaginationLoading && currentPage > 0) {
-            setIsPaginationLoading(false);
-        }
-    }, [userData]);
-
-
-    const handleEndReached = () => {
-        if (!isPaginationLoading && hasMoreData) {
-            setIsPaginationLoading(true);
-            setCurrentPage(prevPage => prevPage + 1);
-        }
-    };
-
-    const handleSeeking = (type) => {
-        setSeek(type);
-    };
-
-    const handleHHobbies = (hobby) => {
-        if (userhobbies.includes(hobby)) {
-            setUserHobbies(userhobbies.filter((item) => item !== hobby));
-        } else if (userhobbies.length < 7) {
-            setUserHobbies([...userhobbies, hobby]);
-        } else {
-            Toast.show('You can select up to 7 Hobbies only', Toast.SHORT);
-        }
-    };
 
     const panResponder = (index) => PanResponder.create({
         onMoveShouldSetPanResponder: (event, gesture) => {
@@ -237,9 +226,15 @@ const DashBoardScreen = ({ navigation }) => {
         },
     });
 
-
     const handleSwipe = (index, direction) => {
         positions[index].setValue({ x: 0, y: 0 });
+        if (index === 0) {
+            setIsLoading(true);
+            setCurrentPage((prevPage) => prevPage + 1);
+            setTimeout(() => {
+                setIsLoading(false);
+            }, 1000);
+        }
     };
 
     const rotate = (index) => {
@@ -251,7 +246,7 @@ const DashBoardScreen = ({ navigation }) => {
                 extrapolate: "clamp",
             });
         }
-        // If position is not initialized, return a default value
+
         return "0deg";
     };
 
@@ -267,7 +262,7 @@ const DashBoardScreen = ({ navigation }) => {
         extrapolate: "clamp",
     });
 
-    const handleHeartSwipe = (index) => {
+    const handleHeartSwipe = (index, id) => {
         if (positions[index]) {
             Animated.timing(positions[index], {
                 toValue: { x: width + 100, y: 0 },
@@ -275,22 +270,21 @@ const DashBoardScreen = ({ navigation }) => {
                 useNativeDriver: true,
             }).start(() => {
                 handleSwipe(index, "right");
+                userLike(id)
             });
         }
     };
 
-    const handleCrossSwipe = (index) => {
-        console.log('indexxx crosss', index);
-
+    const handleCrossSwipe = (index, id) => {
         Animated.timing(positions[index], {
-            toValue: { x: -width - 100, y: 0 }, // Move card to the left
+            toValue: { x: -width - 100, y: 0 },
             duration: 300,
             useNativeDriver: true,
         }).start(() => {
             handleSwipe(index, "left");
+            userDisLike(id)
         });
     };
-
 
     const profileDetailsBottom = scrollY.interpolate({
         inputRange: [0, 100],
@@ -299,8 +293,8 @@ const DashBoardScreen = ({ navigation }) => {
     });
 
     const profileDetailsOpacity = scrollY.interpolate({
-        inputRange: [0, 100],  // Track scrolling from the start
-        outputRange: [1, 0],  // Fade out the profile details as user scrolls
+        inputRange: [0, 100],
+        outputRange: [1, 0],
         extrapolate: 'clamp',
     });
 
@@ -315,14 +309,53 @@ const DashBoardScreen = ({ navigation }) => {
         }
         try {
             const resp = await axios.post('home/request-private-pic-access', body, { headers })
-            // console.log('response from the request photo', resp.data);
+            Toast.show('Private Pic Requested', Toast.SHORT)
         } catch (error) {
             console.log('error from the request photo', error?.response?.data?.message);
+        }
+    }
 
+    const userLike = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            targetUserId: id,
+            action: "LIKE"
+        }
+        try {
+            const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
+            console.log('response from the like button', resp.data);
+
+        } catch (error) {
+            console.log('error from the like ', error);
+        }
+    }
+
+    const userDisLike = async (id) => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        let body = {
+            targetUserId: id,
+            action: "UNLIKE"
+        }
+        try {
+            const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
+            console.log('response from the like button', resp.data);
+
+        } catch (error) {
+            console.log('error from the like ', error);
         }
     }
 
 
+    
+   
+
+ 
     return (
         <View style={{ flex: 1 }}>
             {isLoading ? (
@@ -354,8 +387,6 @@ const DashBoardScreen = ({ navigation }) => {
                                                 rotate: rotate(index),
                                             },
                                         ]
-
-
                                     },
                                 ]}
                                 {...panResponder(index).panHandlers}
@@ -398,40 +429,40 @@ const DashBoardScreen = ({ navigation }) => {
                                             </View>
                                         </View>
                                         <View style={styles.cont3}>
-                                            <Text style={styles.txt1}>{item?.userName || NaN}, {item?.age || NaN} </Text>
+                                            <Text style={styles.txt1}>{item?.userName || 'NaN'}, {item?.age || 'NaN'}</Text>
                                             <Image source={item?.isIdVerified === false ? null : images.verified} style={styles.img1} />
                                         </View>
-                                        <Text style={styles.txt2}>{item?.city || NaN}, {item?.country || NaN}</Text>
-                                        <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>{item?.distance || NaN} miles</Text>
-                                        <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>{item?.myHeading || NaN}</Text>
+                                        <Text style={styles.txt2}>{item?.city || 'NaN'}, {item?.country || 'NaN'}</Text>
+                                        <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>{item?.distance || 'NaN'} miles</Text>
+                                        <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>{item?.myHeading || 'NaN'}</Text>
 
                                         <View style={styles.cont4}>
                                             <View style={styles.cont5}>
-                                                <View style={{ flexDirection: 'row', }}>
+                                                <View style={{ flexDirection: 'row' }}>
                                                     <Image source={images.star} style={styles.icon1} />
                                                     <Text style={styles.txt3}>Member Since</Text>
                                                 </View>
-                                                <Text style={styles.txt4}>{moment(item?.createdAt)?.fromNow() || NaN}</Text>
+                                                <Text style={styles.txt4}>{moment(item?.createdAt)?.fromNow() || 'NaN'}</Text>
                                             </View>
 
                                             <View style={styles.cont5}>
-                                                <View style={{ flexDirection: 'row', }}>
+                                                <View style={{ flexDirection: 'row' }}>
                                                     <Image source={images.heart} style={styles.icon1} />
                                                     <Text style={styles.txt3}>Relationship status</Text>
                                                 </View>
-                                                <Text style={styles.txt4}>{item?.currentRelationshipStatus || NaN}</Text>
+                                                <Text style={styles.txt4}>{item?.currentRelationshipStatus || 'NaN'}</Text>
                                             </View>
 
                                             <View style={styles.cont5}>
-                                                <View style={{ flexDirection: 'row', }}>
+                                                <View style={{ flexDirection: 'row' }}>
                                                     <Image source={images.body} style={styles.icon1} />
                                                     <Text style={styles.txt3}>Body</Text>
                                                 </View>
-                                                <Text style={styles.txt4}>{item?.bodyType || NaN}</Text>
+                                                <Text style={styles.txt4}>{item?.bodyType || 'NaN'}</Text>
                                             </View>
 
                                             <View style={styles.cont5}>
-                                                <View style={{ flexDirection: 'row', }}>
+                                                <View style={{ flexDirection: 'row' }}>
                                                     <Image source={images.height} style={styles.icon1} />
                                                     <Text style={styles.txt3}>Height</Text>
                                                 </View>
@@ -441,22 +472,22 @@ const DashBoardScreen = ({ navigation }) => {
 
                                         <View style={styles.cont6}>
                                             <Text style={styles.txt5}>Photos</Text>
-                                            {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
                                         </View>
                                         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                                            {item.publicPhotos.map((photo, index) => (
-                                                <View key={index} style={{ margin: 5 }}>
-                                                    <Image
-                                                        source={{ uri: photo }}
-                                                        style={{ width: 105, height: 150, borderRadius: 10 }}
-                                                    />
-                                                </View>
+                                            {item?.publicPhotos?.map((photo, index) => (
+                                                photo && (
+                                                    <View key={index} style={{ margin: 5 }}>
+                                                        <Image
+                                                            source={{ uri: photo }}
+                                                            style={{ width: 105, height: 150, borderRadius: 10 }}
+                                                        />
+                                                    </View>
+                                                )
                                             ))}
                                         </View>
 
                                         <View style={styles.cont6}>
                                             <Text style={styles.txt5}>Private Photo</Text>
-                                            {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
                                         </View>
                                         <TouchableOpacity onPress={() => requestPrivatePhoto(item?.userId)}>
                                             <ImageBackground
@@ -491,45 +522,33 @@ const DashBoardScreen = ({ navigation }) => {
                                                         />
                                                     </TouchableOpacity>
                                                 </View>
-
                                             </ImageBackground>
                                         </TouchableOpacity>
 
                                         <Text style={styles.about}>About</Text>
-                                        <Text style={styles.abouttxt}>{item?.aboutUsDescription || NaN}</Text>
+                                        <Text style={styles.abouttxt}>{item?.aboutUsDescription || 'NaN'}</Text>
 
                                         <Text style={styles.about}>What I am Seeking</Text>
-                                        <Text style={styles.abouttxt}>{item?.preferences?.aboutPartnerDescription || NaN}</Text>
-
+                                        <Text style={styles.abouttxt}>{item?.preferences?.aboutPartnerDescription || 'NaN'}</Text>
 
                                         <Text style={styles.about}>Hobbies</Text>
                                         <View style={styles.bodyTypeContainer}>
                                             {item?.hobbies?.map((hobby) => (
-                                                <TouchableOpacity
-                                                    key={hobby}
-                                                    style={[
-                                                        styles.bodyTypeButton,
-                                                        // styles.selectedBodyTypeButton,
-                                                    ]}
-                                                >
-                                                    <Text
-                                                        style={[
-                                                            styles.bodyTypeText,
-                                                            //    styles.selectedBodyTypeText,
-                                                        ]}
-                                                    >
+                                                <TouchableOpacity key={hobby} style={styles.bodyTypeButton}>
+                                                    <Text style={styles.bodyTypeText}>
                                                         {hobby}
                                                     </Text>
                                                 </TouchableOpacity>
                                             ))}
                                         </View>
+
                                         <View style={{ marginBottom: 100 }}>
                                             <View style={styles.cont7}>
                                                 <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
                                                     <Image source={images.face} style={styles.face} />
                                                     <Text style={styles.txt6}>Ethnicity</Text>
                                                 </View>
-                                                <Text style={styles.txt7}>{item?.ethnicity || NaN}</Text>
+                                                <Text style={styles.txt7}>{item?.ethnicity || 'NaN'}</Text>
                                             </View>
 
                                             <View style={styles.cont7}>
@@ -537,7 +556,7 @@ const DashBoardScreen = ({ navigation }) => {
                                                     <Image source={images.child} style={styles.face} />
                                                     <Text style={styles.txt6}>Children</Text>
                                                 </View>
-                                                <Text style={styles.txt7}>{item?.children}</Text>
+                                                <Text style={styles.txt7}>{item?.children || 'NaN'}</Text>
                                             </View>
 
                                             <View style={styles.cont7}>
@@ -545,7 +564,7 @@ const DashBoardScreen = ({ navigation }) => {
                                                     <Image source={images.smoke} style={styles.face} />
                                                     <Text style={styles.txt6}>Do you smoke?</Text>
                                                 </View>
-                                                <Text style={styles.txt7}>{item?.smoke || NaN}</Text>
+                                                <Text style={styles.txt7}>{item?.smoke || 'NaN'}</Text>
                                             </View>
 
                                             <View style={styles.cont7}>
@@ -553,7 +572,7 @@ const DashBoardScreen = ({ navigation }) => {
                                                     <Image source={images.drink} style={styles.face} />
                                                     <Text style={styles.txt6}>Do you drink?</Text>
                                                 </View>
-                                                <Text style={styles.txt7}>{item?.drink || NaN}</Text>
+                                                <Text style={styles.txt7}>{item?.drink || 'NaN'}</Text>
                                             </View>
 
                                             <View style={styles.cont7}>
@@ -561,7 +580,7 @@ const DashBoardScreen = ({ navigation }) => {
                                                     <Image source={images.education} style={styles.face} />
                                                     <Text style={styles.txt6}>Education</Text>
                                                 </View>
-                                                <Text style={styles.txt7}>{item?.highestEducation || NaN}</Text>
+                                                <Text style={styles.txt7}>{item?.highestEducation || 'NaN'}</Text>
                                             </View>
 
                                             <View style={styles.cont7}>
@@ -569,7 +588,7 @@ const DashBoardScreen = ({ navigation }) => {
                                                     <Image source={images.face} style={styles.face} />
                                                     <Text style={styles.txt6}>Occupation</Text>
                                                 </View>
-                                                <Text style={styles.txt7}>{item?.workField || NaN}</Text>
+                                                <Text style={styles.txt7}>{item?.workField || 'NaN'}</Text>
                                             </View>
 
                                             <View style={styles.cont7}>
@@ -577,13 +596,15 @@ const DashBoardScreen = ({ navigation }) => {
                                                     <Image source={images.networth} style={styles.face} />
                                                     <Text style={styles.txt6}>Net Worth</Text>
                                                 </View>
-                                                <Text style={styles.txt7}>{item?.netWorthRange || NaN}</Text>
+                                                <Text style={styles.txt7}>
+                                                    {item?.netWorthRange ? `$${item.netWorthRange.min} - $${item.netWorthRange.max}` : 'NaN'}
+                                                </Text>
                                             </View>
-
                                         </View>
                                     </View>
+
+
                                 </Animated.ScrollView>
-                                {/* Action Buttons */}
                                 <Animated.View style={{
                                     position: "absolute",
                                     bottom: profileDetailsBottom,
@@ -598,13 +619,11 @@ const DashBoardScreen = ({ navigation }) => {
                                         <Text style={styles.cardLocation}>{item.city}</Text>
                                         <Text style={styles.cardDistance}>{item.distance} miles</Text>
                                     </View>
-
-                                    {/* Action Buttons */}
                                     <View style={styles.buttonContainer}>
-                                        <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={() => handleCrossSwipe(index)}>
+                                        <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={() => handleCrossSwipe(index, item?.userId)}>
                                             <Image source={images.cross} style={styles.buttonIcon} />
                                         </TouchableOpacity>
-                                        <TouchableOpacity onPress={() => handleHeartSwipe(index)} style={[styles.circleButton, styles.heartButton]}>
+                                        <TouchableOpacity onPress={() => handleHeartSwipe(index, item?.userId)} style={[styles.circleButton, styles.heartButton]}>
                                             <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
                                         </TouchableOpacity>
                                         <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
@@ -612,7 +631,6 @@ const DashBoardScreen = ({ navigation }) => {
                                         </TouchableOpacity>
                                     </View>
                                 </Animated.View>
-
                             </Animated.View>
                         ))}
                 </View>
@@ -666,6 +684,7 @@ const styles = StyleSheet.create({
 
     image: {
         width: "100%",
+        // resizeMode:'contain'
     },
     gradient: {
         position: "absolute",
@@ -703,20 +722,20 @@ const styles = StyleSheet.create({
         top: 1
     },
     cardName: {
-        color: "black",
+        color: "white",
         fontSize: 28,
         fontWeight: "bold",
         top: 5
     },
     cardLocation: {
-        color: "black",
+        color: "white",
         fontSize: 16,
         opacity: 0.8,
         top: 10
     },
 
     cardDistance: {
-        color: "black",
+        color: "white",
         fontSize: 16,
         opacity: 0.8,
         top: 15

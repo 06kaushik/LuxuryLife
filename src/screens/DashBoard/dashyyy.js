@@ -8,7 +8,8 @@ import {
     Dimensions,
     Image,
     TouchableOpacity,
-    ImageBackground
+    ImageBackground,
+    AppState
 } from "react-native";
 import LinearGradient from 'react-native-linear-gradient';
 import images from "../../components/images";
@@ -28,7 +29,6 @@ const DashBoardScreen = ({ navigation }) => {
     const [userhobbies, setUserHobbies] = useState([]);
     const [userData, setUserData] = useState([])
     console.log('userdatalength', userData.length);
-
     // const positions = useRef(userData?.map(() => new Animated.ValueXY({ x: 0, y: 0 }))).current;
     const [userdetails, setUserDetails] = useState(null)
     const [filterdata, setFilterData] = useState(null)
@@ -38,9 +38,29 @@ const DashBoardScreen = ({ navigation }) => {
     const [hasMoreData, setHasMoreData] = useState(true);
     const isFocused = useIsFocused()
     const positions = useRef([]).current;
-    const [swipedItems, setSwipedItems] = useState([]);
+    const [swipedCount, setSwipedCount] = useState(0);
+    const [appState, setAppState] = useState(AppState.currentState);
 
 
+
+    useEffect(() => {
+        const subscription = AppState.addEventListener("change", (nextAppState) => {
+            setAppState(nextAppState);
+        });
+        return () => {
+            subscription.remove();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (appState === 'active') {
+            setIsLoading(true);
+            setTimeout(() => {
+                setIsLoading(false);
+                getUserFilteredData();
+            }, 2000);
+        }
+    }, [appState]);
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -205,7 +225,7 @@ const DashBoardScreen = ({ navigation }) => {
     const panResponder = (index) => PanResponder.create({
         onMoveShouldSetPanResponder: (event, gesture) => {
             const isHorizontal = Math.abs(gesture.dx) > Math.abs(gesture.dy);
-            return isHorizontal;
+            return isHorizontal || Math.abs(gesture.dx) > 10;
         },
         onPanResponderMove: (event, gesture) => {
             if (positions[index]) {
@@ -238,6 +258,7 @@ const DashBoardScreen = ({ navigation }) => {
             }
         },
     });
+
 
     const handleSwipe = (index, direction) => {
         positions[index].setValue({ x: 0, y: 0 });
@@ -281,6 +302,8 @@ const DashBoardScreen = ({ navigation }) => {
     };
 
     const handleCrossSwipe = (index) => {
+        console.log('indexxx crosss', index);
+
         Animated.timing(positions[index], {
             toValue: { x: -width - 100, y: 0 }, // Move card to the left
             duration: 300,
@@ -314,7 +337,7 @@ const DashBoardScreen = ({ navigation }) => {
         }
         try {
             const resp = await axios.post('home/request-private-pic-access', body, { headers })
-            console.log('response from the request photo', resp.data);
+            // console.log('response from the request photo', resp.data);
         } catch (error) {
             console.log('error from the request photo', error?.response?.data?.message);
 
@@ -388,231 +411,7 @@ const DashBoardScreen = ({ navigation }) => {
                                         >
                                         </LinearGradient>
                                     </TouchableOpacity>
-                                    <View style={styles.details}>
-                                        <View style={styles.contentContainer}>
-                                            <View style={styles.cont1}>
-                                                <Text style={styles.onlineText}>Online</Text>
-                                            </View>
-                                            <View style={styles.cont2}>
-                                                <Text style={styles.txt}>PREMIUM</Text>
-                                            </View>
-                                        </View>
-                                        <View style={styles.cont3}>
-                                            <Text style={styles.txt1}>{item?.userName || NaN}, {item?.age || NaN} </Text>
-                                            <Image source={item?.isIdVerified === false ? null : images.verified} style={styles.img1} />
-                                        </View>
-                                        <Text style={styles.txt2}>{item?.city || NaN}, {item?.country || NaN}</Text>
-                                        <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>{item?.distance || NaN} miles</Text>
-                                        <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>{item?.myHeading || NaN}</Text>
-
-                                        <View style={styles.cont4}>
-                                            <View style={styles.cont5}>
-                                                <View style={{ flexDirection: 'row', }}>
-                                                    <Image source={images.star} style={styles.icon1} />
-                                                    <Text style={styles.txt3}>Member Since</Text>
-                                                </View>
-                                                <Text style={styles.txt4}>{moment(item?.createdAt)?.fromNow() || NaN}</Text>
-                                            </View>
-
-                                            <View style={styles.cont5}>
-                                                <View style={{ flexDirection: 'row', }}>
-                                                    <Image source={images.heart} style={styles.icon1} />
-                                                    <Text style={styles.txt3}>Relationship status</Text>
-                                                </View>
-                                                <Text style={styles.txt4}>{item?.currentRelationshipStatus || NaN}</Text>
-                                            </View>
-
-                                            <View style={styles.cont5}>
-                                                <View style={{ flexDirection: 'row', }}>
-                                                    <Image source={images.body} style={styles.icon1} />
-                                                    <Text style={styles.txt3}>Body</Text>
-                                                </View>
-                                                <Text style={styles.txt4}>{item?.bodyType || NaN}</Text>
-                                            </View>
-
-                                            <View style={styles.cont5}>
-                                                <View style={{ flexDirection: 'row', }}>
-                                                    <Image source={images.height} style={styles.icon1} />
-                                                    <Text style={styles.txt3}>Height</Text>
-                                                </View>
-                                                <Text style={styles.txt4}>{Math.round(item?.tall?.cm) || 'NaN'} cm</Text>
-                                            </View>
-                                        </View>
-
-                                        <View style={styles.cont6}>
-                                            <Text style={styles.txt5}>Photos</Text>
-                                            {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
-                                        </View>
-                                        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                                            {item.publicPhotos.map((photo, index) => (
-                                                <View key={index} style={{ margin: 5 }}>
-                                                    <Image
-                                                        source={{ uri: photo }}
-                                                        style={{ width: 105, height: 150, borderRadius: 10 }}
-                                                    />
-                                                </View>
-                                            ))}
-                                        </View>
-
-                                        <View style={styles.cont6}>
-                                            <Text style={styles.txt5}>Private Photo</Text>
-                                            {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
-                                        </View>
-                                        <TouchableOpacity onPress={() => requestPrivatePhoto(item?.userId)}>
-                                            <ImageBackground
-                                                source={images.dummy1}
-                                                style={{ height: 150, width: 105, borderRadius: 10, marginLeft: 8, top: 5 }}
-                                                imageStyle={{ borderRadius: 10 }}
-                                                blurRadius={30}
-                                            >
-                                                <View style={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    right: 0,
-                                                    bottom: 0,
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                                    borderRadius: 10,
-                                                }}>
-                                                    <Text style={{
-                                                        color: 'white',
-                                                        fontSize: 16,
-                                                        textAlign: 'center',
-                                                    }}>Request to Unlock</Text>
-                                                    <TouchableOpacity style={styles.lockIconContainer}>
-                                                        <Image
-                                                            source={images.lock}
-                                                            style={{
-                                                                width: 24,
-                                                                height: 24, marginTop: 10
-                                                            }}
-                                                        />
-                                                    </TouchableOpacity>
-                                                </View>
-
-                                            </ImageBackground>
-                                        </TouchableOpacity>
-
-                                        <Text style={styles.about}>About</Text>
-                                        <Text style={styles.abouttxt}>{item?.aboutUsDescription || NaN}</Text>
-
-                                        <Text style={styles.about}>What I am Seeking</Text>
-                                        <Text style={styles.abouttxt}>{item?.preferences?.aboutPartnerDescription || NaN}</Text>
-
-
-                                        <Text style={styles.about}>Hobbies</Text>
-                                        <View style={styles.bodyTypeContainer}>
-                                            {item?.hobbies?.map((hobby) => (
-                                                <TouchableOpacity
-                                                    key={hobby}
-                                                    style={[
-                                                        styles.bodyTypeButton,
-                                                        // styles.selectedBodyTypeButton,
-                                                    ]}
-                                                >
-                                                    <Text
-                                                        style={[
-                                                            styles.bodyTypeText,
-                                                            //    styles.selectedBodyTypeText,
-                                                        ]}
-                                                    >
-                                                        {hobby}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            ))}
-                                        </View>
-                                        <View style={{ marginBottom: 100 }}>
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.face} style={styles.face} />
-                                                    <Text style={styles.txt6}>Ethnicity</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.ethnicity || NaN}</Text>
-                                            </View>
-
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.child} style={styles.face} />
-                                                    <Text style={styles.txt6}>Children</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.children}</Text>
-                                            </View>
-
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.smoke} style={styles.face} />
-                                                    <Text style={styles.txt6}>Do you smoke?</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.smoke || NaN}</Text>
-                                            </View>
-
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.drink} style={styles.face} />
-                                                    <Text style={styles.txt6}>Do you drink?</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.drink || NaN}</Text>
-                                            </View>
-
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.education} style={styles.face} />
-                                                    <Text style={styles.txt6}>Education</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.highestEducation || NaN}</Text>
-                                            </View>
-
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.face} style={styles.face} />
-                                                    <Text style={styles.txt6}>Occupation</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.workField || NaN}</Text>
-                                            </View>
-
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.networth} style={styles.face} />
-                                                    <Text style={styles.txt6}>Net Worth</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.netWorthRange || NaN}</Text>
-                                            </View>
-
-                                        </View>
-                                    </View>
                                 </Animated.ScrollView>
-                                {/* Action Buttons */}
-                                <Animated.View style={{
-                                    position: "absolute",
-                                    bottom: profileDetailsBottom,
-                                    opacity: profileDetailsOpacity,
-                                    width: "100%"
-                                }}>
-                                    <View style={{ bottom: 30, left: 16 }}>
-                                        <View style={styles.onlineBadge}>
-                                            <Text style={styles.onlineText1}>Online</Text>
-                                        </View>
-                                        <Text style={styles.cardName}>{item.userName}, {item.age}</Text>
-                                        <Text style={styles.cardLocation}>{item.city}</Text>
-                                        <Text style={styles.cardDistance}>{item.distance} miles</Text>
-                                    </View>
-
-                                    {/* Action Buttons */}
-                                    <View style={styles.buttonContainer}>
-                                        <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={() => handleCrossSwipe(index)}>
-                                            <Image source={images.cross} style={styles.buttonIcon} />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity onPress={() => handleHeartSwipe(index)} style={[styles.circleButton, styles.heartButton]}>
-                                            <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
-                                            <Image source={images.chat} style={styles.buttonIcon} />
-                                        </TouchableOpacity>
-                                    </View>
-                                </Animated.View>
-
                             </Animated.View>
                         ))}
                 </View>
