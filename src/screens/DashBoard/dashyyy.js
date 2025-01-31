@@ -18,6 +18,7 @@ import axios from "axios";
 import moment from 'moment';
 import { useIsFocused } from '@react-navigation/native';
 import LaodingScreen from "../../components/LoadingScreen";
+import Toast from 'react-native-simple-toast'
 
 const { width, height } = Dimensions.get("window");
 
@@ -25,10 +26,8 @@ const { width, height } = Dimensions.get("window");
 
 const DashBoardScreen = ({ navigation }) => {
     const scrollY = useRef(new Animated.Value(0)).current;
-    const [seek, setSeek] = useState(null);
-    const [userhobbies, setUserHobbies] = useState([]);
     const [userData, setUserData] = useState([])
-    console.log('userdatalength', userData.length);
+    console.log('userdatalength', userData);
     // const positions = useRef(userData?.map(() => new Animated.ValueXY({ x: 0, y: 0 }))).current;
     const [userdetails, setUserDetails] = useState(null)
     const [filterdata, setFilterData] = useState(null)
@@ -42,9 +41,14 @@ const DashBoardScreen = ({ navigation }) => {
     const [appState, setAppState] = useState(AppState.currentState);
 
 
+    useEffect(() => {
+        getdatafromAsync()
+        getUserFilteredData();
+    }, [isFocused])
 
     useEffect(() => {
         const subscription = AppState.addEventListener("change", (nextAppState) => {
+            console.log("AppState changed to", nextAppState);
             setAppState(nextAppState);
         });
         return () => {
@@ -60,7 +64,7 @@ const DashBoardScreen = ({ navigation }) => {
                 getUserFilteredData();
             }, 2000);
         }
-    }, [appState]);
+    }, [appState, currentPage]);
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -69,7 +73,6 @@ const DashBoardScreen = ({ navigation }) => {
                 if (data !== null) {
                     const parsedData = JSON.parse(data);
                     setUserDetails(parsedData);
-
                 }
             } catch (error) {
                 console.log('Error fetching user data:', error);
@@ -87,7 +90,7 @@ const DashBoardScreen = ({ navigation }) => {
                     positions[i] = new Animated.ValueXY({ x: 0, y: 0 });
                 }
             }
-            console.log("positionsss", positions);
+            // console.log("positionsss", positions);
         }
     }, [userData]);
 
@@ -101,6 +104,7 @@ const DashBoardScreen = ({ navigation }) => {
         }
     }, [userdetails]);
 
+
     const getdatafromAsync = async () => {
         try {
             const resp = await AsyncStorage.getItem('dashboardData')
@@ -109,11 +113,16 @@ const DashBoardScreen = ({ navigation }) => {
                 const parseData = JSON.parse(resp)
                 setFilterData(parseData)
             }
-
         } catch (error) {
             console.log('error from the async dash data', error);
         }
     }
+
+    useEffect(() => {
+        if (currentPage > 0) {
+            getUserFilteredData();
+        }
+    }, [currentPage]);
 
     const getUserFilteredData = async () => {
 
@@ -121,6 +130,7 @@ const DashBoardScreen = ({ navigation }) => {
         const headers = {
             Authorization: token,
         };
+
         let body = {
             where: {
                 userNameSearchText: "",
@@ -128,8 +138,8 @@ const DashBoardScreen = ({ navigation }) => {
                 otherLocation: filterdata?.where?.otherLocation || '',
                 maxDistance: filterdata?.where?.maxDistance || 100,
                 location: {
-                    latitude: filterdata?.where?.location?.latitude || userdetails?.location?.coordinates[1],
-                    longitude: filterdata?.where?.location?.longitude || userdetails?.location?.coordinates[0],
+                    latitude: filterdata?.where?.location?.latitude || userdetails?.location?.coordinates[1] || 28.6217917,
+                    longitude: filterdata?.where?.location?.longitude || userdetails?.location?.coordinates[0] || 77.3748881,
                     city: filterdata?.where?.location?.city || ''
                 },
                 options: filterdata?.where?.options || {},
@@ -152,31 +162,25 @@ const DashBoardScreen = ({ navigation }) => {
                 languages: filterdata?.where?.languages || [],
                 profileText: filterdata?.where?.profileText || "",
                 ageRange: {
-                    min: filterdata?.where?.ageRange?.min || userdetails?.preferences?.ageRange?.min,
-                    max: filterdata?.where?.ageRange?.max || userdetails?.preferences?.ageRange?.max
+                    min: filterdata?.where?.ageRange?.min || userdetails?.preferences?.ageRange?.min || 18,
+                    max: filterdata?.where?.ageRange?.max || userdetails?.preferences?.ageRange?.max || 40,
                 },
                 gender: filterdata?.where?.gender || userdetails?.preferences?.gender
             },
             requestType: "mobile",
             pageLength: 11,
             currentPage,
-            autopopulate: true
+            autopopulate: true,
+            requestSource: 'dashboard'
         };
-        // console.log('body of search', body);
-
+        console.log('body of search', body);
         setIsLoading(true);
         try {
             const resp = await axios.post('home/search', body, { headers });
-            // console.log('response from the search API', resp?.data?.data);
-            if (currentPage === 0) {
-                setUserData(resp?.data?.data);
-            } else {
-                setUserData(prevData => [...prevData, ...resp?.data?.data]);
-            }
-            if (resp?.data?.data?.length < body.pageLength) {
+            const newData = resp?.data?.data;
+            setUserData(newData);
+            if (newData.length < body.pageLength) {
                 setHasMoreData(false);
-            } else {
-                setHasMoreData(true);
             }
             setIsLoading(false);
         } catch (error) {
@@ -185,42 +189,6 @@ const DashBoardScreen = ({ navigation }) => {
         }
     };
 
-
-
-    useEffect(() => {
-        if (currentPage > 0) {
-            getUserFilteredData();
-        }
-    }, [currentPage]);
-
-    useEffect(() => {
-        if (!isPaginationLoading && currentPage > 0) {
-            setIsPaginationLoading(false);
-        }
-    }, [userData]);
-
-
-
-    const handleEndReached = () => {
-        if (!isPaginationLoading && hasMoreData) {
-            setIsPaginationLoading(true);
-            setCurrentPage(prevPage => prevPage + 1);
-        }
-    };
-
-    const handleSeeking = (type) => {
-        setSeek(type);
-    };
-
-    const handleHHobbies = (hobby) => {
-        if (userhobbies.includes(hobby)) {
-            setUserHobbies(userhobbies.filter((item) => item !== hobby));
-        } else if (userhobbies.length < 7) {
-            setUserHobbies([...userhobbies, hobby]);
-        } else {
-            Toast.show('You can select up to 7 Hobbies only', Toast.SHORT);
-        }
-    };
 
     const panResponder = (index) => PanResponder.create({
         onMoveShouldSetPanResponder: (event, gesture) => {
@@ -259,9 +227,15 @@ const DashBoardScreen = ({ navigation }) => {
         },
     });
 
-
     const handleSwipe = (index, direction) => {
         positions[index].setValue({ x: 0, y: 0 });
+        if (index === 0) {
+            setIsLoading(true);
+            setCurrentPage((prevPage) => prevPage + 1);
+            setTimeout(() => {
+                setIsLoading(false);
+            }, 1000);
+        }
     };
 
     const rotate = (index) => {
@@ -273,7 +247,6 @@ const DashBoardScreen = ({ navigation }) => {
                 extrapolate: "clamp",
             });
         }
-        // If position is not initialized, return a default value
         return "0deg";
     };
 
@@ -289,7 +262,7 @@ const DashBoardScreen = ({ navigation }) => {
         extrapolate: "clamp",
     });
 
-    const handleHeartSwipe = (index) => {
+    const handleHeartSwipe = (index, id) => {
         if (positions[index]) {
             Animated.timing(positions[index], {
                 toValue: { x: width + 100, y: 0 },
@@ -297,22 +270,21 @@ const DashBoardScreen = ({ navigation }) => {
                 useNativeDriver: true,
             }).start(() => {
                 handleSwipe(index, "right");
+                userLike(id)
             });
         }
     };
 
-    const handleCrossSwipe = (index) => {
-        console.log('indexxx crosss', index);
-
+    const handleCrossSwipe = (index, id) => {
         Animated.timing(positions[index], {
-            toValue: { x: -width - 100, y: 0 }, // Move card to the left
+            toValue: { x: -width - 100, y: 0 },
             duration: 300,
             useNativeDriver: true,
         }).start(() => {
             handleSwipe(index, "left");
+            userDisLike(id)
         });
     };
-
 
     const profileDetailsBottom = scrollY.interpolate({
         inputRange: [0, 100],
@@ -321,30 +293,12 @@ const DashBoardScreen = ({ navigation }) => {
     });
 
     const profileDetailsOpacity = scrollY.interpolate({
-        inputRange: [0, 100],  // Track scrolling from the start
-        outputRange: [1, 0],  // Fade out the profile details as user scrolls
+        inputRange: [0, 100],
+        outputRange: [1, 0],
         extrapolate: 'clamp',
     });
 
-    const requestPrivatePhoto = async (id) => {
-        const token = await AsyncStorage.getItem('authToken')
-        const headers = {
-            Authorization: token
-        }
-        let body = {
-            targetUserId: userdetails?._id,
-            userId: id
-        }
-        try {
-            const resp = await axios.post('home/request-private-pic-access', body, { headers })
-            // console.log('response from the request photo', resp.data);
-        } catch (error) {
-            console.log('error from the request photo', error?.response?.data?.message);
-
-
-        }
-    }
-
+    
 
     return (
         <View style={{ flex: 1 }}>
@@ -377,8 +331,6 @@ const DashBoardScreen = ({ navigation }) => {
                                                 rotate: rotate(index),
                                             },
                                         ]
-
-
                                     },
                                 ]}
                                 {...panResponder(index).panHandlers}
@@ -411,7 +363,11 @@ const DashBoardScreen = ({ navigation }) => {
                                         >
                                         </LinearGradient>
                                     </TouchableOpacity>
+                                  
+
+
                                 </Animated.ScrollView>
+                            
                             </Animated.View>
                         ))}
                 </View>
@@ -461,10 +417,13 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 40,
         backgroundColor: "white",
         overflow: "hidden",
+        // borderWidth:5,
+        // borderColor:'red'
     },
 
     image: {
         width: "100%",
+        // resizeMode:'contain'
     },
     gradient: {
         position: "absolute",
@@ -502,20 +461,20 @@ const styles = StyleSheet.create({
         top: 1
     },
     cardName: {
-        color: "black",
+        color: "white",
         fontSize: 28,
         fontWeight: "bold",
         top: 5
     },
     cardLocation: {
-        color: "black",
+        color: "white",
         fontSize: 16,
         opacity: 0.8,
         top: 10
     },
 
     cardDistance: {
-        color: "black",
+        color: "white",
         fontSize: 16,
         opacity: 0.8,
         top: 15

@@ -109,7 +109,8 @@ const RecentScreen = ({ navigation }) => {
             pageLength: 2000,
             currentPage: 0,
             autopopulate: true,
-            requestSource:'list'
+            requestSource: 'list',
+            sortby: ''
         };
         console.log('body of recent', body)
         setIsLoading(true);
@@ -171,7 +172,7 @@ const RecentScreen = ({ navigation }) => {
         const truncatedUserName = item.userName.length > 8 ? item.userName.slice(0, 8) : item.userName;
         return (
             <View style={styles.card} >
-                <TouchableOpacity onPress={() => navigation.navigate('UserProfileDetails', { item: item })}>
+                <TouchableOpacity onPress={() => navigation.navigate('UserProfileDetails', { item: item?.userId })}>
                     <ImageBackground source={{ uri: item?.profilePicture }} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
                         <LinearGradient
                             colors={["transparent", "rgba(0, 0, 0, 0.7)"]}

@@ -61,6 +61,7 @@ const AuthProvider = ({ children, navigation }) => {
     }
   };
 
+
   const loginWithEmail = async (email, password, navigation) => {
     try {
       const body = {
@@ -72,7 +73,7 @@ const AuthProvider = ({ children, navigation }) => {
       const response = await axios.post('auth/sign-in', body);
       console.log('responseeeeee', response);
 
-      if (response?.data?.data?.token) {
+      if (response?.data?.data?.token || response?.data.data?.user?.profileCompleted === true) {
 
         await AsyncStorage.setItem('authToken', response.data.data.token);
         await AsyncStorage.setItem('UserData', JSON.stringify(response.data.data.user));

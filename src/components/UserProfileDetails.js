@@ -7,7 +7,7 @@ import {
     Dimensions,
     ScrollView,
     Image,
-    ImageBackground
+    ImageBackground,
 } from "react-native";
 import FastImage from "react-native-fast-image";
 import images from "./images";
@@ -23,12 +23,14 @@ const { width } = Dimensions.get("window");
 const UserProfileDetails = ({ navigation, route }) => {
 
     const { item } = route.params
-
     const [activeIndex, setActiveIndex] = useState(0);
     const [isModalVisible, setModalVisible] = useState(false);
     const [userdetails, setUserDetails] = useState(null)
     const [modalContent, setModalContent] = useState({ title: "", description: "", action: "" });
     const rbSheetRef = useRef();
+    const [userprofiledata, setUserProfileData] = useState()
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [isModal, setIsModal] = useState(false)
 
 
     useEffect(() => {
@@ -50,6 +52,25 @@ const UserProfileDetails = ({ navigation, route }) => {
     useEffect(() => {
         userViewProfile()
     }, [userdetails])
+
+    useEffect(() => {
+        getUserProfileData()
+    }, [item])
+
+    const getUserProfileData = async () => {
+        const token = await AsyncStorage.getItem('authToken')
+        const headers = {
+            Authorization: token
+        }
+        try {
+            const resp = await axios.get(`home/get-user-profile/${item}`, { headers })
+            console.log('response fromt user details api', resp?.data?.data);
+            setUserProfileData(resp?.data?.data)
+        } catch (error) {
+            console.log('error frm the user profile', error.response.data.message);
+
+        }
+    }
 
     const userLike = async (id) => {
         const token = await AsyncStorage.getItem('authToken')
@@ -88,7 +109,7 @@ const UserProfileDetails = ({ navigation, route }) => {
             console.log('error from the DISLIKE ', error);
         }
     }
-    const hasLiked = item.activity_logs.some(log => log.action === "LIKE" && log.userId === userdetails?._id);
+    const hasLiked = item?.activity_logs?.some(log => log.action === "LIKE" && log.userId === userdetails?._id);
 
     const userBlock = async (id) => {
         const token = await AsyncStorage.getItem('authToken')
@@ -170,7 +191,7 @@ const UserProfileDetails = ({ navigation, route }) => {
             Authorization: token
         }
         let body = {
-            targetUserId: item?.userId,
+            targetUserId: item,
             action: "VIEW"
         }
         console.log('body of view', body);
@@ -182,8 +203,6 @@ const UserProfileDetails = ({ navigation, route }) => {
             console.log('error from the View ', error.response.data.message);
         }
     }
-
-
 
     const openBottomSheet = () => {
         rbSheetRef.current?.open();
@@ -222,20 +241,25 @@ const UserProfileDetails = ({ navigation, route }) => {
         setModalVisible(true);
     };
 
+    const handleImageClick = (imageUrl) => {
+        setSelectedImage(imageUrl);
+        setIsModal(true);
+    };
+
     const closeModal = () => {
         setModalVisible(false);
+        setIsModal(false)
     };
 
     const handleAction = () => {
-
         if (modalContent.action === "Block") {
-            userBlock(item?.userId);
+            userBlock(item);
         }
         if (modalContent.action === "Hide") {
-            userHide(item?.userId);
+            userHide(item);
         }
         if (modalContent.action === "Report") {
-            userReport(item?.userId);
+            userReport(item);
         }
         closeModal();
     };
@@ -245,6 +269,11 @@ const UserProfileDetails = ({ navigation, route }) => {
         const index = Math.round(offsetX / width);
         setActiveIndex(index);
     };
+
+
+
+
+
 
     return (
         <View style={styles.main}>
@@ -257,7 +286,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                     <FastImage source={images.back} style={styles.icon} />
                 </TouchableOpacity>
                 <View style={styles.dotsContainer}>
-                    {item.publicPhotos.map((_, index) => (
+                    {userprofiledata?.publicPhotos?.map((_, index) => (
                         <View
                             key={index}
                             style={[
@@ -270,7 +299,6 @@ const UserProfileDetails = ({ navigation, route }) => {
                 <TouchableOpacity style={styles.iconButton} onPress={openBottomSheet}>
                     <FastImage source={images.dots} style={[styles.icon, { height: 20 }]} />
                     <RBSheet
-
                         ref={rbSheetRef}
                         height={180}
                         openDuration={250}
@@ -304,7 +332,6 @@ const UserProfileDetails = ({ navigation, route }) => {
                 </TouchableOpacity>
             </View>
 
-            {/* Image Carousel */}
             <View style={styles.imageWrapper}>
                 <ScrollView
                     horizontal
@@ -313,19 +340,20 @@ const UserProfileDetails = ({ navigation, route }) => {
                     onScroll={onScroll}
                     scrollEventThrottle={16}
                 >
-                    {item.publicPhotos.map((item, index) => (
+                    {userprofiledata?.publicPhotos?.map((item, index) => (
                         <View key={index} style={styles.imageContainer}>
-                            <FastImage
-                                source={{ uri: item }}
-                                style={styles.img}
-                                resizeMode={FastImage.resizeMode.contain}
-                            />
+                            <TouchableOpacity onPress={() => handleImageClick(item)}>
+                                <FastImage
+                                    source={{ uri: item }}
+                                    style={styles.img}
+                                    resizeMode={FastImage.resizeMode.contain}
+                                />
+                            </TouchableOpacity>
                         </View>
                     ))}
                 </ScrollView>
             </View>
             <ScrollView>
-                {/* Content Section */}
                 <View style={styles.contentContainer}>
                     <View style={styles.cont1}>
                         <Text style={styles.onlineText}>Online</Text>
@@ -335,12 +363,12 @@ const UserProfileDetails = ({ navigation, route }) => {
                     </View>
                 </View>
                 <View style={styles.cont3}>
-                    <Text style={styles.txt1}>{item?.userName || NaN}, {item?.age || NaN} </Text>
-                    <Image source={item?.isIdVerified === false ? null : images.verified} style={styles.img1} />
+                    <Text style={styles.txt1}>{userprofiledata?.userName || NaN}, {userprofiledata?.age || NaN} </Text>
+                    <Image source={userprofiledata?.isIdVerified === false ? null : images.verified} style={styles.img1} />
                 </View>
-                <Text style={styles.txt2}>{item?.city || NaN}, {item?.country || NaN}</Text>
-                <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>{item?.distance || NaN} miles</Text>
-                <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>{item?.myHeading || NaN}</Text>
+                <Text style={styles.txt2}>{userprofiledata?.city || NaN}, {userprofiledata?.country || NaN}</Text>
+                <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>{userprofiledata?.distance || NaN} miles</Text>
+                <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>{userprofiledata?.myHeading || NaN}</Text>
 
                 <View style={styles.cont4}>
                     <View style={styles.cont5}>
@@ -348,7 +376,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                             <Image source={images.star} style={styles.icon1} />
                             <Text style={styles.txt3}>Member Since</Text>
                         </View>
-                        <Text style={styles.txt4}>{moment(item?.createdAt)?.fromNow() || NaN}</Text>
+                        <Text style={styles.txt4}>{moment(userprofiledata?.createdAt)?.fromNow() || NaN}</Text>
                     </View>
 
                     <View style={styles.cont5}>
@@ -356,7 +384,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                             <Image source={images.heart} style={styles.icon1} />
                             <Text style={styles.txt3}>Relationship status</Text>
                         </View>
-                        <Text style={styles.txt4}>{item?.currentRelationshipStatus || NaN}</Text>
+                        <Text style={styles.txt4}>{userprofiledata?.currentRelationshipStatus || NaN}</Text>
                     </View>
 
                     <View style={styles.cont5}>
@@ -364,7 +392,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                             <Image source={images.body} style={styles.icon1} />
                             <Text style={styles.txt3}>Body</Text>
                         </View>
-                        <Text style={styles.txt4}>{item?.bodyType || NaN}</Text>
+                        <Text style={styles.txt4}>{userprofiledata?.bodyType || NaN}</Text>
                     </View>
 
                     <View style={styles.cont5}>
@@ -372,7 +400,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                             <Image source={images.height} style={styles.icon1} />
                             <Text style={styles.txt3}>Height</Text>
                         </View>
-                        <Text style={styles.txt4}>{Math.round(item?.tall?.cm) || 'NaN'} cm</Text>
+                        <Text style={styles.txt4}>{Math.round(userprofiledata?.tall?.cm) || 'NaN'} cm</Text>
                     </View>
                 </View>
 
@@ -381,7 +409,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                     {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
                 </View>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginLeft: 16 }}>
-                    {item.publicPhotos.map((photo, index) => (
+                    {userprofiledata?.publicPhotos?.map((photo, index) => (
                         <View key={index} style={{ margin: 5 }}>
                             <Image
                                 source={{ uri: photo }}
@@ -395,7 +423,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                     <Text style={styles.txt5}>Private Photo</Text>
                     {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
                 </View>
-                <TouchableOpacity onPress={() => requestPrivatePhoto(item?.userId)}>
+                <TouchableOpacity onPress={() => requestPrivatePhoto(userprofiledata?.userId)}>
                     <ImageBackground
                         source={images.dummy1}
                         style={{ height: 150, width: 105, borderRadius: 10, marginLeft: 8, top: 5, marginLeft: 16 }}
@@ -432,14 +460,14 @@ const UserProfileDetails = ({ navigation, route }) => {
                     </ImageBackground>
                 </TouchableOpacity>
                 <Text style={styles.about}>About</Text>
-                <Text style={styles.abouttxt}>{item?.aboutUsDescription || NaN}</Text>
+                <Text style={styles.abouttxt}>{userprofiledata?.aboutUsDescription || NaN}</Text>
 
                 <Text style={styles.about}>What I am Seeking</Text>
-                <Text style={styles.abouttxt}>{item?.preferences?.aboutPartnerDescription || NaN}</Text>
+                <Text style={styles.abouttxt}>{userprofiledata?.preferences?.aboutPartnerDescription || NaN}</Text>
 
                 <Text style={styles.about}>Hobbies</Text>
                 <View style={styles.bodyTypeContainer}>
-                    {item?.hobbies?.map((hobby) => (
+                    {userprofiledata?.hobbies?.map((hobby) => (
                         <TouchableOpacity
                             key={hobby}
                             style={[
@@ -461,7 +489,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                         <Image source={images.face} style={styles.face} />
                         <Text style={styles.txt6}>Ethnicity</Text>
                     </View>
-                    <Text style={styles.txt7}>{item?.ethnicity || NaN}</Text>
+                    <Text style={styles.txt7}>{userprofiledata?.ethnicity || NaN}</Text>
                 </View>
 
                 <View style={styles.cont7}>
@@ -469,7 +497,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                         <Image source={images.child} style={styles.face} />
                         <Text style={styles.txt6}>Children</Text>
                     </View>
-                    <Text style={styles.txt7}>{item?.children}</Text>
+                    <Text style={styles.txt7}>{userprofiledata?.children}</Text>
                 </View>
 
                 <View style={styles.cont7}>
@@ -477,7 +505,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                         <Image source={images.smoke} style={styles.face} />
                         <Text style={styles.txt6}>Do you smoke?</Text>
                     </View>
-                    <Text style={styles.txt7}>{item?.smoke || NaN}</Text>
+                    <Text style={styles.txt7}>{userprofiledata?.smoke || NaN}</Text>
                 </View>
 
                 <View style={styles.cont7}>
@@ -485,7 +513,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                         <Image source={images.drink} style={styles.face} />
                         <Text style={styles.txt6}>Do you drink?</Text>
                     </View>
-                    <Text style={styles.txt7}>{item?.drink || NaN}</Text>
+                    <Text style={styles.txt7}>{userprofiledata?.drink || NaN}</Text>
                 </View>
 
                 <View style={styles.cont7}>
@@ -493,7 +521,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                         <Image source={images.education} style={styles.face} />
                         <Text style={styles.txt6}>Education</Text>
                     </View>
-                    <Text style={styles.txt7}>{item?.highestEducation || NaN}</Text>
+                    <Text style={styles.txt7}>{userprofiledata?.highestEducation || NaN}</Text>
                 </View>
 
                 <View style={styles.cont7}>
@@ -501,7 +529,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                         <Image source={images.face} style={styles.face} />
                         <Text style={styles.txt6}>Occupation</Text>
                     </View>
-                    <Text style={styles.txt7}>{item?.workField || NaN}</Text>
+                    <Text style={styles.txt7}>{userprofiledata?.workField || NaN}</Text>
                 </View>
 
 
@@ -511,7 +539,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                         <Text style={styles.txt6}>Net Worth</Text>
                     </View>
                     <Text style={styles.txt7}>
-                        {item?.netWorthRange ? `$${item.netWorthRange.min} - $${item.netWorthRange.max}` : 'NaN'}
+                        {userprofiledata?.netWorthRange ? `$${userprofiledata.netWorthRange.min} - $${userprofiledata.netWorthRange.max}` : 'NaN'}
                     </Text>
                 </View>
 
@@ -520,7 +548,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                         <Image source={images.cross} style={styles.cross} />
                     </View>
 
-                    <TouchableOpacity onPress={() => hasLiked ? userDisLike(item?.userId) : userLike(item?.userId)}>
+                    <TouchableOpacity onPress={() => hasLiked ? userDisLike(userprofiledata?.userId) : userLike(userprofiledata?.userId)}>
                         <View style={[styles.cont9, { backgroundColor: '#916008', height: 55, width: 55 }]}>
                             <Image source={hasLiked ? images.redheart : images.heart} style={[styles.cross, { tintColor: 'white', height: 25, width: 25 }]} />
                         </View>
@@ -550,6 +578,17 @@ const UserProfileDetails = ({ navigation, route }) => {
                     </View>
                 </View>
             </Modal>
+
+            {selectedImage && (
+                <Modal visible={isModal} transparent={true} onRequestClose={closeModal} onBackdropPress={closeModal} >
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity style={styles.modalCloseButton} onPress={closeModal}>
+                            <Image style={styles.modalCloseText} source={images.cross} />
+                        </TouchableOpacity>
+                        <Image source={{ uri: selectedImage }} style={styles.modalImage} />
+                    </View>
+                </Modal>
+            )}
         </View>
     );
 };
@@ -686,7 +725,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#D9D9D9',
         backgroundColor: 'white',
-        height: 150,
+        height: 170,
         width: '90%',
         alignSelf: 'center',
         marginTop: 20,
@@ -869,6 +908,30 @@ const styles = StyleSheet.create({
     },
     blockButtonText: {
         color: "white",
+    },
+    modalOverlay: {
+        height: '110%',
+        width: '130%',
+        alignSelf: 'center',
+        backgroundColor: "rgba(0, 0, 0, 0.8)", // Full-screen dark background
+    },
+    modalCloseButton: {
+        position: "absolute",
+        top: 40,
+        right: 50,
+        backgroundColor: "rgba(255, 255, 255, 0.5)", // Semi-transparent button
+        padding: 10,
+        borderRadius: 20,
+        zIndex: 1, // Ensure it stays above the image
+    },
+    modalCloseText: {
+        height: 20,
+        width: 20
+    },
+    modalImage: {
+        width: "100%", // Make the image take up the full width
+        height: "100%", // Make the image take up the full height
+        resizeMode: "contain", // Ensure the image maintains its aspect ratio
     },
 
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Text,
     View,
@@ -8,83 +8,125 @@ import {
     FlatList,
     TouchableOpacity,
 } from "react-native";
-import images from "../../components/images"; // Replace with your actual image imports
+import images from "../../components/images";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import useSocket from "../../socket/SocketMain";
+import moment from "moment";
 
 const ChatScreen = ({ navigation }) => {
     const [search, setSearch] = useState("");
+    const [chatList, setChatList] = useState([]);
+    const [userdetails, setUserDetails] = useState(null);
 
-    // Dummy Data for Chats
-    const data = [
-        {
-            id: "1",
-            name: "Martin Randolph",
-            message: "You: What's man!",
-            time: "9:40 AM",
-            avatar: images.dummy,
-            isOnline: true,
-        },
-        {
-            id: "2",
-            name: "Andrew Parker",
-            message: "You: Ok, thanks!",
-            time: "9:25 AM",
-            avatar: images.dummy,
-            isOnline: false,
-        },
-        {
-            id: "3",
-            name: "Karen Castillo",
-            message: "You: Ok, See you in To...",
-            time: "Fri",
-            avatar: images.dummy,
-            isOnline: false,
-        },
-        {
-            id: "4",
-            name: "Maisy Humphrey",
-            message: "Have a good day, Maisy!",
-            time: "Fri",
-            avatar: images.dummy,
-            isOnline: false,
-        },
-        {
-            id: "5",
-            name: "Joshua Lawrence",
-            message: "The business plan loo...",
-            time: "Thu",
-            avatar: images.dummy,
-            isOnline: true,
-        },
-    ];
+    const { emit, on, removeListener } = useSocket(onSocketConnect);
 
-    // Top Section Icons (with Online Indicators)
-    const topIcons = [
-        { id: "1", name: "Joshua", avatar: images.dummy, isOnline: true },
-        { id: "2", name: "Martin", avatar: images.dummy, isOnline: true },
-        { id: "3", name: "Karen", avatar: images.dummy, isOnline: true },
-        { id: "4", name: "Martha", avatar: images.dummy, isOnline: true },
-    ];
 
-    // Render Individual Chat Item
-    const renderItem = ({ item }) => (
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
+        };
+        fetchUserDetails();
+    }, []);
 
-        <TouchableOpacity onPress={() => navigation.navigate('OneToOneChat')} style={styles.chatItem}>
-            {/* Avatar */}
-            <View style={styles.avatarContainer}>
-                <Image source={item.avatar} style={styles.avatar} />
-                {item.isOnline && <View style={styles.onlineIndicator} />}
-            </View>
 
-            {/* Chat Content */}
-            <View style={styles.chatContent}>
-                <Text style={styles.chatName}>{item.name}</Text>
-                <View style={styles.messageTimeRow}>
-                    <Text style={styles.chatMessage}>{item.message}</Text>
-                    <Text style={styles.chatTime}>{item.time}</Text>
+    useEffect(() => {
+        emit("userOnline", { userId: userdetails?._id });
+        emit("getRecentChatList", { userId: userdetails?._id });
+
+        on('recentChatListResponse', (event) => {
+            setChatList(event?.list)
+        })
+        on('userStatusChange', (event) => {
+
+            setChatList(prevChatList =>
+                prevChatList.map(chatItem =>
+                    chatItem?.participantId?._id === event?.userId
+                        ? {
+                            ...chatItem,
+                            participantId: {
+                                ...chatItem.participantId,
+                                isOnLine: event?.isOnline
+                            }
+                        }
+                        : chatItem
+                )
+            );
+
+
+        });
+        return () => {
+            removeListener()
+        };
+    }, [emit, on])
+
+    const onSocketConnect = () => {
+        console.log('Socket connected in chat screen');
+    };
+
+
+    const topOnlineUsers = ({ item }) => {
+        return (
+            <View>
+                <View style={styles.avatarContainer}>
+                    <View style={styles.userIconContainer}>
+                        <View>
+                            <Image source={{ uri: item?.participantId?.profilePicture }} style={styles.topAvatar} />
+                            <View style={styles.onlineIndicator} />
+                        </View>
+                        <Text style={styles.userName}>{item?.participantId?.userName}</Text>
+                    </View>
                 </View>
             </View>
-        </TouchableOpacity>
-    );
+        )
+    }
+
+    const renderItem = ({ item }) => {
+
+        const lastMessageTimestamp = moment(item?.lastMessage?.timestamp);
+        const currentTime = moment();
+        let displayTime;
+
+        if (lastMessageTimestamp.isSame(currentTime, 'day')) {
+            const diffInMinutes = currentTime.diff(lastMessageTimestamp, 'minutes');
+            if (diffInMinutes < 60) {
+                displayTime = `${diffInMinutes} min ago`;
+            } else {
+                displayTime = lastMessageTimestamp.format('h:mm A');
+            }
+        }
+        else if (lastMessageTimestamp.isSame(currentTime.subtract(1, 'days'), 'day')) {
+            displayTime = `Yesterday, ${lastMessageTimestamp.format('h:mm A')}`;
+        }
+        else {
+            displayTime = lastMessageTimestamp.format('MMM D, h:mm A');
+        }
+        return (
+            <TouchableOpacity onPress={() => navigation.navigate('OneToOneChat')} style={styles.chatItem}>
+                <View style={styles.avatarContainer}>
+                    <Image source={{ uri: item?.participantId?.profilePicture }} style={styles.avatar} />
+                    {item?.participantId?.isOnLine === true ?
+                        <View style={styles.onlineIndicator} />
+                        : null
+                    }
+                </View>
+                <View style={styles.chatContent}>
+                    <Text style={styles.chatName}>{item?.participantId?.userName}</Text>
+                    <View style={styles.messageTimeRow}>
+                        <Text style={styles.chatMessage}>{item?.lastMessage?.message}</Text>
+                        <Text style={styles.chatTime}>{displayTime}</Text>
+                    </View>
+                </View>
+            </TouchableOpacity>
+        )
+    }
 
     return (
         <View style={styles.container}>
@@ -106,23 +148,19 @@ const ChatScreen = ({ navigation }) => {
                 />
             </View>
 
-            {/* Top Icons with Online Indicators */}
-            <View style={styles.topIcons}>
-                {topIcons.map((user) => (
-                    <View key={user.id} style={styles.userIconContainer}>
-                        <View>
-                            <Image source={user.avatar} style={styles.topAvatar} />
-                            {user.isOnline && <View style={styles.onlineIndicator} />}
-                        </View>
-                        <Text style={styles.userName}>{user.name}</Text>
-                    </View>
-                ))}
+            <View>
+                <FlatList
+                    data={chatList.filter(item => item?.participantId?.isOnline != false)}
+                    keyExtractor={(item) => item?._id}
+                    renderItem={topOnlineUsers}
+                    style={styles.chatList}
+                />
             </View>
 
-            {/* Chat List */}
+
             <FlatList
-                data={data}
-                keyExtractor={(item) => item.id}
+                data={chatList}
+                keyExtractor={(item) => item?._id}
                 renderItem={renderItem}
                 style={styles.chatList}
             />

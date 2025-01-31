@@ -19,6 +19,7 @@ import moment from 'moment';
 import { useIsFocused } from '@react-navigation/native';
 import LaodingScreen from "../../components/LoadingScreen";
 import Toast from 'react-native-simple-toast'
+import FastImage from 'react-native-fast-image';
 
 const { width, height } = Dimensions.get("window");
 
@@ -41,25 +42,31 @@ const DashBoardScreen = ({ navigation }) => {
     const [appState, setAppState] = useState(AppState.currentState);
 
 
-    // useEffect(() => {
-    //     const subscription = AppState.addEventListener("change", (nextAppState) => {
-    //         console.log("AppState changed to", nextAppState);
-    //         setAppState(nextAppState);
-    //     });
-    //     return () => {
-    //         subscription.remove();
-    //     };
-    // }, []);
+    useEffect(() => {
+        console.log('in the useEfect');
 
-    // useEffect(() => {
-    //     if (appState === 'active') {
-    //         setIsLoading(true);
-    //         setTimeout(() => {
-    //             setIsLoading(false);
-    //             getUserFilteredData();
-    //         }, 2000);
-    //     }
-    // }, [appState, currentPage]);
+        getdatafromAsync()
+        getUserFilteredData();
+    }, [isFocused])
+
+    useEffect(() => {
+        const subscription = AppState.addEventListener("change", (nextAppState) => {
+            setAppState(nextAppState);
+        });
+        return () => {
+            subscription.remove();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (appState === 'active') {
+            setIsLoading(true);
+            setTimeout(() => {
+                setIsLoading(false);
+                getUserFilteredData();
+            }, 2000);
+        }
+    }, [appState, currentPage]);
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -68,7 +75,6 @@ const DashBoardScreen = ({ navigation }) => {
                 if (data !== null) {
                     const parsedData = JSON.parse(data);
                     setUserDetails(parsedData);
-
                 }
             } catch (error) {
                 console.log('Error fetching user data:', error);
@@ -86,7 +92,7 @@ const DashBoardScreen = ({ navigation }) => {
                     positions[i] = new Animated.ValueXY({ x: 0, y: 0 });
                 }
             }
-            console.log("positionsss", positions);
+            // console.log("positionsss", positions);
         }
     }, [userData]);
 
@@ -104,12 +110,11 @@ const DashBoardScreen = ({ navigation }) => {
     const getdatafromAsync = async () => {
         try {
             const resp = await AsyncStorage.getItem('dashboardData')
-            console.log('reposnse from the async', resp);
+            // console.log('reposnse from the async', resp);
             if (resp) {
                 const parseData = JSON.parse(resp)
                 setFilterData(parseData)
             }
-
         } catch (error) {
             console.log('error from the async dash data', error);
         }
@@ -135,8 +140,8 @@ const DashBoardScreen = ({ navigation }) => {
                 otherLocation: filterdata?.where?.otherLocation || '',
                 maxDistance: filterdata?.where?.maxDistance || 100,
                 location: {
-                    latitude: filterdata?.where?.location?.latitude || userdetails?.location?.coordinates[1],
-                    longitude: filterdata?.where?.location?.longitude || userdetails?.location?.coordinates[0],
+                    latitude: filterdata?.where?.location?.latitude || userdetails?.location?.coordinates[1] || 28.6217917,
+                    longitude: filterdata?.where?.location?.longitude || userdetails?.location?.coordinates[0] || 77.3748881,
                     city: filterdata?.where?.location?.city || ''
                 },
                 options: filterdata?.where?.options || {},
@@ -159,8 +164,8 @@ const DashBoardScreen = ({ navigation }) => {
                 languages: filterdata?.where?.languages || [],
                 profileText: filterdata?.where?.profileText || "",
                 ageRange: {
-                    min: filterdata?.where?.ageRange?.min || userdetails?.preferences?.ageRange?.min,
-                    max: filterdata?.where?.ageRange?.max || userdetails?.preferences?.ageRange?.max
+                    min: filterdata?.where?.ageRange?.min || userdetails?.preferences?.ageRange?.min || 18,
+                    max: filterdata?.where?.ageRange?.max || userdetails?.preferences?.ageRange?.max || 40,
                 },
                 gender: filterdata?.where?.gender || userdetails?.preferences?.gender
             },
@@ -170,14 +175,12 @@ const DashBoardScreen = ({ navigation }) => {
             autopopulate: true,
             requestSource: 'dashboard'
         };
-
-        console.log('body of search', body);
-
+        // console.log('body of search', body);
         setIsLoading(true);
         try {
             const resp = await axios.post('home/search', body, { headers });
             const newData = resp?.data?.data;
-            setUserData(newData);  // Replace previous data with new chunk
+            setUserData(newData);
             if (newData.length < body.pageLength) {
                 setHasMoreData(false);
             }
@@ -246,7 +249,6 @@ const DashBoardScreen = ({ navigation }) => {
                 extrapolate: "clamp",
             });
         }
-
         return "0deg";
     };
 
@@ -352,10 +354,6 @@ const DashBoardScreen = ({ navigation }) => {
     }
 
 
-    
-   
-
- 
     return (
         <View style={{ flex: 1 }}>
             {isLoading ? (
@@ -402,7 +400,7 @@ const DashBoardScreen = ({ navigation }) => {
                                 >
                                     <TouchableOpacity style={{}} onPress={() => {
                                         console.log("Image clicked");
-                                        navigation.navigate("UserProfileDetails", { item: item });
+                                        navigation.navigate("UserProfileDetails", { item: item?.userId });
                                     }}>
                                         <Animated.Image
                                             source={{ uri: item?.profilePicture }}
@@ -680,6 +678,8 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 40,
         backgroundColor: "white",
         overflow: "hidden",
+        // borderWidth:5,
+        // borderColor:'red'
     },
 
     image: {

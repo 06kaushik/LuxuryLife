@@ -17,6 +17,7 @@ const FavouriteMeScreen = ({ navigation }) => {
     const [userdetails, setUserDetails] = useState(null);
     const [favouritedme, setFavouritedMe] = useState([]);
 
+
     useEffect(() => {
         const fetchUserDetails = async () => {
             try {
@@ -31,6 +32,7 @@ const FavouriteMeScreen = ({ navigation }) => {
         };
         fetchUserDetails();
     }, []);
+
 
     const getFavouritedMeData = async () => {
         if (!userdetails?.location?.coordinates) return;
@@ -71,6 +73,7 @@ const FavouriteMeScreen = ({ navigation }) => {
         }
     }, [userdetails])
 
+
     const handleEndReached = () => {
         if (!isPaginationLoading && hasMoreData) {
             setIsPaginationLoading(true);
@@ -91,24 +94,25 @@ const FavouriteMeScreen = ({ navigation }) => {
     }, [favouritedme])
 
 
-
     const renderFavouritedMe = ({ item }) => {
         const lastActive = moment(item?.user?.lastActive).fromNow();
         return (
             <View style={styles.card}>
-                <ImageBackground source={{ uri: item?.user?.profilePicture }} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
-                    <LinearGradient colors={["transparent", "rgba(0, 0, 0, 0.7)"]} style={styles.gradientOverlay} />
-                    {item.status === "Online" && (
-                        <View style={styles.statusBadge}>
-                            <Text style={styles.statusText}>Online</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('UserProfileDetails', { item: item?.userId })}>
+                    <ImageBackground source={{ uri: item?.user?.profilePicture }} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
+                        <LinearGradient colors={["transparent", "rgba(0, 0, 0, 0.7)"]} style={styles.gradientOverlay} />
+                        {item.status === "Online" && (
+                            <View style={styles.statusBadge}>
+                                <Text style={styles.statusText}>Online</Text>
+                            </View>
+                        )}
+                        <View style={styles.overlayContainer}>
+                            <Text style={styles.memberName}>{`${item.user?.userName}, ${item?.user?.age}`}</Text>
+                            <Text style={styles.memberLocation}>{item.city}, {item?.country}</Text>
+                            <Text style={styles.memberDistance}>{item.distance} miles</Text>
                         </View>
-                    )}
-                    <View style={styles.overlayContainer}>
-                        <Text style={styles.memberName}>{`${item.user?.userName}, ${item?.user?.age}`}</Text>
-                        <Text style={styles.memberLocation}>{item.city}, {item?.country}</Text>
-                        <Text style={styles.memberDistance}>{item.distance} miles</Text>
-                    </View>
-                </ImageBackground>
+                    </ImageBackground>
+                </TouchableOpacity>
                 <Text style={styles.timeAgo}>{lastActive}</Text>
                 <View style={styles.actionRow}>
                     <TouchableOpacity style={styles.unhideButton}>
@@ -126,7 +130,6 @@ const FavouriteMeScreen = ({ navigation }) => {
     }
 
     return (
-
 
         <View style={styles.main}>
             {isLoading ? (

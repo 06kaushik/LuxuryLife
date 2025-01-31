@@ -13,6 +13,7 @@ const ViewedMe = ({ navigation }) => {
     const [userdetails, setUserDetails] = useState(null);
     const [viewedme, setViewedMe] = useState([]);
 
+
     useEffect(() => {
         const fetchUserDetails = async () => {
             try {
@@ -30,7 +31,6 @@ const ViewedMe = ({ navigation }) => {
 
     const getViewMeData = async () => {
         if (!userdetails?.location?.coordinates) return;
-
         const token = await AsyncStorage.getItem('authToken');
         const headers = { Authorization: token };
         const body = {
@@ -127,19 +127,21 @@ const ViewedMe = ({ navigation }) => {
 
         return (
             <View style={styles.card}>
-                <ImageBackground source={{ uri: item?.user?.profilePicture }} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
-                    <LinearGradient colors={["transparent", "rgba(0, 0, 0, 0.7)"]} style={styles.gradientOverlay} />
-                    {item.status === "Online" && (
-                        <View style={styles.statusBadge}>
-                            <Text style={styles.statusText}>Online</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('UserProfileDetails', { item: item?.userId })}>
+                    <ImageBackground source={{ uri: item?.user?.profilePicture }} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
+                        <LinearGradient colors={["transparent", "rgba(0, 0, 0, 0.7)"]} style={styles.gradientOverlay} />
+                        {item.status === "Online" && (
+                            <View style={styles.statusBadge}>
+                                <Text style={styles.statusText}>Online</Text>
+                            </View>
+                        )}
+                        <View style={styles.overlayContainer}>
+                            <Text style={styles.memberName}>{`${item.user?.userName}, ${item?.user?.age}`}</Text>
+                            <Text style={styles.memberLocation}>{item.city}, {item?.country}</Text>
+                            <Text style={styles.memberDistance}>{item.distance} miles</Text>
                         </View>
-                    )}
-                    <View style={styles.overlayContainer}>
-                        <Text style={styles.memberName}>{`${item.user?.userName}, ${item?.user?.age}`}</Text>
-                        <Text style={styles.memberLocation}>{item.city}, {item?.country}</Text>
-                        <Text style={styles.memberDistance}>{item.distance} miles</Text>
-                    </View>
-                </ImageBackground>
+                    </ImageBackground>
+                </TouchableOpacity>
                 <Text style={styles.timeAgo}>{lastActive}</Text>
                 <View style={styles.actionRow}>
                     <TouchableOpacity onPress={() => userHide(item?.userId)} style={styles.unhideButton}>

@@ -24,7 +24,7 @@ const LoginScreen = ({ navigation }) => {
     const handleGoogleSignIn = async () => {
         console.log('inside handle google sign in function');
         try {
-            setIsLoading(true);
+            setIsLoading(true); 
             await GoogleSignin.hasPlayServices();
             const userInfo = await GoogleSignin.signIn();
             const idToken = userInfo.data.idToken;
@@ -32,7 +32,7 @@ const LoginScreen = ({ navigation }) => {
                 const response = await axios.post('auth/sign-in-google', { idToken });
                 console.log('response from the google sign in', response?.data);
                 Toast.show(response?.data?.message, Toast.SHORT);
-                if (response?.data?.data?.user?.email) {
+                if (response?.data?.data?.user?.email || response?.data?.data?.user?.profileCompleted === true) {
                     login(idToken);
                 } else {
                 }
@@ -40,7 +40,6 @@ const LoginScreen = ({ navigation }) => {
                 console.log('error from google signIn', error.message);
                 Toast.show('SignUp To Get Registered Yourself', Toast.SHORT)
             }
-
         } catch (error) {
             // console.error('Error during Google Sign-In:', error);
             if (error.response) {

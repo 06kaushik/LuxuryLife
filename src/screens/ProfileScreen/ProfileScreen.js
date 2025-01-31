@@ -10,6 +10,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import UserAvatar from 'react-native-user-avatar'
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
+import Modal from "react-native-modal";
 
 
 
@@ -21,8 +22,8 @@ const ProfileScreen = ({ navigation }) => {
     const [submitselfie, setSubmitSelfie] = useState(false);
     const [load, setLoad] = useState(false)
     const [userdetails, setUserDetails] = useState(null)
-    console.log('user details', userdetails);
-
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [isModal, setIsModal] = useState(false)
 
 
 
@@ -149,17 +150,26 @@ const ProfileScreen = ({ navigation }) => {
         }
     };
 
+    const handleImageClick = (imageUrl) => {
+        setSelectedImage(imageUrl);
+        setIsModal(true);
+    };
+
+    const closeModal = () => {
+        setIsModal(false)
+    };
+
 
     return (
 
         <View style={styles.main}>
-            <TouchableOpacity onPress={handleProfilePicture}>
+            <TouchableOpacity onPress={() => handleImageClick(userdetails?.profilePicture)}>
                 <View style={styles.container}>
                     {!userdetails?.profilePicture && (<UserAvatar size={150} name={`${userdetails?.userName}`} bgColor={'grey'} />)}
                     {userdetails?.profilePicture && (<Image source={{ uri: userdetails?.profilePicture }} style={styles.selectedimg1} />)}
-                    <View style={styles.cont5}>
+                    <TouchableOpacity onPress={handleProfilePicture} style={styles.cont5}>
                         <Image source={images.camera} style={styles.cam} />
-                    </View>
+                    </TouchableOpacity>
                 </View>
             </TouchableOpacity>
 
@@ -233,6 +243,17 @@ const ProfileScreen = ({ navigation }) => {
                 </View>
 
             </ScrollView>
+
+            {selectedImage && (
+                <Modal visible={isModal} transparent={true} onRequestClose={closeModal} onBackdropPress={closeModal} >
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity style={styles.modalCloseButton} onPress={closeModal}>
+                            <Image style={styles.modalCloseText} source={images.cross} />
+                        </TouchableOpacity>
+                        <Image source={{ uri: selectedImage }} style={styles.modalImage} />
+                    </View>
+                </Modal>
+            )}
         </View>
     )
 }
@@ -382,5 +403,33 @@ const styles = StyleSheet.create({
         width: 20,
         alignSelf: 'center',
         tintColor: 'white'
-    }
+    },
+    modalOverlay: {
+        height: '110%',
+        width: '130%',
+        alignSelf: 'center',
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        // flex: 1,
+        // justifyContent: "center",
+        // alignItems: "center",
+        // backgroundColor: "rgba(0, 0, 0, 0.8)",
+    },
+    modalCloseButton: {
+        position: "absolute",
+        top: 40,
+        right: 50,
+        backgroundColor: "rgba(255, 255, 255, 0.5)", // Semi-transparent button
+        padding: 10,
+        borderRadius: 20,
+        zIndex: 1, // Ensure it stays above the image
+    },
+    modalCloseText: {
+        height: 20,
+        width: 20
+    },
+    modalImage: {
+        width: "100%", // Make the image take up the full width
+        height: "100%", // Make the image take up the full height
+        resizeMode: "contain", // Ensure the image maintains its aspect ratio
+    },
 })
