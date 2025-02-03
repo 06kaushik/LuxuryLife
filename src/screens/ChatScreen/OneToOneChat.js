@@ -1,38 +1,122 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Image, TextInput, TouchableOpacity, Text, Keyboard, FlatList } from 'react-native';
+import { View, StyleSheet, Image, TextInput, TouchableOpacity, Text, Keyboard, FlatList, Alert } from 'react-native';
 import images from '../../components/images';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import LottieView from 'lottie-react-native';
 import AudioRecord from 'react-native-audio-record';
 import Sound from 'react-native-sound';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import useSocket from '../../socket/SocketMain';
+import io from 'socket.io-client';
 
-const OneToOneChat = ({ navigation }) => {
+const OneToOneChat = ({ navigation, route }) => {
+    const { roomId, initialMessages, item } = route.params;
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const [inputHeight, setInputHeight] = useState(40);
-    const [photos, setPhotos] = useState([]);
-    const [cameraphot, setCamera] = useState(null);
     const [message, setMessage] = useState('');
-    const [messages, setMessages] = useState([]);
-    const [isReceiverTyping, setIsReceiverTyping] = useState(false);
+    const [messages, setMessages] = useState(initialMessages);
     const [isRecording, setIsRecording] = useState(false);
     const [sound, setSound] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [timer, setTimer] = useState(0);  // Add timer state
+    const [timer, setTimer] = useState(0);
     const [intervalId, setIntervalId] = useState(null);
-
-
     const [audioFile, setAudioFile] = useState(null);
-
+    const [userdetails, setUserDetails] = useState(null);
+    const [isAtBottom, setIsAtBottom] = useState(true);
+    const [isTyping, setIsTyping] = useState(false);
+    const [typingTimeout, setTypingTimeout] = useState(null);
     const flatListRef = useRef();
+    const [playingMessageId, setPlayingMessageId] = useState(null);
+    const { emit, on, removeListener } = useSocket(onSocketConnect);
 
+    const onSocketConnect = () => {
+        console.log('Socket connected in chat screen');
+    };
 
+    useEffect(() => {
+        if (typingTimeout) {
+            clearTimeout(typingTimeout);
+        }
+
+        // Start a new debounce timer
+        const newTypingTimeout = setTimeout(() => {
+            emit('typing', {
+                senderId: userdetails?._id,
+                receiverId: item?.participantId?._id,
+            });
+        }, 500);
+
+        setTypingTimeout(newTypingTimeout);
+    }, [message]);
+
+    useEffect(() => {
+        const typingIndicatorTimeout = setInterval(() => {
+            if (isTyping) {
+                setIsTyping(false);
+                clearInterval(typingIndicatorTimeout);
+            }
+        }, 3000);
+
+        on('typingResponse', (data) => {
+            if (data?.response?.message !== null) {
+                setIsTyping(true);
+                clearInterval(typingIndicatorTimeout);
+            } else {
+                setIsTyping(false);
+            }
+        });
+
+        return () => {
+            removeListener('typingResponse');
+            clearInterval(typingIndicatorTimeout);
+        };
+    }, [isTyping, on, removeListener]);
+
+    const handleLayout = () => {
+        setTimeout(() => {
+            if (flatListRef.current) {
+                flatListRef.current.scrollToEnd({ animated: true });
+            }
+        }, 100);
+    };
+
+    useEffect(() => {
+        if (flatListRef.current) {
+            flatListRef.current.scrollToEnd({ animated: true });
+        }
+    }, [messages]);
+
+    const handleScroll = (event) => {
+        const contentHeight = event.nativeEvent.contentSize.height;
+        const contentOffsetY = event.nativeEvent.contentOffset.y;
+        const contentHeightThreshold = 100;
+        setIsAtBottom(contentHeight - contentOffsetY - contentHeightThreshold <= 0);
+    };
+
+    useEffect(() => {
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
+                }
+            } catch (error) {
+                console.log('Error fetching user data:', error);
+            }
+        };
+        fetchUserDetails();
+    }, []);
+
+    useEffect(() => {
+        emit("userOnline", { userId: userdetails?._id });
+    }, [emit]);
 
     useEffect(() => {
         return () => {
-            clearInterval(intervalId);  // Clean up interval when the component is unmounted
+            clearInterval(intervalId);
         };
     }, [intervalId]);
-
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
@@ -42,6 +126,7 @@ const OneToOneChat = ({ navigation }) => {
         const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
             setKeyboardVisible(false);
         });
+
         AudioRecord.init({
             sampleRate: 16000,
             channels: 1,
@@ -56,6 +141,53 @@ const OneToOneChat = ({ navigation }) => {
         };
     }, []);
 
+    useEffect(() => {
+        on('messageResponse', (response) => {
+            console.log('Message response received:');
+            if (response?.result) {
+                console.log('Current messages:', response?.result);
+                console.log('New message:');
+                setMessages((prevMessages) => {
+                    const updatedMessages = [...prevMessages, response.result];
+                    console.log('Updated messages:');
+                    return updatedMessages;
+                });
+            }
+        });
+
+        return () => {
+            removeListener('messageResponse');
+        };
+    }, [on]);
+
+    useEffect(() => {
+        if (audioFile !== null) {
+            sendMessage();
+        }
+    }, [audioFile]);
+
+
+    const sendMessage = async () => {
+        try {
+            const messageToSend = audioFile !== null ? audioFile : message;
+            let data = {
+                roomId: roomId,
+                senderId: userdetails?._id,
+                receiverId: item?.participantId?._id,
+                message: messageToSend,
+                messageType: audioFile !== null ? "audio" : "text",
+                userAgentSent: null,
+                files: [],
+            };
+            console.log('Data being sent:', data);
+            emit('message', data);
+            setMessage('')
+            setAudioFile(null)
+        } catch (error) {
+            console.log('sendMessage error ', error);
+        }
+    };
+
     const handleContentSizeChange = (contentWidth, contentHeight) => {
         if (contentHeight <= 100) {
             setInputHeight(contentHeight);
@@ -68,23 +200,23 @@ const OneToOneChat = ({ navigation }) => {
         const options = {
             mediaType: 'photo',
             quality: 1,
-            selectionLimit: 1, // Only allow one photo at a time
+            selectionLimit: 1,
         };
 
         launchImageLibrary(options, (response) => {
             if (!response.didCancel && !response.error && response.assets) {
-                // Add image as a separate message
                 const newImageMessage = {
                     id: Date.now().toString(),
-                    imageUri: response.assets[0].uri, // URI of the selected image
-                    sender: 'user', // You can switch to 'receiver' for received images
+                    imageUri: response.assets[0].uri,
+                    sender: 'user',
                 };
                 setMessages((prevMessages) => [...prevMessages, newImageMessage]);
             } else if (response.error) {
                 console.error('Image selection error:', response.error);
-            }
+            };
         });
     };
+
 
     const handleTakeSelfie = () => {
         const options = {
@@ -96,7 +228,6 @@ const OneToOneChat = ({ navigation }) => {
 
         launchCamera(options, (response) => {
             if (!response.didCancel && !response.error && response.assets) {
-                setCamera(response.assets[0].uri);
                 const newSelfieMessage = {
                     id: Date.now().toString(),
                     imageUri: response.assets[0].uri,
@@ -105,29 +236,6 @@ const OneToOneChat = ({ navigation }) => {
                 setMessages((prevMessages) => [...prevMessages, newSelfieMessage]);
             }
         });
-    };
-
-    const handleSend = () => {
-        if (message.trim()) {
-            const newMessage = {
-                id: Date.now().toString(),
-                text: message,
-                sender: 'user',
-                status: 'sent',
-            };
-
-            setMessages((prevMessages) => [...prevMessages, newMessage]);
-            setMessage('');
-
-            setTimeout(() => {
-                flatListRef.current.scrollToEnd({ animated: true });
-            }, 100);
-        }
-    };
-
-    const handleReceiverTyping = (text) => {
-        setMessage(text);
-        setIsReceiverTyping(text.length > 0);
     };
 
     const startRecording = () => {
@@ -140,54 +248,57 @@ const OneToOneChat = ({ navigation }) => {
         const audioFilePath = await AudioRecord.stop();
         setAudioFile(audioFilePath);
 
-        const newAudioMessage = {
-            id: Date.now().toString(),
-            audioUri: audioFilePath,
-            sender: 'user',
-        };
-        setMessages((prevMessages) => [...prevMessages, newAudioMessage]);
+        console.log('audio file after stop', audioFilePath)
 
-        // Play the audio after it's recorded
-        const newSound = new Sound(audioFilePath, '', (err) => {
-            if (err) {
-                console.log('Failed to load the sound', err);
-            } else {
-                setSound(newSound);
-            }
-        });
     };
 
-    const playAudio = () => {
-        setIsPlaying(true);
-        if (sound) {
-            sound.play((success) => {
-                if (success) {
-                    console.log('Audio played successfully');
-                } else {
-                    console.log('Audio playback failed');
-                }
-                setIsPlaying(false);  // Reset isPlaying when the audio finishes
-                clearInterval(intervalId);  // Stop the timer when audio finishes
-            });
 
-            // Round the duration to the nearest whole number and then start the timer
-            const roundedDuration = Math.round(sound._duration);  // Round the duration to an integer
-            setTimer(roundedDuration);  // Set the timer to the rounded value
-            const id = setInterval(() => {
-                setTimer(prevTime => {
-                    if (prevTime <= 0) {
-                        clearInterval(id);  // Stop the timer if it reaches 0
-                        return 0;
+    const playAudio = (messageId) => {
+        console.log('message id', messageId);
+
+        // Set the playing message ID to show the Lottie animation
+        setPlayingMessageId(messageId);
+        setIsPlaying(true);  // Set audio to be playing
+
+        const soundMessage = messages.find(msg => msg._id === messageId);
+        console.log('sound message', soundMessage);
+
+        if (soundMessage) {
+            const audioUri = soundMessage.message; // Get the audio URI from the message field
+
+            if (audioUri) {
+                const sound = new Sound(audioUri, '', (err) => {
+                    if (err) {
+                        console.log('Failed to load the sound', err);
+                    } else {
+                        sound.play((success) => {
+                            if (success) {
+                                console.log('Audio played successfully');
+                            } else {
+                                console.log('Audio playback failed');
+                            }
+                            // Reset isPlaying and playingMessageId after audio finishes
+                            setIsPlaying(false);
+                            setPlayingMessageId(null);
+                        });
                     }
-                    return prevTime - 1;
                 });
-            }, 1000);
-            setIntervalId(id);
+            } else {
+                console.log('Audio URI is undefined');
+            }
         } else {
-            Alert.alert('No Audio', 'No audio recorded yet');
-            setIsPlaying(false);
+            console.log('Message not found');
         }
     };
+
+
+
+    const formatTime = (timestamp) => {
+        const date = new Date(timestamp);
+        const options = { hour: '2-digit', minute: '2-digit', hour12: true };
+        return date.toLocaleString('en-US', options);
+    };
+
 
     return (
         <View style={styles.container}>
@@ -196,10 +307,9 @@ const OneToOneChat = ({ navigation }) => {
                     <TouchableOpacity onPress={() => navigation.goBack('')}>
                         <Image source={images.back} style={styles.back} />
                     </TouchableOpacity>
-                    <Image source={images.dummy} style={styles.profile} />
+                    <Image source={{ uri: item?.participantId?.profilePicture }} style={styles.profile} />
                     <View style={{ marginLeft: 15 }}>
-                        <Text style={styles.txt}>Loreum Ipsum</Text>
-
+                        <Text style={styles.txt}>{item?.participantId?.userName}</Text>
                         <Text style={styles.txt1}>New Delhi</Text>
 
                         {isRecording === true ?
@@ -212,57 +322,87 @@ const OneToOneChat = ({ navigation }) => {
                             :
                             null
                         }
-
                     </View>
-                </View>
-                <View>
-                    <Image source={images.dots} style={{ height: 35, width: 35, top: 3 }} />
                 </View>
             </View>
             <View style={styles.line} />
 
-
-
             <FlatList
                 ref={flatListRef}
                 data={messages}
-                ListFooterComponent={<View style={{marginBottom:100}}/>}
-                renderItem={({ item }) => (
-                    <View style={item.sender === 'user' ? [styles.userMessage, { backgroundColor: isPlaying === false ? '#D9FDD3' : 'white' }] : styles.receiverMessage}>
-                        {item.text && <Text style={styles.messageText}>{item.text}</Text>}
-                        {item.imageUri && (
-                            <TouchableOpacity>
-                                <Image source={{ uri: item.imageUri }} style={styles.messageImage} resizeMode='contain' />
-                            </TouchableOpacity>
-                        )}
-                        {isPlaying === false ?
-                            <View>
-                                {item.audioUri && (
-                                    <View style={styles.audioMessageContainer}>
-                                        <Text>🎙️ Audio Message</Text>
-                                        <TouchableOpacity onPress={playAudio}>
-                                            <Text style={styles.playButton}>Play</Text>
-                                        </TouchableOpacity>
-                                    </View>
+                onScroll={handleScroll}
+                style={{ marginTop: 20 }}
+                ListFooterComponent={<View style={{ marginBottom: 100 }} />}
+                renderItem={({ item }) => {
+                    const isUserMessage = item.receiverId !== userdetails?._id;
+                    const messageStyle = isUserMessage ? styles.userMessage : styles.receiverMessage;
+                    const formattedTime = formatTime(item.timestamp);
+                    const isAudioFile = item.message && item.message.startsWith('/data/user/');
+
+                    return (
+                        <View style={messageStyle}>
+                            {item.message && !isAudioFile && <Text style={styles.messageText}>{item.message}</Text>}
+
+                            {item.imageUri && (
+                                <TouchableOpacity>
+                                    <Image source={{ uri: item.imageUri }} style={styles.messageImage} resizeMode='contain' />
+                                </TouchableOpacity>
+                            )}
+
+                            {isAudioFile && (
+                                <View style={styles.audioMessageContainer}>
+                                    <Text>🎙️ Audio File</Text>
+                                    <TouchableOpacity onPress={() => playAudio(item._id)}>
+                                        <Text style={styles.playButton}>Play</Text>
+                                    </TouchableOpacity>
+
+
+                                    {isPlaying && playingMessageId === item._id && (
+                                        <LottieView
+                                            source={require('../../assets/recording.json')}
+                                            autoPlay
+                                            loop
+                                            style={styles.recordingAnimation}
+                                        />
+                                    )}
+                                </View>
+                            )}
+                            {isPlaying && playingMessageId === item._id && (
+                                <LottieView
+                                    source={require('../../assets/play.json')}
+                                    autoPlay
+                                    loop={false}
+                                    style={styles.playAnimation}
+                                />
+                            )}
+
+                            {isPlaying && playingMessageId === item._id && (
+                                <Text style={styles.timer}>{timer.toFixed(1)} sec</Text>
+                            )}
+
+                            <View style={styles.timeAndTickContainer}>
+                                <Text style={styles.timeText}>{formattedTime}</Text>
+
+                                {isUserMessage && (
+                                    <Image source={images.doubletick} style={styles.doubleTick} />
                                 )}
                             </View>
-                            :
-                            <LottieView
-                                source={require('../../assets/play.json')}
-                                autoPlay
-                                loop={false}
-                                style={styles.playAnimation}
-                            />
-
-                        }
-                        {isPlaying && (
-                            <Text style={styles.timer}>{timer.toFixed(1)}sec</Text>
-                        )}
-                    </View>
-                )}
-                keyExtractor={item => item.id}
+                        </View>
+                    );
+                }}
+                keyExtractor={item => item._id}
                 contentContainerStyle={{ paddingBottom: 10 }}
+                onLayout={handleLayout}
             />
+
+            {isTyping && (
+                <LottieView
+                    source={require('../../assets/typing.json')}
+                    autoPlay
+                    loop
+                    style={styles.typingAnimation}
+                />
+            )}
 
             <View style={styles.bottomContainer}>
                 <View style={styles.messageContainer}>
@@ -273,7 +413,7 @@ const OneToOneChat = ({ navigation }) => {
                         multiline
                         onContentSizeChange={handleContentSizeChange}
                         value={message}
-                        onChangeText={handleReceiverTyping}
+                        onChangeText={setMessage}
                     />
                     {!keyboardVisible && (
                         <>
@@ -285,7 +425,6 @@ const OneToOneChat = ({ navigation }) => {
                                 onPressIn={startRecording}
                                 onPressOut={stopRecording}
                             >
-
                                 <Image source={images.mic} style={styles.icon} />
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.iconButton} onPress={handlePhotoSelection}>
@@ -294,7 +433,7 @@ const OneToOneChat = ({ navigation }) => {
                         </>
                     )}
                     {keyboardVisible && (
-                        <TouchableOpacity style={styles.iconButton} onPress={handleSend}>
+                        <TouchableOpacity style={styles.iconButton} onPress={sendMessage}>
                             <View style={{ borderWidth: 1, height: 30, width: 46, justifyContent: 'center', right: 10, borderRadius: 70, backgroundColor: '#916008', borderColor: '#916008' }}>
                                 <Image source={images.send} style={[styles.icon, { tintColor: 'white', alignSelf: 'center', height: 18, width: 18 }]} />
                             </View>
@@ -307,6 +446,7 @@ const OneToOneChat = ({ navigation }) => {
 };
 
 export default OneToOneChat;
+
 
 const styles = StyleSheet.create({
     container: {
@@ -411,15 +551,19 @@ const styles = StyleSheet.create({
         marginVertical: 5,
         borderRadius: 10,
         maxWidth: '80%',
+        marginLeft: 10
     },
     messageText: {
         fontSize: 16,
         color: 'black',
     },
     typingAnimation: {
-        alignSelf: 'center',
-        marginTop: 10,
-        height: 30,
+        position: 'absolute',
+        bottom: 60,
+        left: 20,
+        zIndex: 100,
+        width: 50,
+        height: 50,
     },
     messageImage: {
         width: 250,
@@ -451,5 +595,23 @@ const styles = StyleSheet.create({
         color: 'black',
         textAlign: 'center',
         top: 2
+    },
+    timeAndTickContainer: {
+        flexDirection: 'row', // Place time and double tick on the same row
+        justifyContent: 'flex-end', // Align them as needed, or change this for the positioning
+        alignItems: 'center', // Center vertically
+        marginTop: 5, // Adjust spacing as necessary
+    },
+
+    timeText: {
+        fontSize: 12,
+        color: '#C4C4C4',
+        marginRight: 5, // Adds space between time and double tick
+        // You can also adjust alignSelf if needed
+    },
+
+    doubleTick: {
+        width: 20, // Adjust size as needed
+        height: 20, // Adjust size as needed
     },
 });

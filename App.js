@@ -18,12 +18,13 @@ const App = () => {
   const [state, setState] = useState('');
   const [country, setCountry] = useState('');
   const [userdetails, setUserDetails] = useState(null);
-
+  const { emit, on, removeListener } = useSocket(onSocketConnect); 
+ 
   const onSocketConnect = () => {
     console.log('Socket connected!');
   };
 
-  const { emit, on, removeListener } = useSocket(onSocketConnect); 
+  
 
   useEffect(() => {
     const fetchUserDetails = async () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, } from "react";
 import {
     Text,
     View,
@@ -7,6 +7,7 @@ import {
     Image,
     FlatList,
     TouchableOpacity,
+    ActivityIndicator
 } from "react-native";
 import images from "../../components/images";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -14,11 +15,16 @@ import useSocket from "../../socket/SocketMain";
 import moment from "moment";
 
 const ChatScreen = ({ navigation }) => {
+
+
     const [search, setSearch] = useState("");
     const [chatList, setChatList] = useState([]);
     const [userdetails, setUserDetails] = useState(null);
-
+    const [initialMessages, setInitialMessages] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const emittedRoomIds = useRef(new Set());
     const { emit, on, removeListener } = useSocket(onSocketConnect);
+
 
 
     useEffect(() => {
@@ -38,58 +44,98 @@ const ChatScreen = ({ navigation }) => {
 
 
     useEffect(() => {
-        emit("userOnline", { userId: userdetails?._id });
-        emit("getRecentChatList", { userId: userdetails?._id });
+        if (userdetails?._id) {
+            emit("userOnline", { userId: userdetails?._id });
+            emit("getRecentChatList", { userId: userdetails?._id });
 
-        on('recentChatListResponse', (event) => {
-            setChatList(event?.list)
-        })
-        on('userStatusChange', (event) => {
+            on('recentChatListResponse', (event) => {
+                const updatedChats = event?.list || [];
+                updatedChats.forEach((chatItem) => {
+                    const participantId = chatItem?.participantId?._id;
 
-            setChatList(prevChatList =>
-                prevChatList.map(chatItem =>
-                    chatItem?.participantId?._id === event?.userId
-                        ? {
-                            ...chatItem,
-                            participantId: {
-                                ...chatItem.participantId,
-                                isOnLine: event?.isOnline
+                    if (!chatItem.roomId && !emittedRoomIds.current.has(participantId)) {
+                        emittedRoomIds.current.add(participantId);
+                        emit("checkRoom", { users: { participantId, userId: userdetails?._id } });
+                    }
+                });
+                setChatList(updatedChats);
+                setLoading(false);
+            });
+
+            on('userStatusChange', (event) => {
+                setChatList(prevChatList =>
+                    prevChatList.map(chatItem =>
+                        chatItem?.participantId?._id === event?.userId
+                            ? {
+                                ...chatItem,
+                                participantId: {
+                                    ...chatItem.participantId,
+                                    isOnLine: event?.isOnline
+                                }
                             }
-                        }
-                        : chatItem
-                )
-            );
+                            : chatItem
+                    )
+                );
+            });
+
+            on('roomResponse', (response) => {
+                const roomId = response?.roomId;
+                const participantId = response?.userId;
+                if (roomId) {
+                    setChatList((prevChatList) => {
+                        return prevChatList.map(chatItem =>
+                            chatItem?.participantId?._id === participantId
+                                ? { ...chatItem, roomId }
+                                : chatItem
+                        );
+                    });
+                    emit('initialMessages', { userId: userdetails?._id, roomId });
+                    on('initialMessagesResponse', (response) => {
+                        const messages = response || [];
+                        setInitialMessages(messages?.initialMessages);
+                    });
+                }
+            });
 
 
-        });
-        return () => {
-            removeListener()
-        };
-    }, [emit, on])
+            return () => {
+                removeListener('recentChatListResponse');
+                removeListener('userStatusChange');
+                removeListener('roomResponse');
+                removeListener('initialMessagesResponse');
+            };
+        }
+    }, [userdetails]);
+
 
     const onSocketConnect = () => {
         console.log('Socket connected in chat screen');
     };
 
+    const handleChatPress = (item) => {
+        if (item.roomId) {
+            navigation.navigate('OneToOneChat', { roomId: item.roomId, initialMessages });
+        } else {
+            const participantId = item?.participantId?._id;
+            const userId = userdetails?._id;
+            emit("checkRoom", { users: { participantId, userId } });
 
-    const topOnlineUsers = ({ item }) => {
-        return (
-            <View>
-                <View style={styles.avatarContainer}>
-                    <View style={styles.userIconContainer}>
-                        <View>
-                            <Image source={{ uri: item?.participantId?.profilePicture }} style={styles.topAvatar} />
-                            <View style={styles.onlineIndicator} />
-                        </View>
-                        <Text style={styles.userName}>{item?.participantId?.userName}</Text>
-                    </View>
-                </View>
-            </View>
-        )
-    }
+            on('roomResponse', (response) => {
+                const roomId = response?.roomId;
+                if (roomId) {
+                    emit('initialMessages', { userId, roomId });
+                    on('initialMessagesResponse', (response) => {
+                        const messages = response?.messages || [];
+                        navigation.navigate('OneToOneChat', { roomId: roomId, initialMessages: initialMessages, item: item });
+                    });
+                } else {
+                    console.log("Room ID not available.");
+                }
+            });
+        }
+    };
 
     const renderItem = ({ item }) => {
-
         const lastMessageTimestamp = moment(item?.lastMessage?.timestamp);
         const currentTime = moment();
         let displayTime;
@@ -108,8 +154,9 @@ const ChatScreen = ({ navigation }) => {
         else {
             displayTime = lastMessageTimestamp.format('MMM D, h:mm A');
         }
+
         return (
-            <TouchableOpacity onPress={() => navigation.navigate('OneToOneChat')} style={styles.chatItem}>
+            <TouchableOpacity onPress={() => handleChatPress(item)} style={styles.chatItem}>
                 <View style={styles.avatarContainer}>
                     <Image source={{ uri: item?.participantId?.profilePicture }} style={styles.avatar} />
                     {item?.participantId?.isOnLine === true ?
@@ -125,45 +172,39 @@ const ChatScreen = ({ navigation }) => {
                     </View>
                 </View>
             </TouchableOpacity>
-        )
-    }
+        );
+    };
 
     return (
         <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <Image source={images.profilePic} style={styles.profilePic} />
-                <Text style={styles.headerTitle}>Chats</Text>
-            </View>
+            {loading ? (
+                <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
+            ) : (
+                <>
+                    <View style={styles.header}>
+                        <Image source={{ uri: userdetails?.profilePicture }} style={styles.profilePic} />
+                        <Text style={styles.headerTitle}>Chats</Text>
+                    </View>
 
-            {/* Search Input with Icon */}
-            <View style={styles.searchContainer}>
-                <Image source={images.search} style={styles.searchIcon} />
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search"
-                    placeholderTextColor="#C4C4C4"
-                    value={search}
-                    onChangeText={(text) => setSearch(text)}
-                />
-            </View>
+                    <View style={styles.searchContainer}>
+                        <Image source={images.search} style={styles.searchIcon} />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Search"
+                            placeholderTextColor="#C4C4C4"
+                            value={search}
+                            onChangeText={(text) => setSearch(text)}
+                        />
+                    </View>
 
-            <View>
-                <FlatList
-                    data={chatList.filter(item => item?.participantId?.isOnline != false)}
-                    keyExtractor={(item) => item?._id}
-                    renderItem={topOnlineUsers}
-                    style={styles.chatList}
-                />
-            </View>
-
-
-            <FlatList
-                data={chatList}
-                keyExtractor={(item) => item?._id}
-                renderItem={renderItem}
-                style={styles.chatList}
-            />
+                    <FlatList
+                        data={chatList}
+                        keyExtractor={(item) => item?._id}
+                        renderItem={renderItem}
+                        style={styles.chatList}
+                    />
+                </>
+            )}
         </View>
     );
 };
@@ -180,9 +221,9 @@ const styles = StyleSheet.create({
         marginTop: 50,
     },
     profilePic: {
-        height: 40,
-        width: 40,
-        borderRadius: 20,
+        height: 50,
+        width: 50,
+        borderRadius: 100,
     },
     headerTitle: {
         fontSize: 24,
@@ -206,44 +247,13 @@ const styles = StyleSheet.create({
         tintColor: "#C4C4C4",
     },
     searchInput: {
-        // flex: 1,
         fontFamily: "Poppins-Regular",
         fontSize: 14,
         color: "#000",
         paddingLeft: 20,
         height: 44,
         width: '100%',
-        top: 3
-    },
-    topIcons: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginTop: 20,
-    },
-    userIconContainer: {
-        alignItems: "center",
-    },
-    topAvatar: {
-        height: 50,
-        width: 50,
-        borderRadius: 25,
-    },
-    userName: {
-        marginTop: 5,
-        fontSize: 12,
-        fontFamily: "Poppins-Regular",
-        color: "#7A7A7A",
-    },
-    onlineIndicator: {
-        position: "absolute",
-        bottom: 2,
-        right: 2,
-        height: 12,
-        width: 12,
-        borderRadius: 6,
-        backgroundColor: "#00D26A",
-        borderWidth: 2,
-        borderColor: "white",
+        top: 3,
     },
     chatList: {
         marginTop: 20,
@@ -284,6 +294,22 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontFamily: "Poppins-Regular",
         color: "#C4C4C4",
+    },
+    onlineIndicator: {
+        position: "absolute",
+        bottom: 2,
+        right: 2,
+        height: 12,
+        width: 12,
+        borderRadius: 6,
+        backgroundColor: "#00D26A",
+        borderWidth: 2,
+        borderColor: "white",
+    },
+    loader: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
 

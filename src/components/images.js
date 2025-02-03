@@ -78,6 +78,8 @@ const images = {
     delete: require('../assets/delete.png'),
     tick1: require('../assets/tick1.png'),
     redheart: require('../assets/redheart.png'),
+    doubletick: require('../assets/doubletick.png'),
+
 
 
 

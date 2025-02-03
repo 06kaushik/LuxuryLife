@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import { SocketURL } from '../components/FetchApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const useSocket = (onConnectCallback) => {
+const useSocket = (onConnectCallback, userdetails) => {
     const socketRef = useRef(null);
 
     useEffect(() => {
@@ -21,17 +21,26 @@ const useSocket = (onConnectCallback) => {
 
             // Handle connection
             socketRef.current.on('connect', () => {
+                console.log('connected');
                 onConnectCallback();
+                // Emit 'userOnline' when the socket is connected
+                if (userdetails?._id) {
+                    socketRef.current.emit("userOnline", { userId: userdetails._id });
+                }
             });
 
             // Handle disconnection
             socketRef.current.on('disconnect', () => {
-                // Handle disconnection if needed
+                console.log('disconnected');
+                // Emit 'userOnline' on reconnection
+                if (userdetails?._id) {
+                    socketRef.current.emit("userOnline", { userId: userdetails._id });
+                }
             });
 
             // Handle errors
             socketRef.current.on('error', (error) => {
-                // Handle socket error if needed
+                console.log('Socket error:', error);
             });
         };
 
@@ -44,7 +53,7 @@ const useSocket = (onConnectCallback) => {
                 socketRef.current.disconnect();
             }
         };
-    }, [onConnectCallback]); // Ensure the effect re-runs if onConnectCallback changes
+    }, [onConnectCallback, userdetails]);
 
     // Expose socket functions
     const emit = (event, data = {}) => {
@@ -59,13 +68,19 @@ const useSocket = (onConnectCallback) => {
         }
     };
 
+    const once = (event, cb) => {
+        if (socketRef.current) {
+            socketRef.current.once(event, cb);
+        }
+    };
+
     const removeListener = (event, cb) => {
         if (socketRef.current) {
             socketRef.current.removeListener(event, cb);
         }
     };
 
-    return { emit, on, removeListener };
+    return { emit, on, removeListener, once };
 };
 
 export default useSocket;
