@@ -20,6 +20,7 @@ import { useIsFocused } from '@react-navigation/native';
 import LaodingScreen from "../../components/LoadingScreen";
 import Toast from 'react-native-simple-toast'
 import FastImage from 'react-native-fast-image';
+import useSocket from "../../socket/SocketMain";
 
 const { width, height } = Dimensions.get("window");
 
@@ -40,14 +41,19 @@ const DashBoardScreen = ({ navigation }) => {
     const positions = useRef([]).current;
     const [swipedCount, setSwipedCount] = useState(0);
     const [appState, setAppState] = useState(AppState.currentState);
+    const { emit, on, removeListener } = useSocket(onSocketConnect);
 
-
+    const onSocketConnect = () => {
+        console.log('Socket connected in chat screen');
+    };
     useEffect(() => {
         console.log('in the useEfect');
 
         getdatafromAsync()
         getUserFilteredData();
     }, [isFocused])
+
+    
 
     useEffect(() => {
         const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -353,6 +359,26 @@ const DashBoardScreen = ({ navigation }) => {
         }
     }
 
+    const handleChatPress = (item) => {
+        console.log('inside ', item);
+
+        try {
+            emit("checkRoom", { users: { participantId: item?.userId, userId: userdetails?._id } });
+            on('roomResponse', (response) => {
+                const roomId = response?.roomId;
+                emit('initialMessages', { userId: userdetails?._id, roomId });
+                on('initialMessagesResponse', (response) => {
+                    const messages = response?.initialMessages || [];
+                    navigation.navigate('OneToOneChat', { roomId: roomId, initialMessages: messages, userName: item?.userName, profilepic: item?.profilePicture, id: item?.userId });
+                });
+            });
+
+        } catch (error) {
+            console.log('error from navigatuo to one to one ', error);
+        }
+
+    };
+
 
     return (
         <View style={{ flex: 1 }}>
@@ -610,9 +636,16 @@ const DashBoardScreen = ({ navigation }) => {
                                     width: "100%"
                                 }}>
                                     <View style={{ bottom: 30, left: 16 }}>
-                                        <View style={styles.onlineBadge}>
-                                            <Text style={styles.onlineText1}>Online</Text>
-                                        </View>
+                                        {item?.isOnline === true ?
+                                            <View style={styles.onlineBadge}>
+                                                <Text style={styles.onlineText1}>Online</Text>
+                                            </View>
+                                            :
+                                            <View style={[styles.onlineBadge, { backgroundColor: 'red', borderColor: 'red' }]}>
+                                                <Text style={styles.onlineText1}>Offline</Text>
+                                            </View>
+                                        }
+
                                         <Text style={styles.cardName}>{item.userName}, {item.age}</Text>
                                         <Text style={styles.cardLocation}>{item.city}</Text>
                                         <Text style={styles.cardDistance}>{item.distance} miles</Text>
@@ -624,7 +657,7 @@ const DashBoardScreen = ({ navigation }) => {
                                         <TouchableOpacity onPress={() => handleHeartSwipe(index, item?.userId)} style={[styles.circleButton, styles.heartButton]}>
                                             <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]}>
+                                        <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={() => handleChatPress(item)}>
                                             <Image source={images.chat} style={styles.buttonIcon} />
                                         </TouchableOpacity>
                                     </View>

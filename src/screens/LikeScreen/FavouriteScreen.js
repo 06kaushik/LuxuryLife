@@ -5,6 +5,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import moment from "moment";
+import useSocket from "../../socket/SocketMain";
 
 
 const { width, height } = Dimensions.get('window')
@@ -17,6 +18,11 @@ const FavouriteScreen = ({ navigation }) => {
     const [hasMoreData, setHasMoreData] = useState(true);
     const [userdetails, setUserDetails] = useState(null);
     const [favourite, setFavourite] = useState([]);
+    const { emit, on, removeListener } = useSocket(onSocketConnect);
+
+    const onSocketConnect = () => {
+        console.log('Socket connected in chat screen');
+    };
 
 
     useEffect(() => {
@@ -53,7 +59,7 @@ const FavouriteScreen = ({ navigation }) => {
         setIsLoading(true)
         try {
             const resp = await axios.post(`home/get-my-favorite`, body, { headers });
-            console.log('Response from the favorite data:', resp.data.data);
+            // console.log('Response from the favorite data:', resp.data.data);
             setFavourite(prevData => currentPage === 0 ? resp?.data?.data : [...prevData, ...resp?.data?.data])
             if (resp?.data?.data?.length < body.pageLength) {
                 setHasMoreData(false)
@@ -111,6 +117,23 @@ const FavouriteScreen = ({ navigation }) => {
 
     }
 
+    const handleChatPress = (item) => {
+        try {
+            emit("checkRoom", { users: { participantId: item?.userId, userId: userdetails?._id } });
+            on('roomResponse', (response) => {
+                const roomId = response?.roomId;
+                emit('initialMessages', { userId: userdetails?._id, roomId });
+                on('initialMessagesResponse', (response) => {
+                    const messages = response?.initialMessages || [];
+                    navigation.navigate('OneToOneChat', { roomId: roomId, initialMessages: messages, userName: item?.targetUser?.userName, profilepic: item?.targetUser?.profilePicture, id: item?.userId });
+                });
+            });
+
+        } catch (error) {
+            console.log('error from navigatuo to one to one ', error);
+        }
+    };
+
 
     const renderFavourite = ({ item }) => {
         const lastActive = moment(item?.user?.lastActive).fromNow();
@@ -136,7 +159,7 @@ const FavouriteScreen = ({ navigation }) => {
                     <TouchableOpacity onPress={() => userHide(item?.userId)} style={styles.unhideButton}>
                         <Text style={styles.unhideText}>Hide</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
+                    <TouchableOpacity style={styles.iconButton} onPress={() => handleChatPress(item)}>
                         <Image source={images.chat} style={styles.icon} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.iconButton}>

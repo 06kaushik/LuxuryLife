@@ -79,9 +79,8 @@ const images = {
     tick1: require('../assets/tick1.png'),
     redheart: require('../assets/redheart.png'),
     doubletick: require('../assets/doubletick.png'),
-
-
-
+    singletick: require('../assets/singleTick.png'),
+    bluetick: require('../assets/bluetick.png'),
 
 
 
@@ -92,6 +91,10 @@ const images = {
 
 
     
+
+
+
+
 
 
 

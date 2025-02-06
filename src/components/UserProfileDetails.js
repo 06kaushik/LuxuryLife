@@ -355,12 +355,21 @@ const UserProfileDetails = ({ navigation, route }) => {
             </View>
             <ScrollView>
                 <View style={styles.contentContainer}>
-                    <View style={styles.cont1}>
-                        <Text style={styles.onlineText}>Online</Text>
-                    </View>
-                    <View style={styles.cont2}>
-                        <Text style={styles.txt}>PREMIUM</Text>
-                    </View>
+                    {userprofiledata?.isOnline === true ?
+                        <View style={styles.cont1}>
+                            <Text style={styles.onlineText}>Online</Text>
+                        </View>
+                        :
+                        <View style={[styles.cont1, { backgroundColor: 'red', borderColor: 'red' }]}>
+                            <Text style={styles.onlineText}>Offline</Text>
+                        </View>
+                    }
+                    {userprofiledata?.isSubscribed === true ?
+                        <View style={styles.cont2}>
+                            <Text style={styles.txt}>PREMIUM</Text>
+                        </View>
+                        :
+                        null}
                 </View>
                 <View style={styles.cont3}>
                     <Text style={styles.txt1}>{userprofiledata?.userName || NaN}, {userprofiledata?.age || NaN} </Text>

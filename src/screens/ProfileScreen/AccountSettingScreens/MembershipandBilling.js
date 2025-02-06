@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Text, View, TouchableOpacity, Image, StyleSheet } from "react-native";
 import images from "../../../components/images";
 import LinearGradient from "react-native-linear-gradient";
+import RazorpayCheckout from 'react-native-razorpay';
 
 const MembershipScreen = ({ navigation }) => {
     const [selectedButton, setSelectedButton] = useState("Monthly");
@@ -78,7 +79,30 @@ const MembershipScreen = ({ navigation }) => {
                             <Text style={styles.price}>$180</Text>
                             <Text style={styles.perMonth}>per month</Text>
 
-                            <TouchableOpacity style={styles.button}>
+                            <TouchableOpacity style={styles.button} onPress={() => {
+                                var options = {
+                                    description: 'Credits towards consultation',
+                                    image: 'https://i.imgur.com/3g7nmJC.jpg',
+                                    currency: 'USD',
+                                    key: 'rzp_test_0U87k8QQAqqeki',
+                                    amount: 2000 * 100,
+                                    name: 'Acme Corp',
+                                    order_id: '',
+                                    prefill: {
+                                        email: 'gaurav.kumar@example.com',
+                                        contact: '9191919191',
+                                        name: 'Gaurav Kumar'
+                                    },
+                                    theme: { color: '#53a20e' }
+                                }
+                                RazorpayCheckout.open(options).then((data) => {
+                                    // handle success
+                                    alert(`Success: ${data.razorpay_payment_id}`);
+                                }).catch((error) => {
+                                    // handle failure
+                                    alert(`Error: ${error.code} | ${error.description}`);
+                                });
+                            }}>
                                 <Text style={styles.buttonText}>Upgrade to premium</Text>
                             </TouchableOpacity>
                             <Text>Features</Text>

@@ -65,10 +65,10 @@ const RelevantScreen = ({ navigation }) => {
                             <Text style={styles.memberDistance}>{item.distance}</Text>
                         </View>
                         <View style={{}}>
-                            <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 30, width: 30, justifyContent: 'center',backgroundColor:'white'}}>
+                            <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 30, width: 30, justifyContent: 'center', backgroundColor: 'white' }}>
                                 <Image source={images.chat} style={styles.icon} />
                             </TouchableOpacity>
-                            <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 30, width: 30, justifyContent: 'center',backgroundColor:'white',top:5 }}>
+                            <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 30, width: 30, justifyContent: 'center', backgroundColor: 'white', top: 5 }}>
                                 <Image source={images.heart} style={styles.icon} />
                             </TouchableOpacity>
                         </View>
@@ -83,16 +83,16 @@ const RelevantScreen = ({ navigation }) => {
     return (
 
         <View style={styles.main}>
-        <FlatList
-            data={relevant}
-            renderItem={renderRelevant}
-            keyExtractor={(item) => item.id}
-            numColumns={2}
-            style={{ marginTop: 20 }}
-            contentContainerStyle={styles.gridContent}
-        />
+            <FlatList
+                data={relevant}
+                renderItem={renderRelevant}
+                keyExtractor={(item) => item.id}
+                numColumns={2}
+                style={{ marginTop: 20 }}
+                contentContainerStyle={styles.gridContent}
+            />
 
-    </View>
+        </View>
     )
 }
 

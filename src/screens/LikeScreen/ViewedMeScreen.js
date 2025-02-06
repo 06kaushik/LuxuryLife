@@ -5,6 +5,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import moment from "moment";
+import useSocket from "../../socket/SocketMain";
 
 const { width, height } = Dimensions.get('window')
 
@@ -12,6 +13,11 @@ const ViewedMe = ({ navigation }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [userdetails, setUserDetails] = useState(null);
     const [viewedme, setViewedMe] = useState([]);
+    const { emit, on, removeListener } = useSocket(onSocketConnect);
+
+    const onSocketConnect = () => {
+        console.log('Socket connected in chat screen');
+    };
 
 
     useEffect(() => {
@@ -120,6 +126,27 @@ const ViewedMe = ({ navigation }) => {
 
     }
 
+    const handleChatPress = (item) => {
+        try {
+            emit("checkRoom", { users: { participantId: item?.userId, userId: userdetails?._id } });
+            on('roomResponse', (response) => {
+                const roomId = response?.roomId;
+                console.log('room id in viewd screen',roomId);
+                
+                emit('initialMessages', { userId: userdetails?._id, roomId });
+                on('initialMessagesResponse', (response) => {
+                    const messages = response?.initialMessages || [];
+                    navigation.navigate('OneToOneChat', { roomId: roomId, initialMessages: messages, userName: item?.user?.userName, profilepic: item?.user?.profilePicture, id: item?.userId });
+                });
+            });
+
+        } catch (error) {
+            console.log('error from navigatuo to one to one ', error);
+        }
+
+    };
+
+
 
     const renderViewedMe = ({ item }) => {
         const lastActive = moment(item?.user?.lastActive).fromNow();
@@ -147,7 +174,7 @@ const ViewedMe = ({ navigation }) => {
                     <TouchableOpacity onPress={() => userHide(item?.userId)} style={styles.unhideButton}>
                         <Text style={styles.unhideText}>Hide</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
+                    <TouchableOpacity style={styles.iconButton} onPress={() => handleChatPress(item)}>
                         <Image source={images.chat} style={styles.icon} />
                     </TouchableOpacity>
                     <TouchableOpacity

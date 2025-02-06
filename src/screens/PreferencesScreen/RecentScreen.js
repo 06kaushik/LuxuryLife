@@ -4,6 +4,7 @@ import images from "../../components/images";
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import useSocket from "../../socket/SocketMain";
 
 const { width, height } = Dimensions.get('window');
 
@@ -11,11 +12,13 @@ const RecentScreen = ({ navigation }) => {
 
     const [userData, setUserData] = useState([])
     const [filterdata, setFilterData] = useState(null)
-    const [currentPage, setCurrentPage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
-    const [isPaginationLoading, setIsPaginationLoading] = useState(false);
-    const [hasMoreData, setHasMoreData] = useState(true);
     const [userdetails, setUserDetails] = useState(null)
+    const { emit, on, removeListener } = useSocket(onSocketConnect);
+
+    const onSocketConnect = () => {
+        console.log('Socket connected in chat screen');
+    };
 
 
 
@@ -165,9 +168,29 @@ const RecentScreen = ({ navigation }) => {
         }
     }
 
+    const handleChatPress = (item) => {
+        try {
+            emit("checkRoom", { users: { participantId: item?.userId, userId: userdetails?._id } });
+            on('roomResponse', (response) => {
+                const roomId = response?.roomId;
+                emit('initialMessages', { userId: userdetails?._id, roomId });
+                on('initialMessagesResponse', (response) => {
+                    const messages = response?.initialMessages || [];
+                    navigation.navigate('OneToOneChat', { roomId: roomId, initialMessages: messages, userName: item?.userName, profilepic: item?.profilePicture, id: item?.userId });
+                });
+            });
+
+        } catch (error) {
+            console.log('error from navigatuo to one to one ', error);
+        }
+
+    };
+
 
 
     const renderNewest = ({ item }) => {
+        console.log('newest item', item);
+
         const hasLiked = item.activity_logs.some(log => log.action === "LIKE" && log.userId === userdetails?._id);
         const truncatedUserName = item.userName.length > 8 ? item.userName.slice(0, 8) : item.userName;
         return (
@@ -193,7 +216,7 @@ const RecentScreen = ({ navigation }) => {
                                     <Text style={styles.memberDistance}>{item.distance}</Text>
                                 </View>
                                 <View style={{}}>
-                                    <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 30, width: 30, justifyContent: 'center', backgroundColor: 'white' }}>
+                                    <TouchableOpacity onPress={() => handleChatPress(item)} style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 30, width: 30, justifyContent: 'center', backgroundColor: 'white' }}>
                                         <Image source={images.chat} style={styles.icon} />
                                     </TouchableOpacity>
                                     <TouchableOpacity
