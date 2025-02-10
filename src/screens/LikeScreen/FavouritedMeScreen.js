@@ -10,6 +10,7 @@ import useSocket from "../../socket/SocketMain";
 const { width, height } = Dimensions.get('window')
 
 const FavouriteMeScreen = ({ navigation }) => {
+    console.log('in favourited me screen');
 
     const [currentPage, setCurrentPage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);

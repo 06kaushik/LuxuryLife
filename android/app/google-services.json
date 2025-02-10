@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "387779373749-ubscdsebqptigjt3aj56t3k8o7kt7i4q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.luxurylife",
+            "certificate_hash": "c3d482a680bb589919dc7db386a4fd92f9278e06"
+          }
+        },
+        {
           "client_id": "387779373749-3ikotarkoc8ilie4tqkmstmpuo6kc7tt.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -26,7 +26,6 @@ const ProfileScreen = ({ navigation }) => {
     const [isModal, setIsModal] = useState(false)
 
 
-
     useEffect(() => {
         const fetchUserDetails = async () => {
             try {
@@ -53,8 +52,8 @@ const ProfileScreen = ({ navigation }) => {
 
         launchImageLibrary(options, (response) => {
             if (!response.didCancel && !response.error && response.assets) {
-                setSelfie(response.assets[0].uri); // Save the captured selfie
-                handleSubmitSelfie(response.assets[0].uri); // Automatically call the submit function with the image URI
+                setSelfie(response.assets[0].uri);
+                handleSubmitSelfie(response.assets[0].uri);
             }
         });
     };
@@ -86,16 +85,10 @@ const ProfileScreen = ({ navigation }) => {
             console.log('Response from account update:', response.data);
 
             if (response.status === 200) {
-                // Show success toast
                 Toast.show('Selfie uploaded successfully!', Toast.SHORT);
-
-                // Update AsyncStorage with new user data after successful response
                 const updatedUserData = { ...userdetails, profilePicture: realTimePictureUrl };
                 await AsyncStorage.setItem('UserData', JSON.stringify(updatedUserData));
-
-                // Update the state with new user data
                 setUserDetails(updatedUserData);
-
                 return true;
             } else {
                 Toast.show('Failed to upload selfie. Please try again.', Toast.SHORT);
@@ -113,8 +106,6 @@ const ProfileScreen = ({ navigation }) => {
             setSubmitSelfie(false);
         }
     };
-
-
 
     const uploadPhoto = async (uri, isPrivate = false) => {
         const token = await AsyncStorage.getItem('authToken');
@@ -183,12 +174,12 @@ const ProfileScreen = ({ navigation }) => {
                     <Text style={[styles.txt1, { bottom: 5 }]}>Edit</Text>
                 </TouchableOpacity> */}
 
-                <View style={styles.cont}>
+                <TouchableOpacity style={styles.cont} onPress={() => navigation.navigate('VerifyIdentity')}>
                     <View style={styles.cont1}>
                         <Image source={images.correct} style={styles.correct} />
                         <Text style={styles.txt2}>Get ID Verified</Text>
                     </View>
-                </View>
+                </TouchableOpacity>
                 <View style={{
                     flexDirection: 'row',
                     marginTop: 30,
@@ -207,14 +198,15 @@ const ProfileScreen = ({ navigation }) => {
                             strokeCap="round"
                         />
                     </View>
-
                     <Text style={styles.txt3}>{Math.round(userdetails?.profileCompletion)}% Profile Completion</Text>
                 </View>
 
                 <View style={styles.cont2}>
                     <Text style={styles.txt4}>Get 3x more benefits</Text>
                     <LinearGradient colors={['#916008', '#CC9933']} style={styles.cont3}>
-                        <Text style={styles.txt5}>Upgrade to premium</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('Membership')}>
+                            <Text style={styles.txt5}>Upgrade to premium</Text>
+                        </TouchableOpacity>
                     </LinearGradient>
                 </View>
 

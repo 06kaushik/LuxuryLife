@@ -10,15 +10,15 @@ import useSocket from "../../socket/SocketMain";
 const { width, height } = Dimensions.get('window')
 
 const ViewedMe = ({ navigation }) => {
+
     const [isLoading, setIsLoading] = useState(true);
     const [userdetails, setUserDetails] = useState(null);
     const [viewedme, setViewedMe] = useState([]);
-    const { emit, on, removeListener } = useSocket(onSocketConnect);
+    const { emit, on } = useSocket(onSocketConnect);
 
     const onSocketConnect = () => {
         console.log('Socket connected in chat screen');
     };
-
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -35,7 +35,9 @@ const ViewedMe = ({ navigation }) => {
         fetchUserDetails();
     }, []);
 
+
     const getViewMeData = async () => {
+
         if (!userdetails?.location?.coordinates) return;
         const token = await AsyncStorage.getItem('authToken');
         const headers = { Authorization: token };
@@ -44,19 +46,20 @@ const ViewedMe = ({ navigation }) => {
             pageLength: 2000,
             where: {
                 longitude: userdetails?.location?.coordinates[0],
-                latitude: userdetails?.location?.coordinates[1]
+                latitude: userdetails?.location?.coordinates[1],
             },
             sortBy: "age",
         };
-
+        console.log('body of vieweed data', body);
+        
         setIsLoading(true);
         try {
             const resp = await axios.post('home/get-favorite/viewed', body, { headers });
-            console.log('Response from the viewed me data:', resp.data.data.length);
+            console.log('Response from the viewed me data:', resp.data);
             setViewedMe(resp?.data?.data)
             setIsLoading(false);
         } catch (error) {
-            console.error('Error from get viewed data:', error);
+            console.error('Error from get viewed data:', error?.response?.data?.message);
             setIsLoading(false);
         }
     };
@@ -66,6 +69,7 @@ const ViewedMe = ({ navigation }) => {
             getViewMeData();
         }
     }, [userdetails]);
+
 
     const userLike = async (id) => {
         const token = await AsyncStorage.getItem('authToken')
@@ -80,7 +84,6 @@ const ViewedMe = ({ navigation }) => {
             const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
             console.log('response from the like button', resp.data);
             getViewMeData()
-
         } catch (error) {
             console.log('error from the like ', error);
         }
@@ -131,24 +134,22 @@ const ViewedMe = ({ navigation }) => {
             emit("checkRoom", { users: { participantId: item?.userId, userId: userdetails?._id } });
             on('roomResponse', (response) => {
                 const roomId = response?.roomId;
-                console.log('room id in viewd screen',roomId);
-                
+                console.log('room id in viewd screen', roomId);
+
                 emit('initialMessages', { userId: userdetails?._id, roomId });
                 on('initialMessagesResponse', (response) => {
                     const messages = response?.initialMessages || [];
                     navigation.navigate('OneToOneChat', { roomId: roomId, initialMessages: messages, userName: item?.user?.userName, profilepic: item?.user?.profilePicture, id: item?.userId });
                 });
             });
-
         } catch (error) {
             console.log('error from navigatuo to one to one ', error);
         }
-
     };
 
 
-
     const renderViewedMe = ({ item }) => {
+
         const lastActive = moment(item?.user?.lastActive).fromNow();
         const hasLiked = item.userLikeActionCount === 1;
 
@@ -179,10 +180,9 @@ const ViewedMe = ({ navigation }) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => hasLiked ? userDisLike(item?.userId) : userLike(item?.userId)}
-                        style={styles.iconButton} >
+                        style={styles.iconButton}>
                         <Image source={hasLiked ? images.redheart : images.heart} style={[styles.icon, { height: 20, width: 20, top: 1 }]} />
                     </TouchableOpacity>
-
                 </View>
             </View>
         );

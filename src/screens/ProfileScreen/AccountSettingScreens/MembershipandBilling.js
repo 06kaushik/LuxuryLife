@@ -86,7 +86,7 @@ const MembershipScreen = ({ navigation }) => {
                                     currency: 'USD',
                                     key: 'rzp_test_0U87k8QQAqqeki',
                                     amount: 2000 * 100,
-                                    name: 'Acme Corp',
+                                    name: 'AcadeCraft',
                                     order_id: '',
                                     prefill: {
                                         email: 'gaurav.kumar@example.com',

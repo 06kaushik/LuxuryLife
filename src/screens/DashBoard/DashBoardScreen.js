@@ -25,7 +25,6 @@ import useSocket from "../../socket/SocketMain";
 const { width, height } = Dimensions.get("window");
 
 
-
 const DashBoardScreen = ({ navigation }) => {
     const scrollY = useRef(new Animated.Value(0)).current;
     const [userData, setUserData] = useState([])
@@ -41,6 +40,7 @@ const DashBoardScreen = ({ navigation }) => {
     const positions = useRef([]).current;
     const [swipedCount, setSwipedCount] = useState(0);
     const [appState, setAppState] = useState(AppState.currentState);
+    const [privatepicrequest, setPrivatePicRequest] = useState(false)
     const { emit, on, removeListener } = useSocket(onSocketConnect);
 
     const onSocketConnect = () => {
@@ -48,12 +48,10 @@ const DashBoardScreen = ({ navigation }) => {
     };
     useEffect(() => {
         console.log('in the useEfect');
-
         getdatafromAsync()
         getUserFilteredData();
     }, [isFocused])
 
-    
 
     useEffect(() => {
         const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -73,6 +71,7 @@ const DashBoardScreen = ({ navigation }) => {
             }, 2000);
         }
     }, [appState, currentPage]);
+
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -111,7 +110,6 @@ const DashBoardScreen = ({ navigation }) => {
             getUserFilteredData();
         }
     }, [userdetails]);
-
 
     const getdatafromAsync = async () => {
         try {
@@ -317,6 +315,10 @@ const DashBoardScreen = ({ navigation }) => {
         }
         try {
             const resp = await axios.post('home/request-private-pic-access', body, { headers })
+            console.log('reposnse from private pic requested', resp?.data?.message);
+            if (resp?.data?.message === 'Private profile access requested successfully') {
+                setPrivatePicRequest(true)
+            }
             Toast.show('Private Pic Requested', Toast.SHORT)
         } catch (error) {
             console.log('error from the request photo', error?.response?.data?.message);
@@ -424,33 +426,43 @@ const DashBoardScreen = ({ navigation }) => {
                                     )}
                                     scrollEventThrottle={16}
                                 >
-                                    <TouchableOpacity style={{}} onPress={() => {
+                                    {/* <TouchableOpacity style={{}} onPress={() => {
                                         console.log("Image clicked");
                                         navigation.navigate("UserProfileDetails", { item: item?.userId });
-                                    }}>
-                                        <Animated.Image
-                                            source={{ uri: item?.profilePicture }}
-                                            style={[styles.image, {
-                                                height: imageHeight,
-                                                opacity: imageOpacity,
-                                            }]}
-                                            resizeMode="cover"
-                                        />
-                                        <LinearGradient
-                                            colors={["transparent", "rgba(0,0,0,2)", "rgba(0,0,0,2)"]}
-                                            locations={[0.1, 0.6, 1]}
-                                            style={styles.gradient}
-                                        >
-                                        </LinearGradient>
-                                    </TouchableOpacity>
+                                    }}> */}
+                                    <Animated.Image
+                                        source={{ uri: item?.profilePicture }}
+                                        style={[styles.image, {
+                                            height: imageHeight,
+                                            opacity: imageOpacity,
+                                        }]}
+                                        resizeMode="cover"
+                                    />
+
+                                    <LinearGradient
+                                        colors={["transparent", "rgba(0,0,0,2)", "rgba(0,0,0,2)"]}
+                                        locations={[0.1, 0.6, 1]}
+                                        style={styles.gradient}
+                                    >
+                                    </LinearGradient>
+                                    {/* </TouchableOpacity> */}
                                     <View style={styles.details}>
                                         <View style={styles.contentContainer}>
-                                            <View style={styles.cont1}>
-                                                <Text style={styles.onlineText}>Online</Text>
-                                            </View>
-                                            <View style={styles.cont2}>
-                                                <Text style={styles.txt}>PREMIUM</Text>
-                                            </View>
+                                            {item?.isOnline === true ?
+                                                <View style={styles.cont1}>
+                                                    <Text style={styles.onlineText}>Online</Text>
+                                                </View>
+                                                :
+                                                <View style={[styles.cont1, { backgroundColor: 'red', borderColor: 'red' }]}>
+                                                    <Text style={styles.onlineText}>Offline</Text>
+                                                </View>
+                                            }
+                                            {item?.isSubscribed === true ?
+                                                <View style={styles.cont2}>
+                                                    <Text style={styles.txt}>PREMIUM</Text>
+                                                </View>
+                                                :
+                                                null}
                                         </View>
                                         <View style={styles.cont3}>
                                             <Text style={styles.txt1}>{item?.userName || 'NaN'}, {item?.age || 'NaN'}</Text>
@@ -535,7 +547,7 @@ const DashBoardScreen = ({ navigation }) => {
                                                         color: 'white',
                                                         fontSize: 16,
                                                         textAlign: 'center',
-                                                    }}>Request to Unlock</Text>
+                                                    }}>{privatepicrequest === true ? 'Requested' : 'Request to Unlock'}</Text>
                                                     <TouchableOpacity style={styles.lockIconContainer}>
                                                         <Image
                                                             source={images.lock}
@@ -710,14 +722,18 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 40,
         borderTopRightRadius: 40,
         backgroundColor: "white",
+        // borderBottomColor:'red',
         overflow: "hidden",
-        // borderWidth:5,
-        // borderColor:'red'
+        // borderWidth: 5,
+        // borderColor: 'red',
     },
 
     image: {
         width: "100%",
-        // resizeMode:'contain'
+        borderWidth: 5,
+        borderColor: 'grey',
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
     },
     gradient: {
         position: "absolute",

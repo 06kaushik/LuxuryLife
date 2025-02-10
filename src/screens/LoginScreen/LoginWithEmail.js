@@ -68,6 +68,11 @@ const LoginWithEmail = ({ navigation }) => {
     };
 
     const handleEmailSignIn = async () => {
+        console.log('email:', email);
+        console.log('password:', password);
+        console.log('isChecked:', isChecked);
+        console.log('isEmailValid:', validateEmail(email));
+
         if (
             email.length > 10 &&
             password.length > 8 &&
@@ -78,11 +83,15 @@ const LoginWithEmail = ({ navigation }) => {
                 userName: email,
                 password: password,
             };
+            console.log('credentials', credentials); // Check credentials here
+            console.log('Calling loginWithEmail...');
             loginWithEmail(credentials.userName, credentials.password, navigation);
         } else {
             Toast.show('Please verify you are not a robot and check your credentials to proceed', Toast.SHORT);
         }
     };
+
+
 
     const validateEmail = (email) => {
         const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
@@ -196,7 +205,7 @@ const LoginWithEmail = ({ navigation }) => {
                 </TouchableOpacity>
             </ScrollView>
             <View style={styles.cont4}>
-                <TouchableOpacity onPress={handleEmailSignIn}>
+                <TouchableOpacity onPress={() => loginWithEmail(email, password, navigation)}>
                     <Text style={styles.txt12}>Login</Text>
                 </TouchableOpacity>
             </View>

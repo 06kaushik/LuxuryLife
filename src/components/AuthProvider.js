@@ -10,7 +10,7 @@ export const AuthContext = createContext();
 const AuthProvider = ({ children, navigation }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isNewUser, setIsNewUser] = useState(false); // Track if the user is new
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     // Configure Google Sign-in
@@ -69,16 +69,14 @@ const AuthProvider = ({ children, navigation }) => {
         password: password,
       };
       console.log('body of email sign', body);
-
       const response = await axios.post('auth/sign-in', body);
-      console.log('responseeeeee', response);
 
       if (response?.data?.data?.token || response?.data.data?.user?.profileCompleted === true) {
 
         await AsyncStorage.setItem('authToken', response.data.data.token);
         await AsyncStorage.setItem('UserData', JSON.stringify(response.data.data.user));
         axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.data.token}`;
-        Toast.show('Login Successfull', Toast.SHORT);
+        Toast.show('Login Successful', Toast.SHORT);
         setIsAuthenticated(true);
       } else {
         Toast.show('Failed to sign in', Toast.SHORT);

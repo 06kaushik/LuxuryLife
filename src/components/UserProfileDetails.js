@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import moment from "moment";
 import Toast from 'react-native-simple-toast'
+import useSocket from "../socket/SocketMain";
 
 const { width } = Dimensions.get("window");
 
@@ -31,6 +32,12 @@ const UserProfileDetails = ({ navigation, route }) => {
     const [userprofiledata, setUserProfileData] = useState()
     const [selectedImage, setSelectedImage] = useState(null);
     const [isModal, setIsModal] = useState(false)
+    const [privatepicrequest, setPrivatePicRequest] = useState(false)
+    const { emit, on, removeListener } = useSocket(onSocketConnect);
+
+    const onSocketConnect = () => {
+        console.log('Socket connected in chat screen');
+    };
 
 
     useEffect(() => {
@@ -64,7 +71,7 @@ const UserProfileDetails = ({ navigation, route }) => {
         }
         try {
             const resp = await axios.get(`home/get-user-profile/${item}`, { headers })
-            console.log('response fromt user details api', resp?.data?.data);
+            // console.log('response fromt user details api', resp?.data?.data);
             setUserProfileData(resp?.data?.data)
         } catch (error) {
             console.log('error frm the user profile', error.response.data.message);
@@ -179,9 +186,13 @@ const UserProfileDetails = ({ navigation, route }) => {
         }
         try {
             const resp = await axios.post('home/request-private-pic-access', body, { headers })
-            console.log('response from the request photo', resp.data);
+            if (resp?.data?.message === 'Private profile access requested successfully') {
+                setPrivatePicRequest(true)
+            }
+            Toast.show('Private Photo Requested', Toast.SHORT)
         } catch (error) {
             console.log('error from the request photo', error?.response?.data?.message);
+            Toast.show('Something went wrong', Toast.SHORT)
         }
     }
 
@@ -270,7 +281,25 @@ const UserProfileDetails = ({ navigation, route }) => {
         setActiveIndex(index);
     };
 
+    const handleChatPress = () => {
+        console.log('inside ', item);
 
+        try {
+            emit("checkRoom", { users: { participantId: userprofiledata?._id, userId: userdetails?._id } });
+            on('roomResponse', (response) => {
+                const roomId = response?.roomId;
+                emit('initialMessages', { userId: userdetails?._id, roomId });
+                on('initialMessagesResponse', (response) => {
+                    const messages = response?.initialMessages || [];
+                    navigation.navigate('OneToOneChat', { roomId: roomId, initialMessages: messages, userName: userprofiledata?.userName, profilepic: userprofiledata?.profilePicture, id: userprofiledata?._id });
+                });
+            });
+
+        } catch (error) {
+            console.log('error from navigatuo to one to one ', error);
+        }
+
+    };
 
 
 
@@ -454,7 +483,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                                 color: 'white',
                                 fontSize: 16,
                                 textAlign: 'center',
-                            }}>Request to Unlock</Text>
+                            }}>{privatepicrequest === true ? 'Requested' : 'Request to Unlock'}</Text>
                             <TouchableOpacity style={styles.lockIconContainer}>
                                 <Image
                                     source={images.lock}
@@ -563,9 +592,9 @@ const UserProfileDetails = ({ navigation, route }) => {
                         </View>
                     </TouchableOpacity>
 
-                    <View style={styles.cont9}>
+                    <TouchableOpacity onPress={() => handleChatPress()} style={styles.cont9}>
                         <Image source={images.chat} style={[styles.cross, { height: 20, width: 20 }]} />
-                    </View>
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
             <Modal isVisible={isModalVisible} onBackdropPress={closeModal}>

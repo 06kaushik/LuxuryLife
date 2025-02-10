@@ -24,7 +24,7 @@ const LoginScreen = ({ navigation }) => {
     const handleGoogleSignIn = async () => {
         console.log('inside handle google sign in function');
         try {
-            setIsLoading(true); 
+            setIsLoading(true);
             await GoogleSignin.hasPlayServices();
             const userInfo = await GoogleSignin.signIn();
             const idToken = userInfo.data.idToken;

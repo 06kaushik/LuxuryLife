@@ -31,89 +31,93 @@ const ChatScreen = ({ navigation }) => {
 
 
     useEffect(() => {
-        if (isFocused) {
-            const fetchUserDetails = async () => {
-                try {
-                    const data = await AsyncStorage.getItem('UserData');
-                    if (data !== null) {
-                        const parsedData = JSON.parse(data);
-                        setUserDetails(parsedData);
-                    }
-                } catch (error) {
-                    console.log('Error fetching user data:', error);
+
+        const fetchUserDetails = async () => {
+            try {
+                const data = await AsyncStorage.getItem('UserData');
+                if (data !== null) {
+                    const parsedData = JSON.parse(data);
+                    setUserDetails(parsedData);
                 }
-            };
-
-            fetchUserDetails();
-
-            if (userdetails?._id) {
-                emit("userOnline", { userId: userdetails?._id });
-                emit("getRecentChatList", { userId: userdetails?._id });
-
-                on('recentChatListResponse', (event) => {
-                    const updatedChats = event?.list || [];
-                    updatedChats.forEach((chatItem) => {
-                        const participantId = chatItem?.participantId?._id;
-
-                        if (!chatItem.roomId && !emittedRoomIds.current.has(participantId)) {
-                            emittedRoomIds.current.add(participantId);
-                        }
-                    });
-                    setChatList(updatedChats);
-                    setLoading(false);
-                });
-
-                on('userStatusChange', (event) => {
-                    setUserOnline(event?.userId);
-                    setChatList(prevChatList =>
-                        prevChatList.map(chatItem =>
-                            chatItem?.participantId?._id === event?.userId
-                                ? {
-                                    ...chatItem,
-                                    participantId: {
-                                        ...chatItem.participantId,
-                                        isOnLine: event?.isOnline
-                                    }
-                                }
-                                : chatItem
-                        )
-                    );
-                });
-
-                on('unreadCountUpdate', (event) => {
-                    console.log('Unread count updated: ', event);
-
-                    setChatList(prevChatList =>
-                        prevChatList.map(chatItem => {
-                            if (chatItem?.OneToOneId === event?.OneToOneId) {
-                                return {
-                                    ...chatItem,
-                                    unreadCount: chatItem?.unreadCount + 1,
-                                    lastMessage: {
-                                        message: event?.message,
-                                        messageType: event?.messageType,
-                                        timestamp: new Date().toISOString(),
-                                    },
-                                };
-                            }
-                            return chatItem;
-                        })
-                    );
-                });
+            } catch (error) {
+                console.log('Error fetching user data:', error);
             }
-        }
-
-        return () => {
-            // Cleanup listeners when screen is no longer focused
-            removeListener('recentChatListResponse');
-            removeListener('userStatusChange');
-            removeListener('unreadCountUpdate');
         };
-    }, [isFocused, userdetails, emit, on, removeListener]);
+
+        fetchUserDetails();
+
+
+    }, [isFocused]);
+
 
     const onSocketConnect = () => {
         console.log('Socket connected in chat screen');
     };
+
+    useEffect(() => {
+        if (userdetails) {
+            emit("userOnline", { userId: userdetails?._id });
+            emit("getRecentChatList", { userId: userdetails?._id });
+
+            on('recentChatListResponse', (event) => {
+                const updatedChats = event?.list || [];
+                updatedChats.forEach((chatItem) => {
+                    const participantId = chatItem?.participantId?._id;
+
+                    if (!chatItem.roomId && !emittedRoomIds.current.has(participantId)) {
+                        emittedRoomIds.current.add(participantId);
+                    }
+                });
+                setChatList(updatedChats);
+                setLoading(false);
+            });
+
+            on('userStatusChange', (event) => {
+                setUserOnline(event?.userId);
+                setChatList(prevChatList =>
+                    prevChatList.map(chatItem =>
+                        chatItem?.participantId?._id === event?.userId
+                            ? {
+                                ...chatItem,
+                                participantId: {
+                                    ...chatItem.participantId,
+                                    isOnLine: event?.isOnline
+                                }
+                            }
+                            : chatItem
+                    )
+                );
+            });
+
+            on('unreadCountUpdate', (event) => {
+                console.log('Unread count updated: ', event);
+
+                setChatList(prevChatList =>
+                    prevChatList.map(chatItem => {
+                        if (chatItem?.OneToOneId === event?.OneToOneId) {
+                            return {
+                                ...chatItem,
+                                unreadCount: chatItem?.unreadCount + 1,
+                                lastMessage: {
+                                    message: event?.message,
+                                    messageType: event?.messageType,
+                                    timestamp: new Date().toISOString(),
+                                },
+                            };
+                        }
+                        return chatItem;
+                    })
+                );
+            });
+
+        }
+
+        return () => {
+            removeListener('recentChatListResponse');
+            removeListener('userStatusChange');
+            removeListener('unreadCountUpdate');
+        };
+    }, [userdetails, isFocused])
 
     const handleChatPress = (item) => {
         try {
@@ -136,8 +140,6 @@ const ChatScreen = ({ navigation }) => {
     };
 
     const renderItem = ({ item }) => {
-        // console.log('iteeeem',item);
-
         const lastMessageTimestamp = moment(item?.lastMessage?.timestamp);
         const currentTime = moment();
         let displayTime;

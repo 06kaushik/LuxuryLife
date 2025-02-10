@@ -11,6 +11,7 @@ import useSocket from "../../socket/SocketMain";
 const { width, height } = Dimensions.get('window')
 
 const FavouriteScreen = ({ navigation }) => {
+    console.log('in favourites screen');
 
     const [currentPage, setCurrentPage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
@@ -110,7 +111,7 @@ const FavouriteScreen = ({ navigation }) => {
         try {
             const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
             console.log('response from the HIDE', resp?.data);
-            getViewMeData()
+            getFavouriteData()
         } catch (error) {
             console.log('error from the hde api ', error.response.data.message);
         }
