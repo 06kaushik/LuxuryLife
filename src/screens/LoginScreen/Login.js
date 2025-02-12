@@ -5,6 +5,7 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 import { AuthContext } from '../../components/AuthProvider';
 import axios from 'axios';
 import Toast from 'react-native-simple-toast';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const { width, height } = Dimensions.get('window'); // Get the screen width and height
@@ -30,20 +31,28 @@ const LoginScreen = ({ navigation }) => {
             const idToken = userInfo.data.idToken;
             try {
                 const response = await axios.post('auth/sign-in-google', { idToken });
+                await AsyncStorage.setItem('verifcationToken', response?.data?.data?.token)
                 console.log('response from the google sign in', response?.data);
                 Toast.show(response?.data?.message, Toast.SHORT);
-                if (response?.data?.data?.user?.email || response?.data?.data?.user?.profileCompleted === true) {
+                if (response?.data?.data?.user?.email && response?.data?.data?.user?.profileCompleted === true) {
                     login(idToken);
                 } else {
+                    if (response?.data?.data?.user?.step > 6) {
+                        navigation.navigate('ProfileSignUp', { step: response?.data?.data?.user?.step, email: response?.data?.data?.user?.email })
+                    } else {
+                        navigation.navigate('SignUp', { step: response?.data?.data?.user?.step })
+                        GoogleSignin.signOut();
+                    }
+                    Toast.show('Please complete your profile first.', Toast.SHORT)
                 }
             } catch (error) {
-                console.log('error from google signIn', error.message);
-                Toast.show('SignUp To Get Registered Yourself', Toast.SHORT)
+                GoogleSignin.signOut();
+                console.log('error from google signIn', error.response.data.message);
+                Toast.show('Network Error', Toast.SHORT)
             }
         } catch (error) {
-            // console.error('Error during Google Sign-In:', error);
+            GoogleSignin.signOut();
             if (error.response) {
-                // console.error('Error Response:', error.response.data);
             }
             if (error.code === statusCodes.SIGN_IN_CANCELLED) {
                 Toast.show('User cancelled the sign-in process.', Toast.SHORT)
@@ -58,8 +67,6 @@ const LoginScreen = ({ navigation }) => {
             setIsLoading(false);
         }
     };
-
-
 
 
     return (

@@ -186,10 +186,9 @@ const RecentScreen = ({ navigation }) => {
 
     };
 
-
+ 
 
     const renderNewest = ({ item }) => {
-        console.log('newest item', item);
 
         const hasLiked = item.activity_logs.some(log => log.action === "LIKE" && log.userId === userdetails?._id);
         const truncatedUserName = item.userName.length > 8 ? item.userName.slice(0, 8) : item.userName;

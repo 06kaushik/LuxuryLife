@@ -22,7 +22,7 @@ const PreferencesScreen = ({ navigation }) => {
     const [location, setLocation] = useState(null);
     const [showSearch, setShowSearch] = useState(true);
     const [distanceRange, setDistanceRange] = useState([0, 100]);
-    const [ageRange, setAgeRange] = useState([18, 60]);
+    const [ageRange, setAgeRange] = useState([18, 40]);
     const [selectedOptions, setSelectedOptions] = useState({
         "ID Verified": false,
         "Premium": false,
@@ -736,7 +736,7 @@ const PreferencesScreen = ({ navigation }) => {
                 <Text style={styles.sliderLabel}>{distanceRange[0]} - {distanceRange[1]} miles</Text>
                 <MultiSlider
                     values={distanceRange}
-                    sliderLength={width * 0.9}
+                    sliderLength={width * 0.8}
                     onValuesChange={(values) => setDistanceRange(values)}
                     min={0}
                     max={150}
@@ -777,7 +777,7 @@ const PreferencesScreen = ({ navigation }) => {
                 </Text>
                 <MultiSlider
                     values={ageRange}
-                    sliderLength={width * 0.9}
+                    sliderLength={width * 0.8}
                     onValuesChange={(values) => setAgeRange(values)}
                     min={18}
                     max={60}
@@ -866,33 +866,6 @@ const PreferencesScreen = ({ navigation }) => {
                             >
                                 <View style={styles.checkboxContainer}>
                                     {verificationtoggle.includes(option) && <Text style={styles.tickMark}>✔</Text>}
-                                </View>
-                                <Text style={styles.optionText}>{option}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                )}
-
-                <TouchableOpacity onPress={toggleLevelvisible} style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>LEVELS</Text>
-                    <Image
-                        source={isLevelVisible ? images.dropdown : images.rightarrow}
-                        style={styles.icon}
-                    />
-                </TouchableOpacity>
-                {isLevelVisible && (
-                    <View>
-                        {["Level 1", "Level 2", "Level 3"].map((option) => (
-                            <TouchableOpacity
-                                key={option}
-                                onPress={() => toggleLevel(option)}
-                                style={[
-                                    styles.option,
-                                    leveltoggle.includes(option) && styles.optionSelected,
-                                ]}
-                            >
-                                <View style={styles.checkboxContainer}>
-                                    {leveltoggle.includes(option) && <Text style={styles.tickMark}>✔</Text>}
                                 </View>
                                 <Text style={styles.optionText}>{option}</Text>
                             </TouchableOpacity>

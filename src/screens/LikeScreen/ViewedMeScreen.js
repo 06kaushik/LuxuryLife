@@ -6,6 +6,9 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import moment from "moment";
 import useSocket from "../../socket/SocketMain";
+import { useIsFocused } from '@react-navigation/native';
+
+
 
 const { width, height } = Dimensions.get('window')
 
@@ -15,10 +18,16 @@ const ViewedMe = ({ navigation }) => {
     const [userdetails, setUserDetails] = useState(null);
     const [viewedme, setViewedMe] = useState([]);
     const { emit, on } = useSocket(onSocketConnect);
+    const isFocused = useIsFocused()
+
 
     const onSocketConnect = () => {
         console.log('Socket connected in chat screen');
     };
+
+    useEffect(() => {
+        getViewMeData()
+    }, [isFocused])
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -49,9 +58,10 @@ const ViewedMe = ({ navigation }) => {
                 latitude: userdetails?.location?.coordinates[1],
             },
             sortBy: "age",
+
         };
         console.log('body of vieweed data', body);
-        
+
         setIsLoading(true);
         try {
             const resp = await axios.post('home/get-favorite/viewed', body, { headers });
@@ -149,6 +159,7 @@ const ViewedMe = ({ navigation }) => {
 
 
     const renderViewedMe = ({ item }) => {
+console.log('iteemeemm of viewd me', item);
 
         const lastActive = moment(item?.user?.lastActive).fromNow();
         const hasLiked = item.userLikeActionCount === 1;

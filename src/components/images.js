@@ -81,6 +81,10 @@ const images = {
     doubletick: require('../assets/doubletick.png'),
     singletick: require('../assets/singleTick.png'),
     bluetick: require('../assets/bluetick.png'),
+    swipeleft: require('../assets/swipeleft.png'),
+    swiperight: require('../assets/swiperight.png'),
+
+
 
 
 

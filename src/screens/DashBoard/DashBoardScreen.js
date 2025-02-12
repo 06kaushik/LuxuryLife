@@ -28,8 +28,6 @@ const { width, height } = Dimensions.get("window");
 const DashBoardScreen = ({ navigation }) => {
     const scrollY = useRef(new Animated.Value(0)).current;
     const [userData, setUserData] = useState([])
-    // console.log('userdatalength', userData);
-    // const positions = useRef(userData?.map(() => new Animated.ValueXY({ x: 0, y: 0 }))).current;
     const [userdetails, setUserDetails] = useState(null)
     const [filterdata, setFilterData] = useState(null)
     const [currentPage, setCurrentPage] = useState(0);
@@ -41,6 +39,7 @@ const DashBoardScreen = ({ navigation }) => {
     const [swipedCount, setSwipedCount] = useState(0);
     const [appState, setAppState] = useState(AppState.currentState);
     const [privatepicrequest, setPrivatePicRequest] = useState(false)
+    const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
     const { emit, on, removeListener } = useSocket(onSocketConnect);
 
     const onSocketConnect = () => {
@@ -52,6 +51,16 @@ const DashBoardScreen = ({ navigation }) => {
         getUserFilteredData();
     }, [isFocused])
 
+    useEffect(() => {
+        const checkIfFirstTimeUser = async () => {
+            const demoSeen = await AsyncStorage.getItem('demoSeen');
+            if (!demoSeen) {
+                setIsFirstTimeUser(true);
+            }
+        };
+
+        checkIfFirstTimeUser();
+    }, []);
 
     useEffect(() => {
         const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -110,6 +119,11 @@ const DashBoardScreen = ({ navigation }) => {
             getUserFilteredData();
         }
     }, [userdetails]);
+
+    const handleSwipeGuideComplete = async () => {
+        await AsyncStorage.setItem('demoSeen', 'true');
+        setIsFirstTimeUser(false);
+    };
 
     const getdatafromAsync = async () => {
         try {
@@ -362,7 +376,6 @@ const DashBoardScreen = ({ navigation }) => {
     }
 
     const handleChatPress = (item) => {
-        console.log('inside ', item);
 
         try {
             emit("checkRoom", { users: { participantId: item?.userId, userId: userdetails?._id } });
@@ -384,6 +397,21 @@ const DashBoardScreen = ({ navigation }) => {
 
     return (
         <View style={{ flex: 1 }}>
+            {isFirstTimeUser && (
+                <View style={styles.demoOverlay}>
+                    <View style={{ flexDirection: 'row', }}>
+                        <Image source={images.swipeleft} style={{ height: 70, width: 70, tintColor: 'white', right: 50 }} />
+                        <Image source={images.swiperight} style={{ height: 70, width: 70, tintColor: 'white', left: 50 }} />
+                    </View>
+                    <View style={{ flexDirection: 'row', }}>
+                        <Text style={[styles.demoText, { right: 20 }]}>Swipe left to Dislike</Text>
+                        <Text style={[styles.demoText, { left: 20 }]}>Swipe right to Like</Text>
+                    </View>
+                    <TouchableOpacity style={{ top: 30 }} onPress={handleSwipeGuideComplete}>
+                        <Text style={styles.closeButton}>Got it!</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
             {isLoading ? (
                 <LaodingScreen />
             ) : (
@@ -401,6 +429,7 @@ const DashBoardScreen = ({ navigation }) => {
                                 key={item._id}
                                 style={[
                                     styles.card,
+
                                     {
                                         transform: [
                                             {
@@ -417,24 +446,17 @@ const DashBoardScreen = ({ navigation }) => {
                                 ]}
                                 {...panResponder(index).panHandlers}
                             >
-                                <Animated.ScrollView
-                                    style={styles.scrollView}
-                                    contentContainerStyle={styles.scrollContent}
-                                    onScroll={Animated.event(
-                                        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                                        { useNativeDriver: false }
-                                    )}
-                                    scrollEventThrottle={16}
-                                >
-                                    {/* <TouchableOpacity style={{}} onPress={() => {
-                                        console.log("Image clicked");
-                                        navigation.navigate("UserProfileDetails", { item: item?.userId });
-                                    }}> */}
+
+                                <TouchableOpacity style={{}} activeOpacity={1} onPress={() => {
+                                    console.log("Image clicked");
+                                    navigation.navigate("UserProfileDetails", { item: item?.userId });
+                                }}>
                                     <Animated.Image
                                         source={{ uri: item?.profilePicture }}
                                         style={[styles.image, {
                                             height: imageHeight,
                                             opacity: imageOpacity,
+                                            borderColor: item?.isSubscribed === true ? '#5E3E05' : 'grey'
                                         }]}
                                         resizeMode="cover"
                                     />
@@ -445,202 +467,8 @@ const DashBoardScreen = ({ navigation }) => {
                                         style={styles.gradient}
                                     >
                                     </LinearGradient>
-                                    {/* </TouchableOpacity> */}
-                                    <View style={styles.details}>
-                                        <View style={styles.contentContainer}>
-                                            {item?.isOnline === true ?
-                                                <View style={styles.cont1}>
-                                                    <Text style={styles.onlineText}>Online</Text>
-                                                </View>
-                                                :
-                                                <View style={[styles.cont1, { backgroundColor: 'red', borderColor: 'red' }]}>
-                                                    <Text style={styles.onlineText}>Offline</Text>
-                                                </View>
-                                            }
-                                            {item?.isSubscribed === true ?
-                                                <View style={styles.cont2}>
-                                                    <Text style={styles.txt}>PREMIUM</Text>
-                                                </View>
-                                                :
-                                                null}
-                                        </View>
-                                        <View style={styles.cont3}>
-                                            <Text style={styles.txt1}>{item?.userName || 'NaN'}, {item?.age || 'NaN'}</Text>
-                                            <Image source={item?.isIdVerified === false ? null : images.verified} style={styles.img1} />
-                                        </View>
-                                        <Text style={styles.txt2}>{item?.city || 'NaN'}, {item?.country || 'NaN'}</Text>
-                                        <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>{item?.distance || 'NaN'} miles</Text>
-                                        <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>{item?.myHeading || 'NaN'}</Text>
+                                </TouchableOpacity>
 
-                                        <View style={styles.cont4}>
-                                            <View style={styles.cont5}>
-                                                <View style={{ flexDirection: 'row' }}>
-                                                    <Image source={images.star} style={styles.icon1} />
-                                                    <Text style={styles.txt3}>Member Since</Text>
-                                                </View>
-                                                <Text style={styles.txt4}>{moment(item?.createdAt)?.fromNow() || 'NaN'}</Text>
-                                            </View>
-
-                                            <View style={styles.cont5}>
-                                                <View style={{ flexDirection: 'row' }}>
-                                                    <Image source={images.heart} style={styles.icon1} />
-                                                    <Text style={styles.txt3}>Relationship status</Text>
-                                                </View>
-                                                <Text style={styles.txt4}>{item?.currentRelationshipStatus || 'NaN'}</Text>
-                                            </View>
-
-                                            <View style={styles.cont5}>
-                                                <View style={{ flexDirection: 'row' }}>
-                                                    <Image source={images.body} style={styles.icon1} />
-                                                    <Text style={styles.txt3}>Body</Text>
-                                                </View>
-                                                <Text style={styles.txt4}>{item?.bodyType || 'NaN'}</Text>
-                                            </View>
-
-                                            <View style={styles.cont5}>
-                                                <View style={{ flexDirection: 'row' }}>
-                                                    <Image source={images.height} style={styles.icon1} />
-                                                    <Text style={styles.txt3}>Height</Text>
-                                                </View>
-                                                <Text style={styles.txt4}>{Math.round(item?.tall?.cm) || 'NaN'} cm</Text>
-                                            </View>
-                                        </View>
-
-                                        <View style={styles.cont6}>
-                                            <Text style={styles.txt5}>Photos</Text>
-                                        </View>
-                                        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                                            {item?.publicPhotos?.map((photo, index) => (
-                                                photo && (
-                                                    <View key={index} style={{ margin: 5 }}>
-                                                        <Image
-                                                            source={{ uri: photo }}
-                                                            style={{ width: 105, height: 150, borderRadius: 10 }}
-                                                        />
-                                                    </View>
-                                                )
-                                            ))}
-                                        </View>
-
-                                        <View style={styles.cont6}>
-                                            <Text style={styles.txt5}>Private Photo</Text>
-                                        </View>
-                                        <TouchableOpacity onPress={() => requestPrivatePhoto(item?.userId)}>
-                                            <ImageBackground
-                                                source={images.dummy1}
-                                                style={{ height: 150, width: 105, borderRadius: 10, marginLeft: 8, top: 5 }}
-                                                imageStyle={{ borderRadius: 10 }}
-                                                blurRadius={30}
-                                            >
-                                                <View style={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    right: 0,
-                                                    bottom: 0,
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                                    borderRadius: 10,
-                                                }}>
-                                                    <Text style={{
-                                                        color: 'white',
-                                                        fontSize: 16,
-                                                        textAlign: 'center',
-                                                    }}>{privatepicrequest === true ? 'Requested' : 'Request to Unlock'}</Text>
-                                                    <TouchableOpacity style={styles.lockIconContainer}>
-                                                        <Image
-                                                            source={images.lock}
-                                                            style={{
-                                                                width: 24,
-                                                                height: 24, marginTop: 10
-                                                            }}
-                                                        />
-                                                    </TouchableOpacity>
-                                                </View>
-                                            </ImageBackground>
-                                        </TouchableOpacity>
-
-                                        <Text style={styles.about}>About</Text>
-                                        <Text style={styles.abouttxt}>{item?.aboutUsDescription || 'NaN'}</Text>
-
-                                        <Text style={styles.about}>What I am Seeking</Text>
-                                        <Text style={styles.abouttxt}>{item?.preferences?.aboutPartnerDescription || 'NaN'}</Text>
-
-                                        <Text style={styles.about}>Hobbies</Text>
-                                        <View style={styles.bodyTypeContainer}>
-                                            {item?.hobbies?.map((hobby) => (
-                                                <TouchableOpacity key={hobby} style={styles.bodyTypeButton}>
-                                                    <Text style={styles.bodyTypeText}>
-                                                        {hobby}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            ))}
-                                        </View>
-
-                                        <View style={{ marginBottom: 100 }}>
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.face} style={styles.face} />
-                                                    <Text style={styles.txt6}>Ethnicity</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.ethnicity || 'NaN'}</Text>
-                                            </View>
-
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.child} style={styles.face} />
-                                                    <Text style={styles.txt6}>Children</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.children || 'NaN'}</Text>
-                                            </View>
-
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.smoke} style={styles.face} />
-                                                    <Text style={styles.txt6}>Do you smoke?</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.smoke || 'NaN'}</Text>
-                                            </View>
-
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.drink} style={styles.face} />
-                                                    <Text style={styles.txt6}>Do you drink?</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.drink || 'NaN'}</Text>
-                                            </View>
-
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.education} style={styles.face} />
-                                                    <Text style={styles.txt6}>Education</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.highestEducation || 'NaN'}</Text>
-                                            </View>
-
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.face} style={styles.face} />
-                                                    <Text style={styles.txt6}>Occupation</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>{item?.workField || 'NaN'}</Text>
-                                            </View>
-
-                                            <View style={styles.cont7}>
-                                                <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
-                                                    <Image source={images.networth} style={styles.face} />
-                                                    <Text style={styles.txt6}>Net Worth</Text>
-                                                </View>
-                                                <Text style={styles.txt7}>
-                                                    {item?.netWorthRange ? `$${item.netWorthRange.min} - $${item.netWorthRange.max}` : 'NaN'}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    </View>
-
-
-                                </Animated.ScrollView>
                                 <Animated.View style={{
                                     position: "absolute",
                                     bottom: profileDetailsBottom,
@@ -734,6 +562,7 @@ const styles = StyleSheet.create({
         borderColor: 'grey',
         borderTopLeftRadius: 40,
         borderTopRightRadius: 40,
+
     },
     gradient: {
         position: "absolute",
@@ -1113,5 +942,30 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    demoOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
+    demoText: {
+        fontSize: 20,
+        color: 'white',
+        marginBottom: 20,
+        textAlign: 'center',
+
+    },
+    closeButton: {
+        fontSize: 18,
+        color: 'white',
+        padding: 10,
+        backgroundColor: '#5E3E05',
+        borderRadius: 5,
     },
 });

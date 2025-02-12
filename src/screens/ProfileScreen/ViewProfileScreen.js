@@ -58,15 +58,17 @@ const ViewProfile = ({ navigation }) => {
     const [isDeleting, setIsDeleting] = useState(Array(6).fill(false)); // Track deletion state for each photo
     const [privatepicrequests, setPrivatePicRequests] = useState([])
     const isFocused = useIsFocused()
-    const hobbies = ['Reading', 'Traveling', 'Cooking/Baking', 'Hiking/Outdoor Adventures', 'Photography', 'Painting/Drawing', 'Playing Sports', 'Writing', 'Yoga/Meditation', 'Gardening', 'Watching Movies/TV Shows', 'Dancing', 'Volunteering/Community Service', 'Collecting(eg.,stamps,coins']
-    const ethnicity = ['Asian', 'Black/African descent', 'Hispanic/Latino', 'Middle Eastern', 'Native American/Indigenous', 'Pacific Islander', 'White/Caucasian', 'Mixed/Multiracial', 'Other', 'Prefer not to say']
-    const bodyTypes = ['Slim', 'Athletic', 'Average', 'Curvy', 'Plus-Size', 'Petite', 'Muscular', 'Broad', 'Lean', 'Prefer not to say']
-    const children = ['Yes,I have children', 'No,I do not have children', 'Prefer not to say']
-    const smoking = ['Yes', 'No', 'Prefer not to say']
-    const alcoholic = ['Yes', 'No', 'Prefer not to say']
-    const education = ['High School or Equivalent', 'Some college', 'Associates Degree', 'Bachelors Degree', 'Master Degree', 'Doctorate or PhD', 'Other', 'Prefer not to say']
-    const workField = ['Finance/Investments', 'Technology/Software', 'Art/Entertainment', 'Healthcare/Medical', 'Law/Legal', 'Education/Training', 'Marketing/Sales', 'Hospitality/Real Estate', 'Entrepreneur/Startup', 'Other', 'Prefer not to say']
-    const netWorth = ['Below $200,000', '$200,000-$300,000', '$300,000-$400,000', '$400,000-$500,000', '$500,000-$600,000', '$600,000-$700,000', '$700,000-$800,000', '$800,000-$900,000', '$900,000-$1 million', 'More Than $1 Million', 'More Than $5 Million']
+
+    const bodyTypes = ['Slim', 'Athletic', 'Average', 'Curvy', 'Plus-size', 'Petite', 'Muscular', 'Broad', 'Lean', 'Prefer not to say'];
+    const ethnicity = ['Asian', 'Black/African descent', 'Hispanic/Latino', 'Middle Eastern', 'Native American/Indigenous', 'Pacific Islander', 'White/Caucasian', 'Mixed/Multiracial', 'Other', 'Prefer not to say'];
+    const education = ['High School or Equivalent', 'Some college', 'Associates Degree', 'Bachelors Degree', 'Master Degree', 'Doctorate or PhD', 'Prefer not to say'];
+    const workField = ['Finance/Investment', 'Technology/Software', 'Art/Entertainment', 'Healthcare/Medical', 'Law/Legal', 'Education', 'Marketing/Sales', 'Hospitality/Real Estate', 'Entrepreneur/Startup', 'Other', 'Prefer not to say'];
+    const children = ['Yes, I have children', 'No, I do not have children', 'Prefer not to say'];
+    const netWorth = ['Below $200,000', '$200,000 - $300,000', '$300,000 - $400,000', '$400,000 - $500,000', '$500,000 - $600,000', '$600,000 - $700,000', '$700,000 - $800,000', '$800,000 - $900,000', '$900,000 - $1 million', 'More Than $1 Million', 'More Than $2 Million', 'More Than $5 Million'];
+    const hobbies = ['Reading', 'Traveling', 'Cooking/Baking', 'Hiking/Outdoor Adventures', 'Photography', 'Painting/Drawing', 'Playing Sports', 'Writing', 'Yoga/Meditation', 'Playing Musical Instruments', 'Gardening', 'Watching Movies/TV Shows', 'Dancing', 'Volunteering/Community Service', 'Collecting (e.g., stamps, coins)'];
+    const smoking = ['Yes', 'No', 'Prefer not to say'];
+    const alcoholic = ['Yes', 'No', 'Prefer not to say'];
+
 
 
     useEffect(() => {
@@ -871,7 +873,7 @@ const ViewProfile = ({ navigation }) => {
             console.log('response frin the get private ic request', resp.data.data.data);
             setPrivatePicRequests(resp?.data?.data?.data)
         } catch (error) {
-            console.log('error from get private requesr', error);
+            console.log('error from get private requesr', error?.response?.data?.message);
         }
     }
 
@@ -1146,23 +1148,6 @@ const ViewProfile = ({ navigation }) => {
                     null
                 }
 
-                <View style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    marginLeft: 16,
-                    marginRight: 16,
-                    marginTop: 20,
-                }}>
-                    <Text style={styles.txt6}>Secondary Location</Text>
-                    <TouchableOpacity onPress={handledropLoc1}>
-                        <Image source={isdown1 === false ? images.rightarrow : images.dropdown} style={{ height: 20, width: 20, tintColor: 'grey' }} />
-                    </TouchableOpacity>
-                </View>
-                {isdown1 === true ?
-                    <Text style={styles.txt8}>{userdetails?.city}, {userdetails?.state}, {userdetails?.country}</Text>
-                    :
-                    null
-                }
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: 'Poppins-Bold' }]}>Hobbies</Text>
@@ -1218,34 +1203,37 @@ const ViewProfile = ({ navigation }) => {
                     </TouchableOpacity>
                 </View>
                 {isagerange === true ?
-                    <View>
+                    <View >
                         <View style={styles.ageRangeContainer}>
                             <Text style={styles.ageRangeText}>
                                 {ageRange[0]} - {ageRange[1] === 60 ? '70+' : ageRange[1]}
                             </Text>
                         </View>
-                        <MultiSlider
-                            values={ageRange}
-                            sliderLength={width * 0.9}
-                            onValuesChange={handleSliderChange}
-                            min={18}
-                            max={100}
-                            step={1}
-                            allowOverlap={false}
-                            snapped
-                            selectedStyle={{
-                                backgroundColor: '#5F3D23',
-                            }}
-                            unselectedStyle={{
-                                backgroundColor: '#E0E0E0',
-                            }}
-                            trackStyle={{
-                                height: 6,
-                            }}
-                            customMarker={() => (
-                                <View style={styles.markerStyle} />
-                            )}
-                        />
+                        <View style={{ marginLeft: 20 }}>
+                            <MultiSlider
+                                values={ageRange}
+                                sliderLength={width * 0.8}
+                                onValuesChange={handleSliderChange}
+                                min={18}
+                                max={100}
+                                step={1}
+                                allowOverlap={false}
+                                snapped
+                                selectedStyle={{
+                                    backgroundColor: '#5F3D23',
+                                }}
+                                unselectedStyle={{
+                                    backgroundColor: '#E0E0E0',
+                                }}
+                                trackStyle={{
+                                    height: 6,
+
+                                }}
+                                customMarker={() => (
+                                    <View style={styles.markerStyle} />
+                                )}
+                            />
+                        </View>
                     </View>
                     : null}
 
@@ -1882,6 +1870,7 @@ const styles = StyleSheet.create({
     ageRangeContainer: {
         alignItems: 'center',
         // marginVertical: 30,
+
     },
     ageRangeText: {
         fontSize: 24,

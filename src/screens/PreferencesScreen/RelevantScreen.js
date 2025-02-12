@@ -45,52 +45,52 @@ const RelevantScreen = ({ navigation }) => {
         },
     ]);
 
-    const renderRelevant = ({ item }) => (
-        <View style={styles.card}>
-            <ImageBackground source={item.image} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
-                <LinearGradient
-                    colors={["transparent", "rgba(0, 0, 0, 0.7)"]}
-                    style={styles.gradientOverlay}
-                />
-                {item.status === "Online" && (
-                    <View style={styles.statusBadge}>
-                        <Text style={styles.statusText}>Online</Text>
-                    </View>
-                )}
-                <View style={styles.overlayContainer}>
-                    <View style={{ flexDirection: 'row', justifyContent: "space-between" }}>
-                        <View>
-                            <Text style={styles.memberName}>{`${item.name}, ${item.age}`}</Text>
-                            <Text style={styles.memberLocation}>{item.location}</Text>
-                            <Text style={styles.memberDistance}>{item.distance}</Text>
-                        </View>
-                        <View style={{}}>
-                            <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 30, width: 30, justifyContent: 'center', backgroundColor: 'white' }}>
-                                <Image source={images.chat} style={styles.icon} />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 30, width: 30, justifyContent: 'center', backgroundColor: 'white', top: 5 }}>
-                                <Image source={images.heart} style={styles.icon} />
-                            </TouchableOpacity>
-                        </View>
+    // const renderRelevant = ({ item }) => (
+    //     <View style={styles.card}>
+    //         <ImageBackground source={item.image} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
+    //             <LinearGradient
+    //                 colors={["transparent", "rgba(0, 0, 0, 0.7)"]}
+    //                 style={styles.gradientOverlay}
+    //             />
+    //             {item.status === "Online" && (
+    //                 <View style={styles.statusBadge}>
+    //                     <Text style={styles.statusText}>Online</Text>
+    //                 </View>
+    //             )}
+    //             <View style={styles.overlayContainer}>
+    //                 <View style={{ flexDirection: 'row', justifyContent: "space-between" }}>
+    //                     <View>
+    //                         <Text style={styles.memberName}>{`${item.name}, ${item.age}`}</Text>
+    //                         <Text style={styles.memberLocation}>{item.location}</Text>
+    //                         <Text style={styles.memberDistance}>{item.distance}</Text>
+    //                     </View>
+    //                     <View style={{}}>
+    //                         <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 30, width: 30, justifyContent: 'center', backgroundColor: 'white' }}>
+    //                             <Image source={images.chat} style={styles.icon} />
+    //                         </TouchableOpacity>
+    //                         <TouchableOpacity style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 30, width: 30, justifyContent: 'center', backgroundColor: 'white', top: 5 }}>
+    //                             <Image source={images.heart} style={styles.icon} />
+    //                         </TouchableOpacity>
+    //                     </View>
 
-                    </View>
+    //                 </View>
 
-                </View>
-            </ImageBackground>
-        </View>
-    );
+    //             </View>
+    //         </ImageBackground>
+    //     </View>
+    // );
 
     return (
 
         <View style={styles.main}>
-            <FlatList
+            {/* <FlatList
                 data={relevant}
                 renderItem={renderRelevant}
                 keyExtractor={(item) => item.id}
                 numColumns={2}
                 style={{ marginTop: 20 }}
                 contentContainerStyle={styles.gridContent}
-            />
+            /> */}
 
         </View>
     )

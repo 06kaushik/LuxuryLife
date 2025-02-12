@@ -6,6 +6,8 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import moment from "moment";
 import useSocket from "../../socket/SocketMain";
+import { useIsFocused } from '@react-navigation/native';
+
 
 const { width, height } = Dimensions.get('window')
 
@@ -19,11 +21,16 @@ const FavouriteMeScreen = ({ navigation }) => {
     const [userdetails, setUserDetails] = useState(null);
     const [favouritedme, setFavouritedMe] = useState([]);
     const { emit, on, removeListener } = useSocket(onSocketConnect);
+    const isFocused = useIsFocused()
+
 
     const onSocketConnect = () => {
         console.log('Socket connected in chat screen');
     };
 
+    useEffect(() => {
+        getFavouritedMeData()
+    }, [isFocused])
 
     useEffect(() => {
         const fetchUserDetails = async () => {

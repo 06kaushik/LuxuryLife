@@ -19,10 +19,7 @@ const { width, height } = Dimensions.get('window');
 const ProfileSignUp = ({ navigation, route }) => {
 
     const { userId, step, email, password } = route.params
-
-
     const { login, loginWithEmail } = useContext(AuthContext);
-
     const [currentStep, setCurrentStep] = useState(step || 4);
     const [name, setName] = useState('');
     const [username, setUserName] = useState('')
@@ -45,17 +42,17 @@ const ProfileSignUp = ({ navigation, route }) => {
     const [photos, setPhotos] = useState([]);
     const [profileheading, setProfileHeading] = useState('')
     const [aboutyou, setAboutYou] = useState('')
-    const bodyTypes = ['Slim', 'Athletic', 'Average', 'Curvy', 'Plus-Size', 'Petite', 'Muscular', 'Broad', 'Lean', 'Prefer not to say']
-    const ethnicity = ['Asian', 'Black/African descent', 'Hispanic/Latino', 'Middle Eastern', 'Native American/Indigenous', 'Pacific Islander', 'White/Caucasian', 'Mixed/Multiracial', 'Other', 'Prefer not to say',]
-    const education = ['High School or Equivalent', 'Some college', 'Associates Degree', 'Bachelors Degree', 'Master Degree', 'Doctorate or PhD', 'Other', 'Prefer not to say',]
-    const workField = ['Finance/Investments', 'Technology/Software', 'Art/Entertainment', 'Healthcare/Medical', 'Law/Legal', 'Education/Training', 'Marketing/Sales', 'Hospitality/Real Estate', 'Entrepreneur/Startup', 'Other', 'Prefer not to say']
-    const statusR = ['Single', 'In a Relationship', 'Engaged', 'Married', 'Divorced', 'Widowed', 'Other', 'Prefer not to say']
-    const children = ['Yes,I have children', 'No,I do not have children', 'Prefer not to say']
-    const netWorth = ['Below $200,000', '$200,000-$300,000', '$300,000-$400,000', '$400,000-$500,000', '$500,000-$600,000', '$600,000-$700,000', '$700,000-$800,000', '$800,000-$900,000', '$900,000-$1 million', 'More Than $1 Million', 'More Than $5 Million']
-    const hobbies = ['Reading', 'Traveling', 'Cooking/Baking', 'Hiking/Outdoor Adventures', 'Photography', 'Painting/Drawing', 'Playing Sports', 'Writing', 'Yoga/Meditation', 'Gardening', 'Watching Movies/TV Shows', 'Dancing', 'Volunteering/Community Service', 'Collecting(eg.,stamps,coins']
-    const smoking = ['Yes', 'No', 'Prefer not to say']
-    const alcoholic = ['Yes', 'No', 'Prefer not to say']
-    const interests = ['Fine Dining', 'Luxury Travel', 'Yachting', 'Private Jets', 'Art Collecting', 'Wine Tasting', 'Fashion & Design', 'Exclusive Events', 'Golf', 'High-End Cars', 'Wellness & Fitness', 'Spa Retreats', 'Gourment Cooking', 'Philanthropy', 'Skiing/Snowboarding']
+    const bodyTypes = ['Slim', 'Athletic', 'Average', 'Curvy', 'Plus-size', 'Petite', 'Muscular', 'Broad', 'Lean', 'Prefer not to say'];
+    const ethnicity = ['Asian', 'Black/African descent', 'Hispanic/Latino', 'Middle Eastern', 'Native American/Indigenous', 'Pacific Islander', 'White/Caucasian', 'Mixed/Multiracial', 'Other', 'Prefer not to say'];
+    const education = ['High School or Equivalent', 'Some college', 'Associates Degree', 'Bachelors Degree', 'Master Degree', 'Doctorate or PhD', 'Prefer not to say'];
+    const workField = ['Finance/Investment', 'Technology/Software', 'Art/Entertainment', 'Healthcare/Medical', 'Law/Legal', 'Education', 'Marketing/Sales', 'Hospitality/Real Estate', 'Entrepreneur/Startup', 'Other', 'Prefer not to say'];
+    const statusR = ['Single', 'In a Relationship', 'Married', 'Divorced', 'Widowed', 'Prefer not to say'];
+    const children = ['Yes, I have children', 'No, I do not have children', 'Prefer not to say'];
+    const netWorth = ['Below $200,000', '$200,000 - $300,000', '$300,000 - $400,000', '$400,000 - $500,000', '$500,000 - $600,000', '$600,000 - $700,000', '$700,000 - $800,000', '$800,000 - $900,000', '$900,000 - $1 million', 'More Than $1 Million', 'More Than $2 Million', 'More Than $5 Million'];
+    const hobbies = ['Reading', 'Traveling', 'Cooking/Baking', 'Hiking/Outdoor Adventures', 'Photography', 'Painting/Drawing', 'Playing Sports', 'Writing', 'Yoga/Meditation', 'Playing Musical Instruments', 'Gardening', 'Watching Movies/TV Shows', 'Dancing', 'Volunteering/Community Service', 'Collecting (e.g., stamps, coins)'];
+    const smoking = ['Yes', 'No', 'Prefer not to say'];
+    const alcoholic = ['Yes', 'No', 'Prefer not to say'];
+    const interests = ['Fine Dining', 'Luxury Travel', 'Yachting', 'Private Jets', 'Art Collecting', 'Wine Tasting', 'Fashion & Design', 'Exclusive Events', 'Golf', 'High-End Cars', 'Wellness & Fitness', 'Spa Retreats', 'Gourmet Cooking', 'Philanthropy', 'Skiing/Snowboarding'];
     const [selfie, setSelfie] = useState(null);
     const [message, setMessage] = useState('')
     const [isUploading, setIsUploading] = useState(false);
@@ -74,7 +71,7 @@ const ProfileSignUp = ({ navigation, route }) => {
 
     useEffect(() => {
         if (step) {
-            setCurrentStep(step); // Ensure currentStep is set to the provided step
+            setCurrentStep(step);
         }
     }, [step]);
 
@@ -1897,6 +1894,7 @@ const ProfileSignUp = ({ navigation, route }) => {
 
     const userEthnicity = async () => {
         const token = await AsyncStorage.getItem('verifcationToken');
+
         const headers = {
             Authorization: token,
         };
@@ -2184,26 +2182,34 @@ const ProfileSignUp = ({ navigation, route }) => {
         }
     }
 
+    const handleSkip = () => {
+        if (currentStep < 25) {
+            setCurrentStep(currentStep + 1); // Increment to the next step
+        }
+    };
 
 
     return (
         <View style={styles.container}>
             {/* Header Section */}
-            <TouchableOpacity onPress={() => navigation.goBack('')}>
-                <View style={styles.header}>
-                    <View style={{ flexDirection: 'row' }}>
-                        <Image source={images.back} style={styles.backIcon} />
-                        <Text style={styles.headerText}>Profile</Text>
-                    </View>
 
-                    {/* Conditionally render the "Skip" button */}
-                    {[10, 13, 14, 15, 18, 19, 21, 22, 23, 24, 25].includes(currentStep) && (
-                        <TouchableOpacity>
-                            <Text style={styles.skipText}>Skip</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-            </TouchableOpacity>
+            <View style={styles.header}>
+
+                <TouchableOpacity style={{ flexDirection: 'row' }} onPress={() => navigation.goBack('')}>
+                    <Image source={images.back} style={styles.backIcon} />
+                    <Text style={styles.headerText}>Profile</Text>
+                </TouchableOpacity>
+
+
+
+                {/* Conditionally render the "Skip" button */}
+                {[10, 13, 14, 15, 18, 19, 21, 22, 23, 24,].includes(currentStep) && (
+                    <TouchableOpacity onPress={handleSkip}>
+                        <Text style={styles.skipText}>Skip</Text>
+                    </TouchableOpacity>
+
+                )}
+            </View>
 
             {/* Progress Line */}
             <View style={styles.lineContainer}>

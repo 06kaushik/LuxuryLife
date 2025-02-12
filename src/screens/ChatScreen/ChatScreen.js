@@ -140,6 +140,8 @@ const ChatScreen = ({ navigation }) => {
     };
 
     const renderItem = ({ item }) => {
+        console.log('data in chatlis', item);
+
         const lastMessageTimestamp = moment(item?.lastMessage?.timestamp);
         const currentTime = moment();
         let displayTime;

@@ -479,12 +479,12 @@ const SignUp = ({ navigation }) => {
                 return;
             }
             try {
-                await createPassword(); // Call createPassword function
-                setCurrentStep(6); // Move to the next step
+                await createPassword(); 
+                setCurrentStep(6); 
             } catch (error) {
                 console.error('Error creating password:', error.response || error.message);
                 Toast.show('Failed to create password. Please try again.', Toast.SHORT);
-                return; // Stay on step 5 if password creation fails
+                return; 
             }
         }
 

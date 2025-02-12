@@ -24,7 +24,9 @@ const AccountSetting = ({ navigation }) => {
                         <Text style={styles.txt1}>Manage your Account</Text>
                     </View>
                 </TouchableOpacity>
-                <Image source={images.rightarrow} style={styles.arrow} />
+                <TouchableOpacity onPress={() => navigation.navigate('ManageAccount')}>
+                    <Image source={images.rightarrow} style={styles.arrow} />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.cont1}>
@@ -34,7 +36,9 @@ const AccountSetting = ({ navigation }) => {
                         <Text style={styles.txt1}>Membership and Billing</Text>
                     </View>
                 </TouchableOpacity>
-                <Image source={images.rightarrow} style={styles.arrow} />
+                <TouchableOpacity onPress={() => navigation.navigate('Membership')}>
+                    <Image source={images.rightarrow} style={styles.arrow} />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.cont1}>
@@ -44,7 +48,9 @@ const AccountSetting = ({ navigation }) => {
                         <Text style={styles.txt1}>Notifications & Actions</Text>
                     </View>
                 </TouchableOpacity>
-                <Image source={images.rightarrow} style={styles.arrow} />
+                <TouchableOpacity onPress={() => navigation.navigate('NotificationSetting')}>
+                    <Image source={images.rightarrow} style={styles.arrow} />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.cont1}>
@@ -54,7 +60,9 @@ const AccountSetting = ({ navigation }) => {
                         <Text style={styles.txt1}>Hidden Members</Text>
                     </View>
                 </TouchableOpacity>
-                <Image source={images.rightarrow} style={styles.arrow} />
+                <TouchableOpacity onPress={() => navigation.navigate('HiddenMembers')}>
+                    <Image source={images.rightarrow} style={styles.arrow} />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.cont1}>
@@ -64,7 +72,9 @@ const AccountSetting = ({ navigation }) => {
                         <Text style={styles.txt1}>Blocked Members</Text>
                     </View>
                 </TouchableOpacity>
-                <Image source={images.rightarrow} style={styles.arrow} />
+                <TouchableOpacity onPress={() => navigation.navigate('BlockedMembers')}>
+                    <Image source={images.rightarrow} style={styles.arrow} />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.cont1}>
@@ -74,8 +84,9 @@ const AccountSetting = ({ navigation }) => {
                         <Text style={styles.txt1}>Photo & Video Permissions</Text>
                     </View>
                 </TouchableOpacity>
-
-                <Image source={images.rightarrow} style={styles.arrow} />
+                <TouchableOpacity onPress={() => navigation.navigate('PhotoVideoPermission')}>
+                    <Image source={images.rightarrow} style={styles.arrow} />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.cont1}>
@@ -85,7 +96,9 @@ const AccountSetting = ({ navigation }) => {
                         <Text style={styles.txt1}>Security Information</Text>
                     </View>
                 </TouchableOpacity>
-                <Image source={images.rightarrow} style={styles.arrow} />
+                <TouchableOpacity onPress={() => navigation.navigate('SecurityInformation')}>
+                    <Image source={images.rightarrow} style={styles.arrow} />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.cont1}>
@@ -95,7 +108,9 @@ const AccountSetting = ({ navigation }) => {
                         <Text style={styles.txt1}>Verification</Text>
                     </View>
                 </TouchableOpacity>
-                <Image source={images.rightarrow} style={styles.arrow} />
+                <TouchableOpacity onPress={() => navigation.navigate('Verification')}>
+                    <Image source={images.rightarrow} style={styles.arrow} />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.cont1}>
@@ -105,7 +120,9 @@ const AccountSetting = ({ navigation }) => {
                         <Text style={styles.txt1}>Help Center</Text>
                     </View>
                 </TouchableOpacity>
-                <Image source={images.rightarrow} style={styles.arrow} />
+                <TouchableOpacity onPress={() => navigation.navigate('HelpCenter')}>
+                    <Image source={images.rightarrow} style={styles.arrow} />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.cont1}>
@@ -115,7 +132,9 @@ const AccountSetting = ({ navigation }) => {
                         <Text style={styles.txt1}>About</Text>
                     </View>
                 </TouchableOpacity>
-                <Image source={images.rightarrow} style={styles.arrow} />
+                <TouchableOpacity onPress={() => navigation.navigate('About')}>
+                    <Image source={images.rightarrow} style={styles.arrow} />
+                </TouchableOpacity>
             </View>
 
 

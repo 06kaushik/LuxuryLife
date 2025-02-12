@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Text, View, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { Text, View, TouchableOpacity, Image, StyleSheet, ScrollView } from "react-native";
 import images from "../../../components/images";
 import LinearGradient from "react-native-linear-gradient";
 import RazorpayCheckout from 'react-native-razorpay';
@@ -16,67 +16,19 @@ const MembershipScreen = ({ navigation }) => {
                 </View>
             </TouchableOpacity>
 
-            <View style={styles.cont2}>
-                <TouchableOpacity
-                    style={[
-                        styles.tabButton,
-                    ]}
-                    onPress={() => setSelectedButton("Monthly")}
-                >
-                    <Text
-                        style={[
-                            styles.tabText,
-                            { color: selectedButton === "Monthly" ? "#916008" : "black" },
-                        ]}
-                    >
-                        Monthly
-                    </Text>
-                </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={[
-                        styles.tabButton,
-                    ]}
-                    onPress={() => setSelectedButton("Quarterly")}
-                >
-                    <Text
-                        style={[
-                            styles.tabText,
-                            { color: selectedButton === "Quarterly" ? "#916008" : "#000" },
-                        ]}
-                    >
-                        Quarterly
-                    </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[
-                        styles.tabButton,
-                    ]}
-                    onPress={() => setSelectedButton("Yearly")}
-                >
-                    <Text
-                        style={[
-                            styles.tabText,
-                            { color: selectedButton === "Yearly" ? "#916008" : "#000" },
-                        ]}
-                    >
-                        Yearly
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.contentContainer}>
-                {selectedButton === "Monthly" && (
-                    <View>
+            <ScrollView horizontal={true} style={styles.scrollViewContainer}>
+                {/* First Card */}
+                <View style={styles.contentContainer}>
+                    {selectedButton === "Monthly" && (
                         <LinearGradient
                             colors={["#916008", "#FFFFFF"]}
-                            style={styles.cardContainer}
+                            style={[styles.cardContainer, {}]}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 0, y: 0.7 }}
                         >
                             <Text style={styles.title}>Gold</Text>
-                            <Text style={styles.price}>$180</Text>
+                            <Text style={styles.price}>$100</Text>
                             <Text style={styles.perMonth}>per month</Text>
 
                             <TouchableOpacity style={styles.button} onPress={() => {
@@ -96,10 +48,8 @@ const MembershipScreen = ({ navigation }) => {
                                     theme: { color: '#53a20e' }
                                 }
                                 RazorpayCheckout.open(options).then((data) => {
-                                    // handle success
                                     alert(`Success: ${data.razorpay_payment_id}`);
                                 }).catch((error) => {
-                                    // handle failure
                                     alert(`Error: ${error.code} | ${error.description}`);
                                 });
                             }}>
@@ -107,36 +57,111 @@ const MembershipScreen = ({ navigation }) => {
                             </TouchableOpacity>
                             <Text>Features</Text>
                             <View style={styles.features}>
-                                <Text style={styles.featureItem}>
-                                    • Gold badge indicating premium status.
-                                </Text>
-                                <Text style={styles.featureItem}>
-                                    • Slightly increased profile visibility.
-                                </Text>
-                                <Text style={styles.featureItem}>
-                                    • Access to event invites for networking opportunities.
-                                </Text>
+                                <View style={styles.featureItem}>
+                                    <View style={styles.tickBox}>
+                                        <Image source={images.tick1} style={styles.tickIcon} />
+                                    </View>
+                                    <Text style={styles.featureText}>Gold badge indicating premium status.</Text>
+                                </View>
+                                <View style={styles.featureItem}>
+                                    <View style={styles.tickBox}>
+                                        <Image source={images.tick1} style={styles.tickIcon} />
+                                    </View>
+                                    <Text style={styles.featureText}>Slightly increased profile visibility.</Text>
+                                </View>
+                                <View style={styles.featureItem}>
+                                    <View style={styles.tickBox}>
+                                        <Image source={images.tick1} style={styles.tickIcon} />
+                                    </View>
+                                    <Text style={styles.featureText}>Access to event invites for networking opportunities.</Text>
+                                </View>
                             </View>
                         </LinearGradient>
-                        <View style={{ marginLeft: 16, marginRight: 16, }}>
-                            <Text style={styles.txt1}>Please contact the <Text style={{ textDecorationLine: 'underline' }}>customer support</Text> for any questions regarding billing.</Text>
-                            <Text style={styles.txt2}>Billing History</Text>
-                        </View>
-                    </View>
-                )}
-                {selectedButton === "Quarterly" && (
-                    <Text style={styles.contentText}>Quarterly</Text>
-                )}
-                {selectedButton === "Yearly" && (
-                    <Text style={styles.contentText}>Yearly</Text>
-                )}
+                    )}
+                </View>
+
+                {/* Second Card */}
+                <View style={styles.contentContainer}>
+                    {selectedButton === "Monthly" && (
+                        <LinearGradient
+                            colors={["silver", "white"]}
+                            style={[styles.cardContainer, { backgroundColor: 'white', }]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 0, y: 0.7 }}
+                        >
+                            <Text style={[styles.title, { color: 'black' }]}>Diamond</Text>
+                            <Text style={styles.price}>$150</Text>
+                            <Text style={styles.perMonth}>per month</Text>
+
+                            <TouchableOpacity style={[styles.button, { backgroundColor: 'white', borderColor: 'silver', borderWidth: 1 }]} onPress={() => {
+                                var options = {
+                                    description: 'Credits towards consultation',
+                                    image: 'https://i.imgur.com/3g7nmJC.jpg',
+                                    currency: 'USD',
+                                    key: 'rzp_test_0U87k8QQAqqeki',
+                                    amount: 2000 * 100,
+                                    name: 'AcadeCraft',
+                                    order_id: '',
+                                    prefill: {
+                                        email: 'gaurav.kumar@example.com',
+                                        contact: '9191919191',
+                                        name: 'Gaurav Kumar'
+                                    },
+                                    theme: { color: '#53a20e' }
+                                }
+                                RazorpayCheckout.open(options).then((data) => {
+                                    alert(`Success: ${data.razorpay_payment_id}`);
+                                }).catch((error) => {
+                                    alert(`Error: ${error.code} | ${error.description}`);
+                                });
+                            }}>
+                                <Text style={[styles.buttonText, { color: 'black' }]}>Upgrade to premium</Text>
+                            </TouchableOpacity>
+                            <Text>Features</Text>
+
+                            <View style={styles.features}>
+                                <View style={styles.featureItem}>
+                                    <View style={[styles.tickBox, { borderColor: 'black', backgroundColor: 'black' }]}>
+                                        <Image source={images.tick1} style={styles.tickIcon} />
+                                    </View>
+                                    <Text style={[styles.featureText, { top: 8 }]}>Exclusive Diamond badge that signals wealth and status, highly visible to female members.</Text>
+                                </View>
+                                <View style={styles.featureItem}>
+                                    <View style={[styles.tickBox, { borderColor: 'black', backgroundColor: 'black' }]}>
+                                        <Image source={images.tick1} style={styles.tickIcon} />
+                                    </View>
+                                    <Text style={[styles.featureText, { top: 10 }]}>Top-tier profile placement in searches.</Text>
+                                </View>
+                                <View style={styles.featureItem}>
+                                    <View style={[styles.tickBox, { borderColor: 'black', backgroundColor: 'black' }]}>
+                                        <Image source={images.tick1} style={styles.tickIcon} />
+                                    </View>
+                                    <Text style={[styles.featureText, { top: 10 }]}>Priority invitations to luxury events and networking opportunities.</Text>
+                                </View>
+                                <View style={styles.featureItem}>
+                                    <View style={[styles.tickBox, { borderColor: 'black', backgroundColor: 'black' }]}>
+                                        <Image source={images.tick1} style={styles.tickIcon} />
+                                    </View>
+                                    <Text style={[styles.featureText, { top: 10 }]}>Profile verification and "Authenticity Star" for trustworthiness.</Text>
+                                </View>
+                            </View>
+                        </LinearGradient>
+                    )}
+                </View>
+            </ScrollView>
+            <View style={{ borderWidth: 0.5, borderColor: 'grey', marginLeft: 16, marginRight: 16, marginBottom: 20 }} />
+            <View style={{ marginLeft: 16, marginRight: 16, marginBottom: 40 }}>
+                <Text style={styles.txt1}>Please contact the <Text style={{ textDecorationLine: 'underline' }}>customer support</Text> for any questions regarding billing.</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('BillingHistory')}>
+                    <Text style={styles.txt2}>Billing History</Text>
+                </TouchableOpacity>
             </View>
+
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-
     main: {
         flex: 1,
         backgroundColor: "white",
@@ -159,55 +184,27 @@ const styles = StyleSheet.create({
         fontSize: 20,
         marginTop: 5,
     },
-    cont2: {
-        height: 40,
-        width: "90%",
-        alignSelf: "center",
-        borderRadius: 25,
-        marginTop: 40,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        borderColor: "grey",
-        padding: 2,
-    },
-    tabButton: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100%",
-        borderRadius: 20,
-        marginHorizontal: 5,
-    },
-    tabText: {
-        fontSize: 16,
-        fontFamily: "Poppins-SemiBold",
-        textAlign: "center",
-    },
     contentContainer: {
-        flex: 1,
-        marginTop: 20,
-        alignItems: "center",
+        marginRight: 20,
+        // flex: 1,
+        // alignItems: "center",
     },
-    contentText: {
-        fontSize: 16,
-        fontFamily: "Poppins-Regular",
-        color: "#000",
+    scrollViewContainer: {
+        flexDirection: 'row',
+        marginTop: 40,
+        marginLeft: 16,
     },
     cardContainer: {
-        width: "90%",
+        width: 280,  // Adjust width to fit within screen size
         alignSelf: "center",
         borderRadius: 10,
         padding: 30,
-        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
         marginVertical: 20,
-        height: 450,
+        // height: 430,
         justifyContent: "space-between",
-        // borderWidth: 5,
-        borderColor: '#916008',
+        // elevation: 3,
+        // marginHorizontal: 10,  // Add horizontal margin to separate cards
     },
     title: {
         fontSize: 20,
@@ -249,10 +246,30 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     featureItem: {
-        fontSize: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 5,
+    },
+    featureText: {
+        fontSize: 14,
         color: "black",
         fontFamily: "Poppins-Regular",
-        marginBottom: 5,
+        marginLeft: 10,
+    },
+    tickBox: {
+        borderWidth: 1,
+        borderRadius: 100,
+        height: 20,
+        width: 20,
+        justifyContent: 'center',
+        backgroundColor: '#916008',
+        borderColor: '#916008',
+    },
+    tickIcon: {
+        height: 11,
+        width: 11,
+        alignSelf: 'center',
+        tintColor: "white",
     },
     txt1: {
         textAlign: 'center',
@@ -264,7 +281,9 @@ const styles = StyleSheet.create({
         color: '#3C4043',
         fontFamily: 'Poppins-Bold',
         fontSize: 16,
-        marginTop: 20
+        marginTop: 20,
+        textAlign: 'center',
+        textDecorationLine: 'underline'
     }
 });
 

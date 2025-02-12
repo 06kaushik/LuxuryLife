@@ -40,27 +40,30 @@ const LoginWithEmail = ({ navigation }) => {
                 const response = await axios.post('auth/sign-in-google', { idToken });
                 console.log('response from the google sign in', response?.data);
                 Toast.show(response?.data?.message, Toast.SHORT);
-                if (response?.data?.data?.user?.email) {
+                if (response?.data?.data?.user?.email && response?.data?.data?.user?.profileCompleted === true) {
                     login(idToken);
                 } else {
+                    Toast.show('Please complete your profile first.', Toast.SHORT)
                 }
             } catch (error) {
+                GoogleSignin.signOut();
                 console.log('error from google signIn', error.message);
                 Toast.show('SignUp To Get Registered Yourself', Toast.SHORT)
             }
         } catch (error) {
-            console.error('Error during Google Sign-In:', error);
+            GoogleSignin.signOut();
+            // console.error('Error during Google Sign-In:', error);
             if (error.response) {
-                console.error('Error Response:', error.response.data);
+                // console.error('Error Response:', error.response.data);
             }
             if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-                Alert.alert('Cancelled', 'User cancelled the sign-in process.');
+                Toast.show('User cancelled the sign-in process.', Toast.SHORT)
             } else if (error.code === statusCodes.IN_PROGRESS) {
-                Alert.alert('In Progress', 'Sign-in process is already in progress.');
+                Toast.show('Sign-in process is already in progress.', Toast.SHORT)
             } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                Alert.alert('Error', 'Google Play Services are not available.');
+                Toast.show('Google Play Services are not available.', Toast.SHORT)
             } else {
-                Alert.alert('Error', 'Something went wrong during the sign-in process.');
+                // Toast.show('Something went wrong during the sign-in process.', Toast.SHORT)
             }
         } finally {
             setIsLoading(false);

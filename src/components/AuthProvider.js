@@ -49,6 +49,7 @@ const AuthProvider = ({ children, navigation }) => {
       const response = await axios.post('auth/sign-in-google', { idToken });
       if (response?.data?.data?.user?.email) {
         await AsyncStorage.setItem('authToken', response.data.data.token);
+        await AsyncStorage.setItem('verifcationToken', response.data.data.token);
         await AsyncStorage.setItem('UserData', JSON.stringify(response.data.data.user));
         axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.data.token}`;
         setIsAuthenticated(true);

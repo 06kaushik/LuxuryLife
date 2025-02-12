@@ -6,6 +6,8 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import moment from "moment";
 import useSocket from "../../socket/SocketMain";
+import { useIsFocused } from '@react-navigation/native';
+
 
 
 const { width, height } = Dimensions.get('window')
@@ -20,11 +22,16 @@ const FavouriteScreen = ({ navigation }) => {
     const [userdetails, setUserDetails] = useState(null);
     const [favourite, setFavourite] = useState([]);
     const { emit, on, removeListener } = useSocket(onSocketConnect);
+    const isFocused = useIsFocused()
+
 
     const onSocketConnect = () => {
         console.log('Socket connected in chat screen');
     };
 
+    useEffect(() => {
+        getFavouriteData()
+    }, [isFocused])
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -134,6 +141,7 @@ const FavouriteScreen = ({ navigation }) => {
             console.log('error from navigatuo to one to one ', error);
         }
     };
+
 
 
     const renderFavourite = ({ item }) => {

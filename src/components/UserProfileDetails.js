@@ -33,12 +33,12 @@ const UserProfileDetails = ({ navigation, route }) => {
     const [selectedImage, setSelectedImage] = useState(null);
     const [isModal, setIsModal] = useState(false)
     const [privatepicrequest, setPrivatePicRequest] = useState(false)
-    const { emit, on, removeListener } = useSocket(onSocketConnect);
+    const { emit, on } = useSocket(onSocketConnect);
+
 
     const onSocketConnect = () => {
         console.log('Socket connected in chat screen');
     };
-
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -71,11 +71,9 @@ const UserProfileDetails = ({ navigation, route }) => {
         }
         try {
             const resp = await axios.get(`home/get-user-profile/${item}`, { headers })
-            // console.log('response fromt user details api', resp?.data?.data);
             setUserProfileData(resp?.data?.data)
         } catch (error) {
             console.log('error frm the user profile', error.response.data.message);
-
         }
     }
 
@@ -150,11 +148,12 @@ const UserProfileDetails = ({ navigation, route }) => {
             const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
             console.log('response from the hide button', resp.data);
             navigation.goBack('')
-            Toast.show('User Blocked Succuessfully', Toast.SHORT)
+            Toast.show('User Hidden Succuessfully', Toast.SHORT)
         } catch (error) {
             console.log('error from the hide ', error);
         }
     }
+
 
     const userReport = async (id) => {
         const token = await AsyncStorage.getItem('authToken')
@@ -169,7 +168,7 @@ const UserProfileDetails = ({ navigation, route }) => {
             const resp = await axios.put(`home/update-activity-log/${userdetails?._id}`, body, { headers })
             console.log('response from the report button', resp.data);
             navigation.goBack('')
-            Toast.show('User Blocked Succuessfully', Toast.SHORT)
+            Toast.show('User Reported Succuessfully', Toast.SHORT)
         } catch (error) {
             console.log('error from the report ', error);
         }
@@ -182,10 +181,14 @@ const UserProfileDetails = ({ navigation, route }) => {
         }
         let body = {
             targetUserId: userdetails?._id,
-            userId: id
+            receiverId: id
         }
+        console.log('body of request ', body);
+
         try {
             const resp = await axios.post('home/request-private-pic-access', body, { headers })
+            console.log('response from the request', resp?.data);
+            getUserProfileData()
             if (resp?.data?.message === 'Private profile access requested successfully') {
                 setPrivatePicRequest(true)
             }
@@ -203,7 +206,8 @@ const UserProfileDetails = ({ navigation, route }) => {
         }
         let body = {
             targetUserId: item,
-            action: "VIEW"
+            action: "VIEW",
+
         }
         console.log('body of view', body);
 
@@ -282,7 +286,6 @@ const UserProfileDetails = ({ navigation, route }) => {
     };
 
     const handleChatPress = () => {
-        console.log('inside ', item);
 
         try {
             emit("checkRoom", { users: { participantId: userprofiledata?._id, userId: userdetails?._id } });
@@ -298,7 +301,6 @@ const UserProfileDetails = ({ navigation, route }) => {
         } catch (error) {
             console.log('error from navigatuo to one to one ', error);
         }
-
     };
 
 
@@ -306,83 +308,84 @@ const UserProfileDetails = ({ navigation, route }) => {
 
     return (
         <View style={styles.main}>
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.iconButton}
-                    onPress={() => navigation.goBack()}
-                >
-                    <FastImage source={images.back} style={styles.icon} />
-                </TouchableOpacity>
-                <View style={styles.dotsContainer}>
-                    {userprofiledata?.publicPhotos?.map((_, index) => (
-                        <View
-                            key={index}
-                            style={[
-                                styles.dot,
-                                activeIndex === index ? styles.activeDot : {},
-                            ]}
-                        />
-                    ))}
-                </View>
-                <TouchableOpacity style={styles.iconButton} onPress={openBottomSheet}>
-                    <FastImage source={images.dots} style={[styles.icon, { height: 20 }]} />
-                    <RBSheet
-                        ref={rbSheetRef}
-                        height={180}
-                        openDuration={250}
-                        closeOnDragDown={true}
-                        customStyles={{
-                            container: {
-                                borderTopLeftRadius: 20,
-                                borderTopRightRadius: 20,
-                            },
-                            draggableIcon: {
-                                backgroundColor: "#C4C4C4",
-                            },
-                        }}
-                    >
-                        <View style={{ marginTop: 20, }}>
-                            <TouchableOpacity onPress={() => openModal("Hide")}>
-                                <Text style={{ color: '#3C4043', textAlign: 'center', fontSize: 16, fontFamily: 'Poppins-SemiBold', margin: 10 }}>Hide</Text>
-                            </TouchableOpacity>
-                            <View style={{ borderWidth: 0.7, borderColor: '#EBEBEB', width: '80%', alignSelf: 'center' }} />
-                            <TouchableOpacity onPress={() => openModal("Block")}>
-                                <Text style={{ color: '#3C4043', textAlign: 'center', fontSize: 16, fontFamily: 'Poppins-SemiBold', margin: 10 }}>Block</Text>
-                            </TouchableOpacity>
-                            <View style={{ borderWidth: 0.7, borderColor: '#EBEBEB', width: '80%', alignSelf: 'center' }} />
-                            <TouchableOpacity onPress={() => openModal("Report")}>
-                                <Text style={{ color: '#3C4043', textAlign: 'center', fontSize: 16, fontFamily: 'Poppins-SemiBold', margin: 10 }}>Report</Text>
-                            </TouchableOpacity>
-                        </View>
-
-
-                    </RBSheet>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.imageWrapper}>
-                <ScrollView
-                    horizontal
-                    pagingEnabled
-                    showsHorizontalScrollIndicator={false}
-                    onScroll={onScroll}
-                    scrollEventThrottle={16}
-                >
-                    {userprofiledata?.publicPhotos?.map((item, index) => (
-                        <View key={index} style={styles.imageContainer}>
-                            <TouchableOpacity onPress={() => handleImageClick(item)}>
-                                <FastImage
-                                    source={{ uri: item }}
-                                    style={styles.img}
-                                    resizeMode={FastImage.resizeMode.contain}
-                                />
-                            </TouchableOpacity>
-                        </View>
-                    ))}
-                </ScrollView>
-            </View>
             <ScrollView>
+                {/* Header */}
+                <View style={styles.header}>
+                    <TouchableOpacity
+                        style={styles.iconButton}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <FastImage source={images.back} style={styles.icon} />
+                    </TouchableOpacity>
+                    <View style={styles.dotsContainer}>
+                        {userprofiledata?.publicPhotos?.map((_, index) => (
+                            <View
+                                key={index}
+                                style={[
+                                    styles.dot,
+                                    activeIndex === index ? styles.activeDot : {},
+                                ]}
+                            />
+                        ))}
+                    </View>
+                    <TouchableOpacity style={styles.iconButton} onPress={openBottomSheet}>
+                        <FastImage source={images.dots} style={[styles.icon, { height: 20 }]} />
+                        <RBSheet
+                            ref={rbSheetRef}
+                            height={180}
+                            openDuration={250}
+                            closeOnDragDown={true}
+                            customStyles={{
+                                container: {
+                                    borderTopLeftRadius: 20,
+                                    borderTopRightRadius: 20,
+                                },
+                                draggableIcon: {
+                                    backgroundColor: "#C4C4C4",
+                                },
+                            }}
+                        >
+                            <View style={{ marginTop: 20, }}>
+                                <TouchableOpacity onPress={() => openModal("Hide")}>
+                                    <Text style={{ color: '#3C4043', textAlign: 'center', fontSize: 16, fontFamily: 'Poppins-SemiBold', margin: 10 }}>Hide</Text>
+                                </TouchableOpacity>
+                                <View style={{ borderWidth: 0.7, borderColor: '#EBEBEB', width: '80%', alignSelf: 'center' }} />
+                                <TouchableOpacity onPress={() => openModal("Block")}>
+                                    <Text style={{ color: '#3C4043', textAlign: 'center', fontSize: 16, fontFamily: 'Poppins-SemiBold', margin: 10 }}>Block</Text>
+                                </TouchableOpacity>
+                                <View style={{ borderWidth: 0.7, borderColor: '#EBEBEB', width: '80%', alignSelf: 'center' }} />
+                                <TouchableOpacity onPress={() => openModal("Report")}>
+                                    <Text style={{ color: '#3C4043', textAlign: 'center', fontSize: 16, fontFamily: 'Poppins-SemiBold', margin: 10 }}>Report</Text>
+                                </TouchableOpacity>
+                            </View>
+
+
+                        </RBSheet>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.imageWrapper}>
+                    <ScrollView
+                        horizontal
+                        pagingEnabled
+                        showsHorizontalScrollIndicator={false}
+                        onScroll={onScroll}
+                        scrollEventThrottle={16}
+                    >
+                        {userprofiledata?.publicPhotos?.map((item, index) => (
+                            <View key={index} style={styles.imageContainer}>
+                                <TouchableOpacity onPress={() => handleImageClick(item)}>
+                                    <FastImage
+                                        source={{ uri: item }}
+                                        style={styles.img}
+                                        resizeMode={FastImage.resizeMode.contain}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+                    </ScrollView>
+                </View>
+
                 <View style={styles.contentContainer}>
                     {userprofiledata?.isOnline === true ?
                         <View style={styles.cont1}>
@@ -448,12 +451,14 @@ const UserProfileDetails = ({ navigation, route }) => {
                 </View>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginLeft: 16 }}>
                     {userprofiledata?.publicPhotos?.map((photo, index) => (
-                        <View key={index} style={{ margin: 5 }}>
-                            <Image
-                                source={{ uri: photo }}
-                                style={{ width: 105, height: 150, borderRadius: 10 }}
-                            />
-                        </View>
+                        <TouchableOpacity onPress={() => handleImageClick(photo)}>
+                            <View key={index} style={{ margin: 5 }}>
+                                <Image
+                                    source={{ uri: photo }}
+                                    style={{ width: 105, height: 150, borderRadius: 10 }}
+                                />
+                            </View>
+                        </TouchableOpacity>
                     ))}
                 </View>
 
@@ -461,7 +466,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                     <Text style={styles.txt5}>Private Photo</Text>
                     {/* <Image source={images.rightarrow} style={styles.arrow} /> */}
                 </View>
-                <TouchableOpacity onPress={() => requestPrivatePhoto(userprofiledata?.userId)}>
+                <TouchableOpacity onPress={() => requestPrivatePhoto(userprofiledata?._id)}>
                     <ImageBackground
                         source={images.dummy1}
                         style={{ height: 150, width: 105, borderRadius: 10, marginLeft: 8, top: 5, marginLeft: 16 }}
@@ -483,7 +488,7 @@ const UserProfileDetails = ({ navigation, route }) => {
                                 color: 'white',
                                 fontSize: 16,
                                 textAlign: 'center',
-                            }}>{privatepicrequest === true ? 'Requested' : 'Request to Unlock'}</Text>
+                            }}>{userprofiledata?.privatePicAccess?.status || 'Request to Unlock'}</Text>
                             <TouchableOpacity style={styles.lockIconContainer}>
                                 <Image
                                     source={images.lock}
@@ -581,22 +586,23 @@ const UserProfileDetails = ({ navigation, route }) => {
                     </Text>
                 </View>
 
-                <View style={styles.contt8}>
-                    <View style={styles.cont9}>
-                        <Image source={images.cross} style={styles.cross} />
-                    </View>
 
-                    <TouchableOpacity onPress={() => hasLiked ? userDisLike(userprofiledata?.userId) : userLike(userprofiledata?.userId)}>
-                        <View style={[styles.cont9, { backgroundColor: '#916008', height: 55, width: 55 }]}>
-                            <Image source={hasLiked ? images.redheart : images.heart} style={[styles.cross, { tintColor: 'white', height: 25, width: 25 }]} />
-                        </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={() => handleChatPress()} style={styles.cont9}>
-                        <Image source={images.chat} style={[styles.cross, { height: 20, width: 20 }]} />
-                    </TouchableOpacity>
-                </View>
             </ScrollView>
+            <View style={styles.contt8}>
+                <View style={styles.cont9}>
+                    <Image source={images.cross} style={styles.cross} />
+                </View>
+
+                <TouchableOpacity onPress={() => hasLiked ? userDisLike(userprofiledata?._id) : userLike(userprofiledata?._id)}>
+                    <View style={[styles.cont9, { backgroundColor: '#916008', height: 55, width: 55 }]}>
+                        <Image source={hasLiked ? images.redheart : images.heart} style={[styles.cross, { tintColor: 'white', height: 25, width: 25 }]} />
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => handleChatPress()} style={styles.cont9}>
+                    <Image source={images.chat} style={[styles.cross, { height: 20, width: 20 }]} />
+                </TouchableOpacity>
+            </View>
             <Modal isVisible={isModalVisible} onBackdropPress={closeModal}>
                 <View style={styles.modalContainer}>
                     <Text style={styles.modalTitle}>{modalContent.title}</Text>
@@ -880,16 +886,27 @@ const styles = StyleSheet.create({
     contt8: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 30,
-        margin: 60
+        position: 'absolute',
+        bottom: 0,  // Sticks the container to the bottom of the screen
+        left: 0,
+        right: 0,
+        paddingHorizontal: 40,  // Optional: Adds space from the edges
+        paddingVertical: 10,  // Optional: Adds some space inside the container
+        backgroundColor: 'white',  // White background for the container
+        borderTopLeftRadius: 20,  // Rounded top corners
+        borderTopRightRadius: 20,  // Rounded top corners
+        zIndex: 1,  // Ensure it's on top of other content
     },
+
     cont9: {
         borderWidth: 1,
         height: 48,
         width: 48,
         borderRadius: 100,
         borderColor: '#DADADA',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'white',  // White background for each button
     },
     cross: {
         height: 15,
