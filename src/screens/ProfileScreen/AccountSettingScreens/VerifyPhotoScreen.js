@@ -83,13 +83,13 @@ const VerifySelfie = ({ navigation }) => {
 
             console.log('Selfie submitted successfully:', response.data);
             Toast.show('Selfie submitted successfully.', Toast.SHORT);
-            navigation.navigate('AccountSetting'); // Navigate to success screen
+            navigation.navigate('Home');
         } catch (error) {
             console.error('Error submitting selfie:', error.response?.data || error.message);
             Toast.show('Failed to upload the selfie. Please try again.', Toast.SHORT);
         }
     };
-
+ 
     const handleTakeSelfie = () => {
         const options = {
             mediaType: 'photo',
@@ -126,7 +126,7 @@ const VerifySelfie = ({ navigation }) => {
 
     return (
         <View style={styles.main}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
+            <TouchableOpacity onPress={() => navigation.goBack('')}>
                 <View style={styles.cont}>
                     <Image source={images.back} style={styles.backIcon} />
                     <Text style={styles.txt}>Verification</Text>

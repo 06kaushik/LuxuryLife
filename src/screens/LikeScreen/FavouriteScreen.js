@@ -57,7 +57,7 @@ const FavouriteScreen = ({ navigation }) => {
         };
         const body = {
             currentPage,
-            pageLength: 20,
+            pageLength: 2000,
             where: {
                 longitude: userdetails?.lcoation?.coordinates[0],
                 latitude: userdetails?.location?.coordinates[1],
@@ -68,12 +68,7 @@ const FavouriteScreen = ({ navigation }) => {
         try {
             const resp = await axios.post(`home/get-my-favorite`, body, { headers });
             // console.log('Response from the favorite data:', resp.data.data);
-            setFavourite(prevData => currentPage === 0 ? resp?.data?.data : [...prevData, ...resp?.data?.data])
-            if (resp?.data?.data?.length < body.pageLength) {
-                setHasMoreData(false)
-            } else {
-                setHasMoreData(true)
-            }
+            setFavourite(resp?.data?.data)
             setIsLoading(false)
         } catch (error) {
             console.error('Error from get viewed data:', error);

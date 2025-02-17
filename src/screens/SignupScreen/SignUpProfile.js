@@ -526,7 +526,7 @@ const ProfileSignUp = ({ navigation, route }) => {
             }
             const isValid = /^[a-zA-Z0-9]+$/.test(username);
             if (!isValid) {
-                Toast.show('Username can only contain letters and numbers, no special characters.', Toast.SHORT);
+                Toast.show('Username can only contain letters and numbers ,no space, no special characters.', Toast.SHORT);
                 return;
             }
 

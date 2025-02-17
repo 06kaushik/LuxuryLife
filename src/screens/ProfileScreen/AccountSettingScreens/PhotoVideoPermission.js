@@ -41,8 +41,6 @@ const PhotoVideoPermissions = ({ navigation }) => {
             try {
                 // Show loader
                 setLoading(true);
-
-                // Fetch user details
                 const userData = await AsyncStorage.getItem('UserData');
                 if (!userData) {
                     console.error('User data is missing.');

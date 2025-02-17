@@ -18,7 +18,7 @@ const ViewedMe = ({ navigation }) => {
     const [userdetails, setUserDetails] = useState(null);
     const [viewedme, setViewedMe] = useState([]);
     const { emit, on } = useSocket(onSocketConnect);
-    const isFocused = useIsFocused()
+    const isFocused = useIsFocused();
 
 
     const onSocketConnect = () => {
@@ -43,7 +43,6 @@ const ViewedMe = ({ navigation }) => {
         };
         fetchUserDetails();
     }, []);
-
 
     const getViewMeData = async () => {
 
@@ -79,7 +78,6 @@ const ViewedMe = ({ navigation }) => {
             getViewMeData();
         }
     }, [userdetails]);
-
 
     const userLike = async (id) => {
         const token = await AsyncStorage.getItem('authToken')
@@ -157,9 +155,8 @@ const ViewedMe = ({ navigation }) => {
         }
     };
 
-
     const renderViewedMe = ({ item }) => {
-console.log('iteemeemm of viewd me', item);
+        console.log('iteemeemm of viewd me', item);
 
         const lastActive = moment(item?.user?.lastActive).fromNow();
         const hasLiked = item.userLikeActionCount === 1;

@@ -21,9 +21,12 @@ const ProfileScreen = ({ navigation }) => {
     const [selfie, setSelfie] = useState(null);
     const [submitselfie, setSubmitSelfie] = useState(false);
     const [load, setLoad] = useState(false)
+    console.log('loaading loader', load);
+
     const [userdetails, setUserDetails] = useState(null)
     const [selectedImage, setSelectedImage] = useState(null);
     const [isModal, setIsModal] = useState(false)
+    const [isloading, setIsLoading] = useState(true)
 
 
     useEffect(() => {
@@ -83,7 +86,8 @@ const ProfileScreen = ({ navigation }) => {
             console.log('Payload for account update (selfie):', accountUpdatePayload);
             const response = await axios.put(`auth/update-account/${userdetails?._id}`, accountUpdatePayload, { headers });
             console.log('Response from account update:', response.data);
-
+            Toast.show('profile pic updated successfully', Toast.SHORT)
+            setLoad(false);
             if (response.status === 200) {
                 Toast.show('Selfie uploaded successfully!', Toast.SHORT);
                 const updatedUserData = { ...userdetails, profilePicture: realTimePictureUrl };
@@ -154,6 +158,16 @@ const ProfileScreen = ({ navigation }) => {
     return (
 
         <View style={styles.main}>
+            {load && (
+                <View style={styles.demoOverlay}>
+                    <ActivityIndicator
+                        size="large"
+                        color="#916008"
+                        style={styles.loader}
+                    />
+                </View>
+            )}
+
             <TouchableOpacity onPress={() => handleImageClick(userdetails?.profilePicture)}>
                 <View style={styles.container}>
                     {!userdetails?.profilePicture && (<UserAvatar size={150} name={`${userdetails?.userName}`} bgColor={'grey'} />)}
@@ -266,6 +280,7 @@ const styles = StyleSheet.create({
         width: 150,
         alignSelf: 'center',
         marginTop: 50,
+        position: 'relative'
     },
     txt: {
         color: 'black',
@@ -423,5 +438,24 @@ const styles = StyleSheet.create({
         width: "100%", // Make the image take up the full width
         height: "100%", // Make the image take up the full height
         resizeMode: "contain", // Ensure the image maintains its aspect ratio
+    },
+    loader: {
+        position: 'absolute',
+        top: '50%', // Vertically center the loader inside the profile picture
+        left: '50%', // Horizontally center the loader inside the profile picture
+        marginLeft: -20, // Adjust for proper centering (half of loader size)
+        marginTop: -20, // Adjust for proper centering (half of loader size)
+        zIndex: 10, // Make sure the loader is on top of the profile image
+    },
+    demoOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
     },
 })

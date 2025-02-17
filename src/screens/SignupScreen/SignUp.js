@@ -53,6 +53,8 @@ const SignUp = ({ navigation }) => {
     const { login } = useContext(AuthContext);
     const [selectedgender, setSelectedGender] = useState(null)
     const [selectinterest, setSelectInterest] = useState([])
+    console.log('selected interest', selectinterest);
+
     const [email, setEmail] = useState('')
     const [userId, setUserId] = useState('')
     const [errorMessage, setErrorMessage] = useState('');
@@ -95,7 +97,7 @@ const SignUp = ({ navigation }) => {
     /////// HANDLING API /////////
 
     const validateEmail = (email) => {
-        const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;  // Basic email regex
+        const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         return re.test(email);
     };
 
@@ -297,12 +299,7 @@ const SignUp = ({ navigation }) => {
     };
 
     const handleInteretSelect = (type) => {
-
-        if (selectinterest.includes(type)) {
-            setSelectInterest(selectinterest.filter((item) => item !== type));
-        } else if (selectinterest.length < 4) {
-            setSelectInterest([...selectinterest, type]);
-        }
+        setSelectInterest([type])
     };
 
     const showDatePicker = () => {
@@ -316,11 +313,12 @@ const SignUp = ({ navigation }) => {
     const handleDateConfirm = (date) => {
 
         const userAge = calculateAge(date);
-        if (userAge >= 18) {
+
+        if (userAge >= 18 && userAge <= 100 && selectedDate === selectedDate) {
             setSelectedDate(date);
             setDatePickerOpen(false);
         } else {
-            Toast.show('You must be atleat 18 years old to use this service.', Toast.SHORT);
+            Toast.show('You must be 18 to 100 years old to use this service.', Toast.SHORT);
             setDatePickerOpen(false);
         }
     };
@@ -422,9 +420,22 @@ const SignUp = ({ navigation }) => {
             return;
         }
 
-        if (currentStep === 2 && !selectedDate) {
-            alert('Please select your date of birth');
-            return;
+        if (currentStep === 2) {
+            if (!selectedDate) {
+                alert('Please select your date of birth');
+                return;
+            }
+
+            // Check if the selectedDate is equal to the current date
+            const today = new Date();
+            const selectedDateWithoutTime = new Date(selectedDate.setHours(0, 0, 0, 0)); // Remove time from selected date
+            const todayWithoutTime = new Date(today.setHours(0, 0, 0, 0)); // Remove time from current date
+
+            // If selected date is the same as today's date, show an alert
+            if (selectedDateWithoutTime.getTime() === todayWithoutTime.getTime()) {
+                alert('You cannot select today\'s date. Please select a date in the past.');
+                return;
+            }
         }
 
         if (currentStep === 3) {
@@ -479,12 +490,12 @@ const SignUp = ({ navigation }) => {
                 return;
             }
             try {
-                await createPassword(); 
-                setCurrentStep(6); 
+                await createPassword();
+                setCurrentStep(6);
             } catch (error) {
                 console.error('Error creating password:', error.response || error.message);
                 Toast.show('Failed to create password. Please try again.', Toast.SHORT);
-                return; 
+                return;
             }
         }
 
@@ -543,9 +554,9 @@ const SignUp = ({ navigation }) => {
                             {['Male', 'Female', 'Non-binary/Other', 'Both'].map((option) => (
                                 <TouchableOpacity
                                     key={option}
-                                    style={[styles.optionContainer, selectinterest.includes(option) && styles.selectedBodyTypeButton]}
+                                    style={[styles.optionContainer, selectinterest[0] === option && styles.selectedBodyTypeButton]}
                                     onPress={() => handleInteretSelect(option)}>
-                                    <Text style={[styles.optionText, selectinterest.includes(option) && styles.selectedBodyTypeText]}>{option}</Text>
+                                    <Text style={[styles.optionText, selectinterest[0] === option && styles.selectedBodyTypeText]}>{option}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>

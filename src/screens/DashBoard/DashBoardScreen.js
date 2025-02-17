@@ -9,18 +9,20 @@ import {
     Image,
     TouchableOpacity,
     ImageBackground,
-    AppState
+    AppState,
+    BackHandler,
+    ToastAndroid
 } from "react-native";
 import LinearGradient from 'react-native-linear-gradient';
 import images from "../../components/images";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import moment from 'moment';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import LaodingScreen from "../../components/LoadingScreen";
 import Toast from 'react-native-simple-toast'
-import FastImage from 'react-native-fast-image';
 import useSocket from "../../socket/SocketMain";
+import Modal from 'react-native-modal'
 
 const { width, height } = Dimensions.get("window");
 
@@ -29,17 +31,17 @@ const DashBoardScreen = ({ navigation }) => {
     const scrollY = useRef(new Animated.Value(0)).current;
     const [userData, setUserData] = useState([])
     const [userdetails, setUserDetails] = useState(null)
+
     const [filterdata, setFilterData] = useState(null)
     const [currentPage, setCurrentPage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
-    const [isPaginationLoading, setIsPaginationLoading] = useState(false);
     const [hasMoreData, setHasMoreData] = useState(true);
     const isFocused = useIsFocused()
     const positions = useRef([]).current;
-    const [swipedCount, setSwipedCount] = useState(0);
     const [appState, setAppState] = useState(AppState.currentState);
-    const [privatepicrequest, setPrivatePicRequest] = useState(false)
     const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
+    const [backPressed, setBackPressed] = useState(false)
+    const [modalVisible, setModalVisible] = useState(false);
     const { emit, on, removeListener } = useSocket(onSocketConnect);
 
     const onSocketConnect = () => {
@@ -50,6 +52,41 @@ const DashBoardScreen = ({ navigation }) => {
         getdatafromAsync()
         getUserFilteredData();
     }, [isFocused])
+
+
+    useEffect(() => {
+        // Check if the user details are fetched
+        if (userdetails && userdetails.profileCompletion < 100) {
+            setModalVisible(true);
+        }
+    }, [userdetails]);
+
+    const handleCompleteProfile = () => {
+        setModalVisible(false);
+        navigation.navigate('ViewProfile');
+    };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            const backAction = () => {
+                if (backPressed) {
+                    BackHandler.exitApp();
+                } else {
+                    setBackPressed(true);
+                    ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+                    setTimeout(() => {
+                        setBackPressed(false)
+                    }, 2000);
+                    return true;
+                }
+            }
+            const backHandler = BackHandler.addEventListener(
+                'hardwareBackPress',
+                backAction
+            );
+            return () => backHandler.remove()
+        }, [backPressed])
+    )
 
     useEffect(() => {
         const checkIfFirstTimeUser = async () => {
@@ -331,7 +368,7 @@ const DashBoardScreen = ({ navigation }) => {
             const resp = await axios.post('home/request-private-pic-access', body, { headers })
             console.log('reposnse from private pic requested', resp?.data?.message);
             if (resp?.data?.message === 'Private profile access requested successfully') {
-                setPrivatePicRequest(true)
+
             }
             Toast.show('Private Pic Requested', Toast.SHORT)
         } catch (error) {
@@ -506,7 +543,34 @@ const DashBoardScreen = ({ navigation }) => {
                         ))}
                 </View>
             )}
+            {modalVisible && (
+                <View style={styles.demoOverlay}>
+                    <Modal
+                        visible={modalVisible}
+                        transparent={true}
+                        animationType="fade"
+                        onRequestClose={() => setModalVisible(false)}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.title}>Complete Your Profile for the Best Matches!</Text>
+                                <Text style={styles.completionText}>{userdetails?.profileCompletion}% Complete</Text>
+                                <Text style={styles.description}>
+                                    You’re almost there! A fully completed profile increases your chances of finding the perfect match and makes you stand out from other members.
+                                </Text>
+                                <TouchableOpacity style={styles.button} onPress={handleCompleteProfile}>
+                                    <Text style={styles.buttonText}>Complete My Profile Now</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.button} onPress={() => setModalVisible(false)}>
+                                    <Text style={styles.buttonText}>Do It Later</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+                </View>
+            )}
         </View>
+
     );
 };
 
@@ -880,7 +944,7 @@ const styles = StyleSheet.create({
         padding: 20,
         borderRadius: 10,
         alignItems: 'center',
-        width: '80%',
+        // width: '80%',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
@@ -932,7 +996,7 @@ const styles = StyleSheet.create({
         marginLeft: 10,
     },
     button: {
-        backgroundColor: '#DAA520',
+        backgroundColor: '#916008',
         paddingVertical: 15,
         paddingHorizontal: 30,
         borderRadius: 30,

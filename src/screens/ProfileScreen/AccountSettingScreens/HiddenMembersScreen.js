@@ -150,9 +150,9 @@ const HiddenMembers = ({ navigation }) => {
                 <View style={styles.emptyContainer}>
                     <Image source={images.hidden} style={styles.emptyImage} />
                     <Text style={styles.emptyText}>Hurray...you haven't UnHide anyone.</Text>
-                    <View style={styles.browseButton}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.browseButton}>
                         <Text style={styles.browseText}>Browse Members</Text>
-                    </View>
+                    </TouchableOpacity>
                 </View>
             ) : (
                 <FlatList

@@ -241,6 +241,10 @@ const OneToOneChat = ({ navigation, route }) => {
 
 
     const sendMessage = async () => {
+        if (!message.trim() && !audioFile && !fileid) {
+
+            return;
+        }
         try {
             let data = {
                 roomId: roomId,

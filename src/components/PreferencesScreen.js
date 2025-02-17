@@ -66,6 +66,41 @@ const PreferencesScreen = ({ navigation }) => {
     const [selectedLocation, setSelectedLocation] = useState('')
 
 
+    const handleReset = () => {
+        setSearchCity("");
+        setSearchName("");
+        setSelectedFilter(null);
+        setSelectedTags([]);
+        setSelectedBodyTypes([]);
+        setVerificationToggle([]);
+        setLevelToggle([]);
+        setEthnicityToggle([]);
+        setHeight([137, 213]);
+        setSmokeToggle([]);
+        setDrinkingToggle([]);
+        setRelationToggle([]);
+        setEducationToggle([]);
+        setChildrenToggle([]);
+        setLanguageToggle([]);
+        setIsOtherLocationSelected(false);
+        setLocation(userdetails?.city);
+        setSelectedLocation({
+            city: userdetails?.city,
+            latitude: userdetails?.location.coordinates[1],
+            longitude: userdetails?.location.coordinates[0],
+        });
+        setDistanceRange([0, 100]);
+        setAgeRange([18, 60]);
+        setSelectedOptions({
+            "ID Verified": false,
+            "Premium": false,
+            "Unviewed": false,
+            "Viewed Me": false,
+            "Favorited Me": false,
+            "Photos": false,
+            "Online Now": false
+        });
+    };
 
 
     const mapToApiFormat = (selectedOptions) => {
@@ -115,10 +150,10 @@ const PreferencesScreen = ({ navigation }) => {
 
 
     const handleSuggestionPress = (item) => {
+
         const selectedCity = item.formatted_address.split(',')[0];
         const latitude = item.geometry.location.lat;
         const longitude = item.geometry.location.lng;
-
         setSearchCity(selectedCity);
         setSuggestions([]);
         setLocation(selectedCity);
@@ -128,8 +163,6 @@ const PreferencesScreen = ({ navigation }) => {
             longitude: longitude
         });
     };
-
-
 
 
     const handleRadioSelection = (selectedLoc) => {
@@ -172,6 +205,7 @@ const PreferencesScreen = ({ navigation }) => {
     }, []);
 
     const getUserSearch = async () => {
+
         const token = await AsyncStorage.getItem('authToken');
         const headers = { Authorization: token };
         try {
@@ -179,7 +213,6 @@ const PreferencesScreen = ({ navigation }) => {
             const filters = resp.data.data || [];
             const validFilters = filters.filter(filter => filter.filterName && filter.filterName.trim() !== "");
             setSavedFilters(validFilters);
-            // console.log('Saved filters:', JSON.stringify(validFilters));
         } catch (error) {
             console.log('Error from get search', error.response?.data?.message);
         }
@@ -239,6 +272,7 @@ const PreferencesScreen = ({ navigation }) => {
         }
     }
 
+
     const handleDeleteFilter = async (id) => {
         const token = await AsyncStorage.getItem('authToken')
         const headers = {
@@ -248,6 +282,7 @@ const PreferencesScreen = ({ navigation }) => {
             const resp = await axios.delete(`home/delete-user-filter/${id}`, { headers })
             console.log('response from the delete api filter', resp.data);
             getUserSearch()
+            handleReset()
         } catch (error) {
             console.log('error from the delete filter api', error);
         }
@@ -372,6 +407,7 @@ const PreferencesScreen = ({ navigation }) => {
     };
 
     const getSearch = async () => {
+
         const token = await AsyncStorage.getItem('authToken')
         const headers = {
             Authorization: token,
@@ -1094,9 +1130,9 @@ const PreferencesScreen = ({ navigation }) => {
 
 
             <View style={styles.cont}>
-                <View style={styles.cont1}>
+                <TouchableOpacity onPress={handleReset} style={styles.cont1}>
                     <Text style={styles.txt1}>Reset</Text>
-                </View>
+                </TouchableOpacity>
                 {selectedFilter === null ?
                     <TouchableOpacity style={[styles.cont1, { width: '40%' }]} onPress={toggleModal}>
                         <Text style={styles.txt1}>Save Search</Text>

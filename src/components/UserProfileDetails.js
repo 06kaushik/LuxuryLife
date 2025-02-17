@@ -589,9 +589,9 @@ const UserProfileDetails = ({ navigation, route }) => {
 
             </ScrollView>
             <View style={styles.contt8}>
-                <View style={styles.cont9}>
+                <TouchableOpacity onPress={() => userDisLike(userprofiledata?._id)} style={styles.cont9}>
                     <Image source={images.cross} style={styles.cross} />
-                </View>
+                </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => hasLiked ? userDisLike(userprofiledata?._id) : userLike(userprofiledata?._id)}>
                     <View style={[styles.cont9, { backgroundColor: '#916008', height: 55, width: 55 }]}>

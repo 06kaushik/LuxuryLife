@@ -42,7 +42,6 @@ const BlockedMembers = ({ navigation }) => {
         const body = {
             currentPage,
             pageLength: 20,
-
         };
         setIsLoading(true)
         try {
@@ -85,7 +84,7 @@ const BlockedMembers = ({ navigation }) => {
             setIsPaginationLoading(false)
         }
     }, [blockedmember])
-    B
+
     const unBlockUser = async (id) => {
         console.log('user ifff', id);
 
@@ -96,8 +95,8 @@ const BlockedMembers = ({ navigation }) => {
         let body = {}
         try {
             const resp = await axios.post(`account/unblock-unhide-member/${id}`, body, { headers })
-            console.log('response from the unhide api', resp?.data);
-            getHiddenMember()
+            console.log('response from the blocked api', resp?.data);
+            getBlockedMember()
         } catch (error) {
             console.log('error from the unhide api', error.response.data.message);
         }
@@ -149,9 +148,9 @@ const BlockedMembers = ({ navigation }) => {
                 <View style={styles.emptyContainer}>
                     <Image source={images.hidden} style={styles.emptyImage} />
                     <Text style={styles.emptyText}>Hurray...you haven't Blocked anyone.</Text>
-                    <View style={styles.browseButton}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.browseButton}>
                         <Text style={styles.browseText}>Browse Members</Text>
-                    </View>
+                    </TouchableOpacity>
                 </View>
             ) : (
                 <FlatList

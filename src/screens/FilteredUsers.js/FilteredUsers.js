@@ -66,6 +66,41 @@ const FileredUsers = ({ navigation }) => {
     const [selectedLocation, setSelectedLocation] = useState('')
 
 
+    const handleReset = () => {
+        setSearchCity("");
+        setSearchName("");
+        setSelectedFilter(null);
+        setSelectedTags([]);
+        setSelectedBodyTypes([]);
+        setVerificationToggle([]);
+        setLevelToggle([]);
+        setEthnicityToggle([]);
+        setHeight([137, 213]);
+        setSmokeToggle([]);
+        setDrinkingToggle([]);
+        setRelationToggle([]);
+        setEducationToggle([]);
+        setChildrenToggle([]);
+        setLanguageToggle([]);
+        setIsOtherLocationSelected(false);
+        setLocation(userdetails?.city);
+        setSelectedLocation({
+            city: userdetails?.city,
+            latitude: userdetails?.location.coordinates[1],
+            longitude: userdetails?.location.coordinates[0],
+        });
+        setDistanceRange([0, 100]);
+        setAgeRange([18, 60]);
+        setSelectedOptions({
+            "ID Verified": false,
+            "Premium": false,
+            "Unviewed": false,
+            "Viewed Me": false,
+            "Favorited Me": false,
+            "Photos": false,
+            "Online Now": false
+        });
+    };
 
 
     const mapToApiFormat = (selectedOptions) => {
@@ -248,6 +283,7 @@ const FileredUsers = ({ navigation }) => {
             const resp = await axios.delete(`home/delete-user-filter/${id}`, { headers })
             console.log('response from the delete api filter', resp.data);
             getUserSearch()
+            handleReset()
         } catch (error) {
             console.log('error from the delete filter api', error);
         }
@@ -421,7 +457,7 @@ const FileredUsers = ({ navigation }) => {
             pageLength: 11,
             currentPage: 0,
             autopopulate: true,
-            requestSource:'list'
+            requestSource: 'list'
         }
         // console.log('body of preferece', body);
 
@@ -430,6 +466,7 @@ const FileredUsers = ({ navigation }) => {
             // console.log('response from the get search api', resp?.data);
             await AsyncStorage.setItem('dashboardData', JSON.stringify(body));
             navigation.navigate('PreferenceTopScreen')
+            handleReset()
         } catch (error) {
             console.log('error from the get search api', error.response.data.message);
         }
@@ -1122,9 +1159,9 @@ const FileredUsers = ({ navigation }) => {
 
 
             <View style={styles.cont}>
-                <View style={styles.cont1}>
+                <TouchableOpacity onPress={handleReset} style={styles.cont1}>
                     <Text style={styles.txt1}>Reset</Text>
-                </View>
+                </TouchableOpacity>
                 {selectedFilter === null ?
                     <TouchableOpacity style={[styles.cont1, { width: '40%' }]} onPress={toggleModal}>
                         <Text style={styles.txt1}>Save Search</Text>

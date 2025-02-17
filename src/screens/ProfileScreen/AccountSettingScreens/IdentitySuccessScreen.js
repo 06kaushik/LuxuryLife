@@ -10,7 +10,7 @@ const IdentitySuccess = ({ navigation }) => {
     return (
 
         <View style={styles.main}>
-            <TouchableOpacity onPress={() => navigation.navigate('AccountSetting')}>
+            <TouchableOpacity onPress={() => navigation.navigate('Home')}>
                 <View style={styles.cont}>
                     <Image source={images.back} style={styles.backIcon} />
                     <Text style={styles.txt}>Verification</Text>
