@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image, TextInput,
 import images from '../../components/images';
 import DatePicker from 'react-native-date-picker';
 import Toast from 'react-native-simple-toast';
-// import { CheckBox } from 'react-native-elements';
+import { CheckBox } from 'react-native-elements';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { AuthContext } from '../../components/AuthProvider';
 import axios, { Axios } from 'axios';
@@ -881,7 +881,7 @@ const SignUp = ({ navigation }) => {
 
                             <View style={styles.cont3}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    {/* <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         {isLoadingCaptcha ? (
                                             <LottieView
                                                 source={require('../../assets/loading.json')}
@@ -898,7 +898,7 @@ const SignUp = ({ navigation }) => {
                                             />
                                         )}
                                         <Text style={[styles.txt9, { marginLeft: isLoadingCaptcha ? 20 : null }]}>I'm not a robot</Text>
-                                    </View> */}
+                                    </View>
                                     <View style={{ marginRight: 10 }}>
                                         <Image source={images.captcha} style={{ height: 40, width: 40, left: 5 }} />
                                         <Text style={styles.txt10}>reCAPTCHA</Text>

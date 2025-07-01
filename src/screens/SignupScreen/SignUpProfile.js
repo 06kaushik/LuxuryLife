@@ -77,10 +77,14 @@ const ProfileSignUp = ({ navigation, route }) => {
     const [workfieldskip, setWorkFieldSkip] = useState(false)
     const [childskip, setChildSkip] = useState(false)
     const [networthskip, setNetWorthSkip] = useState(false)
+    const [educationskip, setEducationSkip] = useState(false)
+    const [hobbieskip, setHobbieSkip] = useState(false)
+    const [ageskip, setAgeSkip] = useState(false)
+
     const rbSheetRef = useRef();
     const [attemptedUsernames, setAttemptedUsernames] = useState([]);
     const [attemptCount, setAttemptCount] = useState(0);
-    const selectedIndex = useRef(null); // To track which photo index to update
+    const selectedIndex = useRef(null);
     const [userdetails, setUserDetails] = useState(null)
     const [loading, setLoading] = useState(false);
     const [loadingUserData, setLoadingUserData] = useState(true);
@@ -345,8 +349,10 @@ const ProfileSignUp = ({ navigation, route }) => {
     const handleEducation = (type) => {
         if (selecteducation === type) {
             setEducation(''); // Deselect if the same education is clicked
+            setEducationSkip(false)
         } else {
             setEducation(type); // Select the new education level
+            setEducationSkip(true)
         }
     };
 
@@ -411,8 +417,10 @@ const ProfileSignUp = ({ navigation, route }) => {
     const handleHHobbies = (hobby) => {
         if (userhobbies.includes(hobby)) {
             setUserHobbies(userhobbies.filter(item => item !== hobby));
+
         } else if (userhobbies.length < 7) {
             setUserHobbies([...userhobbies, hobby]);
+
         } else {
             Toast.show('You can select up to 7 hobbies only', Toast.SHORT);
         }
@@ -2639,8 +2647,8 @@ const ProfileSignUp = ({ navigation, route }) => {
                 </TouchableOpacity>
 
                 {/* Conditionally render the "Skip" button */}
-                {[10, 12, 13, 19, 23, 24].includes(currentStep) && (
-                    (!workfieldskip && currentStep === 10 || !childskip && currentStep === 12 || !networthskip && currentStep === 13 || !aboutpartner?.length > 0 && currentStep === 19)
+                {[9, 10, 12, 13, 14, 15, 19, 21, 22, 23, 24].includes(currentStep) && (
+                    (!workfieldskip && currentStep === 10 || !childskip && currentStep === 12 || !networthskip && currentStep === 13 || !aboutpartner?.length > 0 && currentStep === 19 || !educationskip && currentStep === 9 || !ageskip && currentStep === 14 || !hobbieskip && currentStep === 15 || !profileheading?.length > 0 && currentStep === 21 || !aboutyou.length > 0 && currentStep === 22)
                         ? (
                             <TouchableOpacity onPress={handleSkip}>
                                 <Text style={styles.skipText}>Skip</Text>

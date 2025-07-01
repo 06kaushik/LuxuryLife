@@ -36,7 +36,7 @@ const LoginWithEmail = ({ navigation }) => {
         });
     }, []);
 
-    const handleGoogleSignIn = async () => { 
+    const handleGoogleSignIn = async () => {
         await analytics().logEvent('login_started');
         try {
             setIsLoading(true);
@@ -126,8 +126,6 @@ const LoginWithEmail = ({ navigation }) => {
     };
 
 
-
-
     useEffect(() => {
         getFcmPushToken()
     }, [])
@@ -206,7 +204,6 @@ const LoginWithEmail = ({ navigation }) => {
                             />
                         </TouchableOpacity>
                     </View>
-
 
                 </View>
 
