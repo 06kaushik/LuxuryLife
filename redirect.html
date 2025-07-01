@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Redirecting to App</title>
+    <script>
+        const query = window.location.search;
+        const params = new URLSearchParams(query);
+        const code = params.get('code');
+        const state = params.get('state');
+        const deepLink = `luxurylife://twitter-auth${query}`;
+
+        console.log("🔐 Twitter OAuth Code:", code);
+        console.log("🔁 Redirecting to:", deepLink);
+
+        window.onload = function () {
+            // Attempt auto redirect
+            window.location.href = deepLink;
+
+            // Show fallback button after 2 seconds
+            setTimeout(() => {
+                document.getElementById('fallback').style.display = 'block';
+            }, 2000);
+        };
+
+        function redirectManually() {
+            window.location.href = deepLink;
+        }
+    </script>
+</head>
+
+<body>
+    <p>Redirecting to the app...</p>
+    <button id="fallback" onclick="redirectManually()" style="display: none;">
+        Click here if nothing happens
+    </button>
+</body>
+
+</html>

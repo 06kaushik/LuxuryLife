@@ -1,0 +1,23 @@
+buildscript {
+    ext {
+        buildToolsVersion = "35.0.0"
+        minSdkVersion = 24
+        compileSdkVersion = 35
+        targetSdkVersion = 34
+        ndkVersion = "26.1.10909125"
+        kotlinVersion = "2.0.0"
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.2.1") // ✅ AGP version compatible with Kotlin 2.0+
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion") // ✅ Use variable
+        classpath("com.google.gms:google-services:4.4.0")// Correct version for Firebase plugin
+
+    }
+}
+
+apply plugin: "com.facebook.react.rootproject"

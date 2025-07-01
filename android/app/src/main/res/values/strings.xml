@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Luxury Life</string>
+<string name="facebook_app_id">3887587824833940</string>
+<string name="fb_login_protocol_scheme">fb1234</string>
+<string name="facebook_client_token">77e5f4379d12c3a3faf951a0cb96384e</string>
+
+</resources>
