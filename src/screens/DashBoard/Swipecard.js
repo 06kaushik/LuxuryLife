@@ -1,0 +1,770 @@
+import React, { useEffect, useRef, useState } from "react";
+import {
+    View,
+    Text,
+    Animated,
+    PanResponder,
+    StyleSheet,
+    Dimensions,
+    Image,
+    TouchableOpacity,
+    ImageBackground,
+    AppState
+} from "react-native";
+import LinearGradient from 'react-native-linear-gradient';
+import images from "../../components/images";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import moment from 'moment';
+import { useIsFocused } from '@react-navigation/native';
+import LaodingScreen from "../../components/LoadingScreen";
+import Toast from 'react-native-simple-toast'
+import FastImage from 'react-native-fast-image';
+import useSocket from "../../socket/SocketMain";
+
+const SwipeableCard = React.memo(({ item, index, positions, panResponder, rotate, handleSwipe, handleHeartSwipe, handleCrossSwipe, handleChatPress, privatepicrequest, requestPrivatePhoto }) => {
+
+    const scrollY = useRef(new Animated.Value(0)).current;
+    const position = positions[index];
+
+    if (!position) {
+        return null;
+    }
+
+    const imageHeight = scrollY.interpolate({
+        inputRange: [0, 200],  // Adjust the range for scrolling
+        outputRange: [300, 150],  // Adjust the image height as scrolls
+        extrapolate: "clamp",  // Prevents values from going out of range
+    });
+
+    const imageOpacity = scrollY.interpolate({
+        inputRange: [0, 200],
+        outputRange: [1, 0.5],
+        extrapolate: "clamp",
+    });
+
+    const profileDetailsBottom = scrollY.interpolate({
+        inputRange: [0, 100],
+        outputRange: [50, -150],
+        extrapolate: 'clamp',
+    });
+
+    const profileDetailsOpacity = scrollY.interpolate({
+        inputRange: [0, 100],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
+    });
+
+    return (
+        <Animated.View
+            key={item._id}
+            style={[
+                styles.card,
+                {
+                    transform: [
+                        {
+                            translateX: positions[index] ? positions[index].x : new Animated.Value(0),
+                        },
+                        {
+                            translateY: positions[index] ? positions[index].y : new Animated.Value(0),
+                        },
+                        {
+                            rotate: rotate(index),
+                        },
+                    ]
+                },
+            ]}
+            {...panResponder(index).panHandlers}
+        >
+            <Animated.ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+                scrollEventThrottle={16}
+            >
+                {/* <TouchableOpacity style={{}} onPress={() => {
+                                        console.log("Image clicked");
+                                        navigation.navigate("UserProfileDetails", { item: item?.userId });
+                                    }}> */}
+                <Animated.Image
+                    source={{ uri: item?.profilePicture }}
+                    style={[styles.image, {
+                        height: imageHeight,
+                        opacity: imageOpacity,
+                    }]}
+                    resizeMode="cover"
+                />
+
+                <LinearGradient
+                    colors={["transparent", "rgba(0,0,0,2)", "rgba(0,0,0,2)"]}
+                    locations={[0.1, 0.6, 1]}
+                    style={styles.gradient}
+                >
+                </LinearGradient>
+                {/* </TouchableOpacity> */}
+                <View style={styles.details}>
+                    <View style={styles.contentContainer}>
+                        {item?.isOnline === true ?
+                            <View style={styles.cont1}>
+                                <Text style={styles.onlineText}>Online</Text>
+                            </View>
+                            :
+                            <View style={[styles.cont1, { backgroundColor: 'red', borderColor: 'red' }]}>
+                                <Text style={styles.onlineText}>Offline</Text>
+                            </View>
+                        }
+                        {item?.isSubscribed === true ?
+                            <View style={styles.cont2}>
+                                <Text style={styles.txt}>PREMIUM</Text>
+                            </View>
+                            :
+                            null}
+                    </View>
+                    <View style={styles.cont3}>
+                        <Text style={styles.txt1}>{item?.userName || 'NaN'}, {item?.age || 'NaN'}</Text>
+                        <Image source={item?.isIdVerified === false ? null : images.verified} style={styles.img1} />
+                    </View>
+                    <Text style={styles.txt2}>{item?.city || 'NaN'}, {item?.country || 'NaN'}</Text>
+                    <Text style={[styles.txt2, { color: 'black', fontSize: 16, fontFamily: 'Poppins-Medium' }]}>{item?.distance || 'NaN'} miles</Text>
+                    <Text style={[styles.txt2, { fontFamily: 'Poppins-SemiBold' }]}>{item?.myHeading || 'NaN'}</Text>
+
+                    <View style={styles.cont4}>
+                        <View style={styles.cont5}>
+                            <View style={{ flexDirection: 'row' }}>
+                                <Image source={images.star} style={styles.icon1} />
+                                <Text style={styles.txt3}>Member Since</Text>
+                            </View>
+                            <Text style={styles.txt4}>{moment(item?.createdAt)?.fromNow() || 'NaN'}</Text>
+                        </View>
+
+                        <View style={styles.cont5}>
+                            <View style={{ flexDirection: 'row' }}>
+                                <Image source={images.heart} style={styles.icon1} />
+                                <Text style={styles.txt3}>Relationship status</Text>
+                            </View>
+                            <Text style={styles.txt4}>{item?.currentRelationshipStatus || 'NaN'}</Text>
+                        </View>
+
+                        <View style={styles.cont5}>
+                            <View style={{ flexDirection: 'row' }}>
+                                <Image source={images.body} style={styles.icon1} />
+                                <Text style={styles.txt3}>Body</Text>
+                            </View>
+                            <Text style={styles.txt4}>{item?.bodyType || 'NaN'}</Text>
+                        </View>
+
+                        <View style={styles.cont5}>
+                            <View style={{ flexDirection: 'row' }}>
+                                <Image source={images.height} style={styles.icon1} />
+                                <Text style={styles.txt3}>Height</Text>
+                            </View>
+                            <Text style={styles.txt4}>{Math.round(item?.tall?.cm) || 'NaN'} cm</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.cont6}>
+                        <Text style={styles.txt5}>Photos</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                        {item?.publicPhotos?.map((photo, index) => (
+                            photo && (
+                                <View key={index} style={{ margin: 5 }}>
+                                    <Image
+                                        source={{ uri: photo }}
+                                        style={{ width: 105, height: 150, borderRadius: 10 }}
+                                    />
+                                </View>
+                            )
+                        ))}
+                    </View>
+
+                    <View style={styles.cont6}>
+                        <Text style={styles.txt5}>Private Photo</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => requestPrivatePhoto(item?.userId)}>
+                        <ImageBackground
+                            source={images.dummy1}
+                            style={{ height: 150, width: 105, borderRadius: 10, marginLeft: 8, top: 5 }}
+                            imageStyle={{ borderRadius: 10 }}
+                            blurRadius={30}
+                        >
+                            <View style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                borderRadius: 10,
+                            }}>
+                                <Text style={{
+                                    color: 'white',
+                                    fontSize: 16,
+                                    textAlign: 'center',
+                                }}>{privatepicrequest === true ? 'Requested' : 'Request to Unlock'}</Text>
+                                <TouchableOpacity style={styles.lockIconContainer}>
+                                    <Image
+                                        source={images.lock}
+                                        style={{
+                                            width: 24,
+                                            height: 24, marginTop: 10
+                                        }}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        </ImageBackground>
+                    </TouchableOpacity>
+
+                    <Text style={styles.about}>About</Text>
+                    <Text style={styles.abouttxt}>{item?.aboutUsDescription || 'NaN'}</Text>
+
+                    <Text style={styles.about}>What I am Seeking</Text>
+                    <Text style={styles.abouttxt}>{item?.preferences?.aboutPartnerDescription || 'NaN'}</Text>
+
+                    <Text style={styles.about}>Hobbies</Text>
+                    <View style={styles.bodyTypeContainer}>
+                        {item?.hobbies?.map((hobby) => (
+                            <TouchableOpacity key={hobby} style={styles.bodyTypeButton}>
+                                <Text style={styles.bodyTypeText}>
+                                    {hobby}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    <View style={{ marginBottom: 100 }}>
+                        <View style={styles.cont7}>
+                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                <Image source={images.face} style={styles.face} />
+                                <Text style={styles.txt6}>Ethnicity</Text>
+                            </View>
+                            <Text style={styles.txt7}>{item?.ethnicity || 'NaN'}</Text>
+                        </View>
+
+                        <View style={styles.cont7}>
+                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                <Image source={images.child} style={styles.face} />
+                                <Text style={styles.txt6}>Children</Text>
+                            </View>
+                            <Text style={styles.txt7}>{item?.children || 'NaN'}</Text>
+                        </View>
+
+                        <View style={styles.cont7}>
+                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                <Image source={images.smoke} style={styles.face} />
+                                <Text style={styles.txt6}>Do you smoke?</Text>
+                            </View>
+                            <Text style={styles.txt7}>{item?.smoke || 'NaN'}</Text>
+                        </View>
+
+                        <View style={styles.cont7}>
+                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                <Image source={images.drink} style={styles.face} />
+                                <Text style={styles.txt6}>Do you drink?</Text>
+                            </View>
+                            <Text style={styles.txt7}>{item?.drink || 'NaN'}</Text>
+                        </View>
+
+                        <View style={styles.cont7}>
+                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                <Image source={images.education} style={styles.face} />
+                                <Text style={styles.txt6}>Education</Text>
+                            </View>
+                            <Text style={styles.txt7}>{item?.highestEducation || 'NaN'}</Text>
+                        </View>
+
+                        <View style={styles.cont7}>
+                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                <Image source={images.face} style={styles.face} />
+                                <Text style={styles.txt6}>Occupation</Text>
+                            </View>
+                            <Text style={styles.txt7}>{item?.workField || 'NaN'}</Text>
+                        </View>
+
+                        <View style={styles.cont7}>
+                            <View style={{ flexDirection: 'row', marginTop: 10, marginLeft: 16 }}>
+                                <Image source={images.networth} style={styles.face} />
+                                <Text style={styles.txt6}>Net Worth</Text>
+                            </View>
+                            <Text style={styles.txt7}>
+                                {item?.netWorthRange ? `$${item.netWorthRange.min} - $${item.netWorthRange.max}` : 'NaN'}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+
+            </Animated.ScrollView>
+            <Animated.View style={{
+                position: "absolute",
+                bottom: profileDetailsBottom,
+                opacity: profileDetailsOpacity,
+                width: "100%"
+            }}>
+                <View style={{ bottom: 30, left: 16 }}>
+                    {item?.isOnline === true ?
+                        <View style={styles.onlineBadge}>
+                            <Text style={styles.onlineText1}>Online</Text>
+                        </View>
+                        :
+                        <View style={[styles.onlineBadge, { backgroundColor: 'red', borderColor: 'red' }]}>
+                            <Text style={styles.onlineText1}>Offline</Text>
+                        </View>
+                    }
+
+                    <Text style={styles.cardName}>{item.userName}, {item.age}</Text>
+                    <Text style={styles.cardLocation}>{item.city}</Text>
+                    <Text style={styles.cardDistance}>{item.distance} miles</Text>
+                </View>
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={() => handleCrossSwipe(index, item?.userId)}>
+                        <Image source={images.cross} style={styles.buttonIcon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleHeartSwipe(index, item?.userId)} style={[styles.circleButton, styles.heartButton]}>
+                        <Image source={images.heart} style={[styles.buttonIcon, { tintColor: 'white', height: 30, width: 30 }]} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.circleButton, { marginTop: 10 }]} onPress={() => handleChatPress(item)}>
+                        <Image source={images.chat} style={styles.buttonIcon} />
+                    </TouchableOpacity>
+                </View>
+            </Animated.View>
+        </Animated.View>
+    );
+});
+
+export default SwipeableCard;
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "white",
+    },
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: 16,
+        backgroundColor: "#fff",
+        // elevation: 4,
+    },
+    logo: {
+        width: 75,
+        height: 35,
+        top: 10
+    },
+    headerText: {
+        fontSize: 24,
+        fontFamily: "Playfair_9pt-BoldItalic",
+        color: "black",
+        right: 5
+    },
+    menuIcon: {
+        width: 24,
+        height: 24,
+    },
+    card: {
+        width: "100%",
+        height: '85%',
+        position: "absolute",
+        bottom: 0,
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        backgroundColor: "white",
+        // borderBottomColor:'red',
+        overflow: "hidden",
+        // borderWidth: 5,
+        // borderColor: 'red',
+    },
+
+    image: {
+        width: "100%",
+        borderWidth: 5,
+        borderColor: 'grey',
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+    },
+    gradient: {
+        position: "absolute",
+        bottom: 0,
+        width: "100%",
+        height: "40%",
+        justifyContent: "flex-end",
+        paddingHorizontal: 16,
+        paddingBottom: 20,
+        marginBottom: 1500
+    },
+
+    overlayContent: {
+        position: "absolute",
+        bottom: 200,
+        left: 16,
+    },
+
+    onlineBadge: {
+        borderWidth: 1,
+        height: 19,
+        width: 55,
+        backgroundColor: '#4caf50',
+        borderColor: '#4caf50',
+        borderRadius: 20,
+        justifyContent: 'center',
+        bottom: 10
+
+    },
+    onlineText1: {
+        textAlign: 'center',
+        color: 'white',
+        fontSize: 10,
+        fontFamily: 'Poppins-Bold',
+        top: 1
+    },
+    cardName: {
+        color: "white",
+        fontSize: 28,
+        fontWeight: "bold",
+        top: 5
+    },
+    cardLocation: {
+        color: "white",
+        fontSize: 16,
+        opacity: 0.8,
+        top: 10
+    },
+
+    cardDistance: {
+        color: "white",
+        fontSize: 16,
+        opacity: 0.8,
+        top: 15
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        backgroundColor: "white",
+        marginTop: 1
+    },
+    details: {
+        padding: 16,
+        backgroundColor: "white",
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+    },
+    detailsHeader: {
+        fontSize: 18,
+        fontWeight: "bold",
+        marginBottom: 10,
+    },
+    detailsText: {
+        fontSize: 16,
+        lineHeight: 24,
+    },
+    buttonContainer: {
+        flexDirection: "row",
+        justifyContent: "space-around",
+        // position: "absolute",
+        // bottom: 20,
+        // width: "100%",
+    },
+    circleButton: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: "#fff",
+        alignItems: "center",
+        justifyContent: "center",
+        elevation: 3,
+    },
+    heartButton: {
+        backgroundColor: "#916008",
+        width: 70,
+        height: 70,
+        borderRadius: 100
+    },
+    buttonIcon: {
+        width: 15,
+        height: 15,
+        tintColor: '#5C4033'
+    },
+    contentContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingHorizontal: 16,
+        marginTop: 20,
+    },
+    cont1: {
+        borderWidth: 1,
+        height: 20,
+        width: 55,
+        borderColor: "#34A853",
+        backgroundColor: "#34A853",
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 20,
+    },
+    onlineText: {
+        color: "white",
+        fontSize: 12,
+        fontWeight: "bold",
+    },
+    nameText: {
+        fontSize: 24,
+        fontWeight: "bold",
+        color: "#3C4043",
+    },
+    locationText: {
+        fontSize: 14,
+        color: "#7A7A7A",
+    },
+    cont2: {
+        borderWidth: 1,
+        height: 22,
+        width: 80,
+        borderColor: '#5E3E05',
+        backgroundColor: "#5E3E05",
+        borderRadius: 20,
+        justifyContent: 'center'
+    },
+    txt: {
+        textAlign: 'center',
+        color: '#F2D28C'
+    },
+    txt1: {
+        color: '#302E2E',
+        marginLeft: 16,
+        fontSize: 20,
+        fontFamily: 'Poppins-SemiBold'
+    },
+    img1: {
+        height: 20,
+        width: 20,
+        marginTop: 3,
+        marginLeft: 5
+    },
+    cont3: {
+        flexDirection: 'row',
+        marginTop: 20,
+    },
+    txt2: {
+        color: '#7A7A7A',
+        fontSize: 12,
+        fontFamily: 'Poppins-Regular',
+        marginLeft: 16,
+        marginTop: 10
+    },
+    cont4: {
+        borderWidth: 1,
+        borderColor: '#D9D9D9',
+        backgroundColor: 'white',
+        height: 150,
+        width: '90%',
+        alignSelf: 'center',
+        marginTop: 20,
+        borderRadius: 9
+    },
+    cont5: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginLeft: 16,
+        marginRight: 16,
+        marginTop: 10
+    },
+    icon1: {
+        height: 21,
+        width: 21,
+        top: 2
+    },
+    txt3: {
+        color: 'black',
+        fontSize: 15,
+        fontFamily: 'Poppins-Medium',
+        marginLeft: 12
+    },
+    txt4: {
+        fontFamily: 'Poppins-Regular',
+        fontSize: 14,
+        color: '#7A7A7A'
+    },
+    cont6: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginLeft: 16,
+        marginRight: 16,
+        marginTop: 20
+    },
+    txt5: {
+        color: 'black',
+        fontFamily: 'Poppins-Bold',
+        fontSize: 20
+    },
+    arrow: {
+        height: 20,
+        width: 20
+    },
+    about: {
+        marginLeft: 16,
+        color: 'black',
+        fontSize: 20,
+        fontFamily: 'Poppins-SemiBold',
+        marginTop: 20
+    },
+    abouttxt: {
+        fontFamily: 'Poppins-Regular',
+        fontSize: 14,
+        marginLeft: 16,
+        color: 'black',
+    },
+    bodyTypeContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        marginTop: 20,
+    },
+    bodyTypeButton: {
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 20,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        margin: 5,
+        backgroundColor: '#FFF',
+    },
+    selectedBodyTypeButton: {
+        backgroundColor: '#5F3D23',
+        borderColor: '#5F3D23',
+    },
+    bodyTypeText: {
+        fontSize: 14,
+        fontFamily: 'Poppins-Regular',
+        color: '#3C4043',
+    },
+    selectedBodyTypeText: {
+        color: '#FFF',
+        fontFamily: 'Poppins-Bold',
+    },
+    cont7: {
+        height: 70,
+        width: '90%',
+        borderWidth: 1,
+        alignSelf: 'center',
+        marginTop: 20,
+        borderRadius: 9,
+        borderColor: '#DADCE0',
+
+    },
+    face: {
+        height: 20,
+        width: 20,
+
+    },
+    txt6: {
+        color: 'black',
+        fontFamily: 'Poppins-Medium',
+        fontSize: 14,
+        marginLeft: 12
+    },
+    txt7: {
+        color: '#7A7A7A',
+        fontFamily: 'Poppins-Regular',
+        fontSize: 14,
+        marginLeft: 16,
+        marginTop: 5
+    },
+    contt8: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 30,
+        margin: 60
+    },
+    cont9: {
+        borderWidth: 1,
+        height: 48,
+        width: 48,
+        borderRadius: 100,
+        borderColor: '#DADADA',
+        justifyContent: 'center'
+    },
+    cross: {
+        height: 15,
+        width: 15,
+        alignSelf: 'center',
+        tintColor: '#916008'
+    },
+    modalContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        alignItems: 'center',
+        width: '80%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    progressText: {
+        fontSize: 20,
+        color: '#DAA520',
+    },
+    completionText: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#DAA520',
+        marginTop: 10,
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginTop: 20,
+        marginBottom: 10,
+        color: 'black',
+    },
+    description: {
+        fontSize: 14,
+        textAlign: 'center',
+        marginTop: 10,
+        marginBottom: 20,
+        color: '#C4C4C4',
+    },
+    listContainer: {
+        marginTop: 20,
+        marginBottom: 30,
+    },
+    subtitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#DAA520',
+    },
+    listItem: {
+        flexDirection: 'row',
+        marginVertical: 5,
+        alignItems: 'center',
+    },
+    listItemText: {
+        fontSize: 14,
+        color: '#000',
+        marginLeft: 10,
+    },
+    button: {
+        backgroundColor: '#DAA520',
+        paddingVertical: 15,
+        paddingHorizontal: 30,
+        borderRadius: 30,
+        marginTop: 20,
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+});

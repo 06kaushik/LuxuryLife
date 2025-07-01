@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>387779373749-ch7j582no3ark8kcvjtfe3tvslhlcon8.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.387779373749-ch7j582no3ark8kcvjtfe3tvslhlcon8</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>387779373749-a4224h3ffkukk0aatk3cvaafc3c1tuu8.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyB08-VvOAC-cHf7sCYBxkvPWRNUMTLaJPE</string>
+	<key>GCM_SENDER_ID</key>
+	<string>387779373749</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.acadecraft.luxurylife</string>
+	<key>PROJECT_ID</key>
+	<string>luxurylifeacade</string>
+	<key>STORAGE_BUCKET</key>
+	<string>luxurylifeacade.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:387779373749:ios:536df78c627ad0f53e6cfc</string>
+</dict>
+</plist>
