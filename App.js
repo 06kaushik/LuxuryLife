@@ -21,12 +21,14 @@ import { navigationRef } from './src/components/NavigationService';
 import OfflineNotice from './src/components/OfflineNotice';
 import { UserProvider } from './src/components/UserContext';
 import firebase from '@react-native-firebase/app';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import PushNotification from 'react-native-push-notification';
+
 
 axios.defaults.baseURL = FETCH_URL;
 
 const App = () => {
   global.Buffer = Buffer;
-
 
 
   const [city, setCity] = useState('');
@@ -54,12 +56,123 @@ const App = () => {
     }
   };
 
-
   useEffect(() => {
     if (userdetails) {
       fetchLocationName();
     }
   }, [userdetails]);
+
+  useEffect(() => {
+    // Create the notification channel when the app initializes
+    PushNotification.createChannel(
+      {
+        channelId: "chat_notification", // Channel ID (used in FCM payload)
+        channelName: "Chat Notification", // Name of the channel
+        channelDescription: "Notifications for incoming chat messages", // Description
+        soundName: "default",             // Use default sound for notifications
+        importance: 4,                    // High importance for immediate delivery
+        vibrate: true                     // Vibration enabled
+      },
+      (created) => console.log(`Notification channel created: ${created}`)
+    );
+  }, []);
+
+  useEffect(() => {
+    // Handle foreground notifications
+    const unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
+      // Display notification in the foreground
+      PushNotification.localNotification({
+        channelId: 'chat_notification', // Channel ID
+        title: remoteMessage.notification.title,
+        message: remoteMessage.notification.body,
+        soundName: 'default', // Notification sound
+        priority: 'high',     // High priority for immediate display
+      });
+    });
+
+    return () => {
+      unsubscribeOnMessage();
+    };
+  }, []);
+
+
+
+  useEffect(() => {
+    // Handle foreground notifications
+    const unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
+      //('Foreground notification received:', remoteMessage);
+      // if (remoteMessage.data && remoteMessage.data.userId) {
+      //   await getUserProfileData(remoteMessage.data.userId);
+      //   // navigationRef.current?.navigate('Chat')
+      //   // handleChatPress(remoteMessage.data.userId);  
+      // }
+    });
+
+    // Handle background and terminated state notifications
+    const unsubscribeOnNotificationOpenedApp = messaging().onNotificationOpenedApp(remoteMessage => {
+      // //('Notification caused app to open from background state:', remoteMessage);
+      // if (remoteMessage.data && remoteMessage.data.userId) {
+      //   getUserProfileData(remoteMessage.data.userId);
+      //   navigationRef.current?.navigate('Chat')
+      //   // handleChatPress(remoteMessage.data.userId);  
+      // }
+    });
+
+    // Handle app opened from terminated state
+    messaging()
+      .getInitialNotification()
+      .then(remoteMessage => {
+        if (remoteMessage && remoteMessage.data && remoteMessage.data.userId) {
+          // getUserProfileData(remoteMessage.data.userId);
+          navigationRef.current?.navigate('Home', {
+            screen: 'Chat'
+          })
+
+          // handleChatPress(remoteMessage.data.userId);  
+
+        }
+      });
+
+    // Handle background message
+    messaging().setBackgroundMessageHandler(async remoteMessage => {
+      console.log('reomote messages', remoteMessage);
+      const { data } = remoteMessage;
+      if (data && data.type && data.userId) {
+        switch (data.type) {
+          case 'text':
+            navigationRef.current?.navigate('Home', {
+              screen: 'Chat'
+            })
+            break;
+          case 'PROFILE_LIKE':
+            navigationRef.current?.navigate('Home', {
+              screen: 'Likes'
+            })
+            break;
+          case 'PROFILE_VIEW':
+            navigationRef.current?.navigate('Home', {
+              screen: 'Likes'
+            })
+            break;
+          case 'call_request':
+            navigationRef.current?.navigate('Home', {
+              screen: 'Dash'
+            })
+            break;
+          // Add other types if needed
+          default:
+            break;
+        }
+      }
+    });
+
+    return () => {
+      unsubscribeOnMessage();
+      unsubscribeOnNotificationOpenedApp();
+    };
+  }, []);
+
+
 
   const fetchLocationName = async () => {
     const permission = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
@@ -151,34 +264,41 @@ const App = () => {
   }, []);
 
 
+
+
+
   const handleUpdate = () => {
     setIsModalVisible(false);
     Linking.openURL(updateUrl);
   };
 
-  
+
   return (
-    <UserProvider>
-      <ViewLikeProvider>
-        <NotificationProvider>
-          <AuthProvider>
-            <SocketProvider>
-              <OfflineNotice />
-              <NavigationContainer ref={navigationRef}>
-                <AppContent />
-                <IncomingCallHandler />
-                <IncomingAudioCallHandler userId={userdetails?._id} userprofiledata={userprofiledata} />
-              </NavigationContainer>
-              <UpdateModal
-                visible={isModalVisible}
-                onClose={() => setIsModalVisible(false)}
-                onUpdate={handleUpdate}
-              />
-            </SocketProvider>
-          </AuthProvider>
-        </NotificationProvider>
-      </ViewLikeProvider>
-    </UserProvider>
+    <SafeAreaProvider>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#301F12' }} edges={['top', 'bottom']}>
+        <UserProvider>
+          <ViewLikeProvider>
+            <NotificationProvider>
+              <AuthProvider>
+                <SocketProvider>
+                  <OfflineNotice />
+                  <NavigationContainer ref={navigationRef}>
+                    <AppContent />
+                    <IncomingCallHandler />
+                    <IncomingAudioCallHandler userId={userdetails?._id} userprofiledata={userprofiledata} />
+                  </NavigationContainer>
+                  <UpdateModal
+                    visible={isModalVisible}
+                    onClose={() => setIsModalVisible(false)}
+                    onUpdate={handleUpdate}
+                  />
+                </SocketProvider>
+              </AuthProvider>
+            </NotificationProvider>
+          </ViewLikeProvider>
+        </UserProvider>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 

@@ -124,7 +124,7 @@ const FavouriteScreen = ({ navigation, index }) => {
 
             setIsLoading(false)
         } catch (error) {
-            console.error('Full error from get favourite screen data:', error?.response?.data || error.message || error);
+            // console.error('Full error from get favourite screen data:', error?.response?.data || error.message || error);
             setIsLoading(false)
         }
     };

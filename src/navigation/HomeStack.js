@@ -38,6 +38,7 @@ import InstagramLogin from "../components/instaLoginConfig";
 import InstagramBioVerify from "../components/instaLoginConfig";
 import LinkedInLoginInline from "../components/LinkdinLogin";
 import ChatScreen from "../screens/ChatScreen/ChatScreen";
+import SubscriptionScreen from "../components/ApplePaymentScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -81,6 +82,8 @@ const HomeStack = () => {
             <Stack.Screen name="RazorChat" component={RazorPayGatewayChat} />
             <Stack.Screen name="OneToOneChatNav" component={OneToOneChatFromNav} />
             <Stack.Screen name="ChatScreen" component={ChatScreen} />
+            <Stack.Screen name="ApplePayment" component={SubscriptionScreen} />
+
 
             {/* <Stack.Screen name="InstaLogin" component={InstagramBioVerify} />
             <Stack.Screen name="Linkdin" component={LinkedInLoginInline} /> */}

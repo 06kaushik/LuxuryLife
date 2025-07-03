@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image, TextInput, ScrollView, ActivityIndicator, Linking, useColorScheme, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image, TextInput, ScrollView, ActivityIndicator, Linking, useColorScheme, Keyboard, Platform, Pressable } from 'react-native';
 import images from '../../components/images';
 import DatePicker from 'react-native-date-picker';
 import Toast from 'react-native-simple-toast';
@@ -15,6 +15,7 @@ import { PLAYFAIRFONTS, POPPINSRFONTS } from '../../components/GlobalStyle';
 import { PermissionsAndroid } from 'react-native';
 import messaging from '@react-native-firebase/messaging'
 import analytics from '@react-native-firebase/analytics';
+import { appleAuth, AppleButton } from '@invertase/react-native-apple-authentication';
 
 
 
@@ -130,26 +131,40 @@ const SignUp = ({ navigation }) => {
     // }, []);
 
     useEffect(() => {
-        getFcmPushToken()
-    }, [])
+        getFcmPushToken();
+    }, []);
 
     const getFcmPushToken = async () => {
-        await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
-        const authStatus = await messaging().requestPermission();
-        const enabled =
-            authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-            authStatus === messaging.AuthorizationStatus.PROVISIONAL
-        if (enabled) {
-            const fcmToken = await messaging().getToken();
-            // ('FCM TOKEN IN PUSH FUNCTION LOGIN', fcmToken);
+        try {
+            if (Platform.OS === 'android') {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+                );
+                if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                    console.log('Notification permission denied on Android');
+                    return { authorized: false, token: null };
+                }
+            }
 
-            setFcmToken(fcmToken);
-            return { authorized: true, token: fcmToken };
-        } else {
+            const authStatus = await messaging().requestPermission();
+            const enabled =
+                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+                authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+            if (enabled) {
+                const fcmToken = await messaging().getToken();
+                console.log('FCM Token:', fcmToken);
+                setFcmToken(fcmToken);
+                return { authorized: true, token: fcmToken };
+            } else {
+                console.log('User did not grant notification permission');
+                return { authorized: false, token: null };
+            }
+        } catch (error) {
+            console.log('Error getting FCM token:', error);
             return { authorized: false, token: null };
         }
     };
-
 
     const handleCheckboxPress = async () => {
         if (!isChecked) {
@@ -199,7 +214,7 @@ const SignUp = ({ navigation }) => {
                 Toast.show('Sign-up failed. Please try again.', Toast.SHORT);
             }
         } else {
-            Toast.show('Please verify you are not a robot', Toast.SHORT);
+            Toast.show('Please accept the terms of use.', Toast.SHORT);
         }
     };
 
@@ -351,6 +366,8 @@ const SignUp = ({ navigation }) => {
             await GoogleSignin.hasPlayServices();
             const userInfo = await GoogleSignin.signIn();
             const idToken = userInfo.idToken;
+            console.log('token of google', idToken);
+
             setIdToken(idToken)
             const body = {
                 idToken: idToken,
@@ -395,7 +412,7 @@ const SignUp = ({ navigation }) => {
                 }
             } catch (error) {
                 GoogleSignin.signOut();
-                //('error from google sign-up', error);
+                console.log('error from google sign-up', error.response?.data || error.message);
                 Toast.show('Network Error', Toast.SHORT);
             }
         } catch (error) {
@@ -724,6 +741,42 @@ const SignUp = ({ navigation }) => {
         }
     };
 
+    useEffect(() => {
+        // Handle credential revoked
+        return appleAuth.onCredentialRevoked(async () => {
+            console.warn('User Credentials have been revoked');
+            // Optionally alert user or take action
+        });
+    }, []);
+
+    const onAppleButtonPress = async () => {
+        try {
+            // Perform the login request
+            const appleAuthRequestResponse = await appleAuth.performRequest({
+                requestedOperation: appleAuth.Operation.LOGIN,
+                requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+            });
+
+            const {
+                user,
+                email,
+                fullName,
+                identityToken,
+                authorizationCode,
+            } = appleAuthRequestResponse;
+
+            if (!identityToken) {
+                throw 'Apple Sign-In failed - no identity token returned';
+            }
+            console.log('Apple Auth Response', appleAuthRequestResponse);
+            Alert.alert('Apple Sign-In Success', `User ID: ${user}`);
+
+        } catch (error) {
+            console.error(error);
+            // Alert.alert('Apple Sign-In Error', error?.message || error.toString());
+        }
+    };
+
 
     const getStepNote = () => {
         switch (currentStep) {
@@ -853,6 +906,17 @@ const SignUp = ({ navigation }) => {
                                 </View>
                             </TouchableOpacity>
 
+                            <TouchableOpacity onPress={onAppleButtonPress} disabled={isLoading}>
+                                <View style={styles.cont2}>
+                                    <Image source={images.apple} style={{ height: 20, width: 20, alignSelf: 'center' }} />
+                                    {isLoading ? (
+                                        <ActivityIndicator size="small" color="#000" />
+                                    ) : (
+                                        <Text style={styles.txt7}>SignUp with Apple</Text>
+                                    )}
+                                </View>
+                            </TouchableOpacity>
+
                             <View style={{}}>
                                 {/* Positioning the checkbox just before the text */}
                                 {/* <CheckBox
@@ -880,30 +944,39 @@ const SignUp = ({ navigation }) => {
 
 
                             <View style={styles.cont3}>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    {/* <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                        {isLoadingCaptcha ? (
-                                            <LottieView
-                                                source={require('../../assets/loading.json')}
-                                                autoPlay
-                                                loop
-                                                style={{ width: 40, height: 40 }}
-                                            />
-                                        ) : (
-                                            <CheckBox
-                                                checked={isChecked}
-                                                onPress={handleCheckboxPress}
-                                                size={30}
-                                                containerStyle={{ margin: 0, padding: 0 }}
-                                            />
-                                        )}
-                                        <Text style={[styles.txt9, { marginLeft: isLoadingCaptcha ? 20 : null }]}>I'm not a robot</Text>
-                                    </View> */}
-                                    <View style={{ marginRight: 10 }}>
-                                        <Image source={images.captcha} style={{ height: 40, width: 40, left: 5 }} />
-                                        <Text style={styles.txt10}>reCAPTCHA</Text>
-                                        <Text style={styles.txt11}>Privacy-Terms</Text>
-                                    </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                                    <Pressable onPress={handleCheckboxPress} style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1 }}>
+                                        <View
+                                            style={{
+                                                height: 24,
+                                                width: 24,
+                                                borderRadius: 4,
+                                                borderWidth: 1,
+                                                borderColor: '#916008',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                backgroundColor: isChecked ? '#916008' : 'white',
+                                                marginTop: 15,
+                                                marginLeft: 15
+                                            }}
+                                        >
+                                            {isChecked && (
+                                                <Image source={images.tick1} style={{ height: 14, width: 14, tintColor: 'white' }} />
+                                            )}
+                                        </View>
+                                        <Text
+                                            style={{
+                                                marginLeft: 10,
+                                                fontFamily: 'Poppins-Regular',
+                                                fontSize: 12,
+                                                color: 'black',
+                                                flex: 1, // allow wrapping
+                                                flexWrap: 'wrap',
+                                            }}
+                                        >
+                                            I agree to the Terms of Use and understand that objectionable content will not be tolerated.
+                                        </Text>
+                                    </Pressable>
                                 </View>
                             </View>
                             <Text></Text>
@@ -1287,7 +1360,7 @@ const styles = StyleSheet.create({
         fontFamily: PLAYFAIRFONTS.bold,
         fontSize: 28,
         textAlign: 'center',
-        marginTop: '20'
+        marginTop: 20
     },
     txt1: {
         color: '#3C4043',

@@ -1,4 +1,8 @@
+source 'https://github.com/CocoaPods/Specs.git'  # 💡 Use git source to avoid CDN issues
+
 platform :ios, '15.2'
+
+ENV['RCT_NEW_ARCH_ENABLED'] = '0'  # Ensure old architecture
 
 require Pod::Executable.execute_command('node', ['-p',
   'require.resolve("react-native/scripts/react_native_pods.rb", {paths: [process.argv[1]]})',
@@ -11,7 +15,7 @@ use_frameworks! :linkage => :static
 target 'Luxury_Life' do
   config = use_native_modules!
 
-  # ✅ Use setup_permissions helper (do NOT list individual Permission-* pods manually)
+  # ✅ Permissions
   require_relative '../node_modules/react-native-permissions/scripts/setup.rb'
   setup_permissions([
     'Camera',
@@ -20,27 +24,26 @@ target 'Luxury_Life' do
     'Notifications'
   ])
 
+  # ✅ React Native core + Hermes
   use_react_native!(
     :path => config[:reactNativePath],
     :app_path => "#{Pod::Config.instance.installation_root}/..",
-    :fabric_enabled => false,  # Old architecture (disable Fabric / New Arch)
-    :hermes_enabled => true
+    :fabric_enabled => false,   # Old architecture
+    :hermes_enabled => true     # Hermes enabled
   )
 
-  # Known module fixes
-  pod 'GoogleUtilities', :modular_headers => truecd
+  # ✅ Additional pods
+  pod 'GoogleUtilities', :modular_headers => true
   pod 'FirebaseCoreInternal', :modular_headers => true
   pod 'GoogleMaps'
   pod 'Firebase/Analytics'
-pod 'Firebase/Messaging'
+  pod 'Firebase/Messaging'
 
   target 'Luxury_LifeTests' do
     inherit! :complete
   end
 
   post_install do |installer|
-    ENV['RCT_NEW_ARCH_ENABLED'] = '0'  # Explicitly ensure New Arch disabled
-
     react_native_post_install(
       installer,
       config[:reactNativePath],
@@ -48,6 +51,7 @@ pod 'Firebase/Messaging'
     )
 
     installer.pods_project.targets.each do |target|
+      # Swift + modular headers setup
       if ['AppAuth', 'GTMAppAuth', 'GoogleUtilities', 'FirebaseCoreInternal'].include?(target.name)
         target.build_configurations.each do |config|
           config.build_settings['DEFINES_MODULE'] = 'YES'
@@ -56,6 +60,13 @@ pod 'Firebase/Messaging'
           config.build_settings['OTHER_SWIFT_FLAGS'] ||= ['']
           config.build_settings['OTHER_SWIFT_FLAGS'] << '-enable-experimental-feature'
           config.build_settings['OTHER_SWIFT_FLAGS'] << 'AccessLevelOnImport'
+        end
+      end
+
+      # Force Hermes dSYM generation
+      if target.name.include?("hermes")
+        target.build_configurations.each do |config|
+          config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
         end
       end
     end

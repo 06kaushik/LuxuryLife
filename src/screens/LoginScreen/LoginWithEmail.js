@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { Text, View, Image, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, AppState, Platform } from 'react-native';
+import { Text, View, Image, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, AppState, Platform, Pressable } from 'react-native';
 import images from "../../components/images";
 // import { CheckBox } from 'react-native-elements';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
@@ -9,16 +9,18 @@ import Toast from 'react-native-simple-toast';
 import LottieView from 'lottie-react-native';
 import { ScrollView } from "react-native-gesture-handler";
 import messaging from '@react-native-firebase/messaging'
-// import { PermissionsAndroid } from 'react-native';
 import analytics from '@react-native-firebase/analytics';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { appleAuth, AppleButton } from '@invertase/react-native-apple-authentication';
+
 
 const LoginWithEmail = ({ navigation }) => {
 
+
     const [isChecked, setIsChecked] = useState(false);
     const [isLoadingCaptcha, setIsLoadingCaptcha] = useState(true);
-    const [email, setEmail] = useState('himanshu06kaushik@gmail.com')
-    const [password, setPassword] = useState('Test12345')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [isPasswordVisible, setPasswordVisible] = useState(false);
     const { login, loginWithEmail } = useContext(AuthContext);
@@ -26,11 +28,9 @@ const LoginWithEmail = ({ navigation }) => {
     const [isLoading1, setIsLoading1] = useState(false)
 
 
-
-
     useEffect(() => {
         GoogleSignin.configure({
-          webClientId: '387779373749-ch7j582no3ark8kcvjtfe3tvslhlcon8.apps.googleusercontent.com',
+            webClientId: '387779373749-ch7j582no3ark8kcvjtfe3tvslhlcon8.apps.googleusercontent.com',
             offlineAccess: true,
         });
     }, []);
@@ -81,10 +81,10 @@ const LoginWithEmail = ({ navigation }) => {
             return;
         }
 
-        // if (isChecked === false) {
-        //     Toast.show('Please verify you are not a robot.', Toast.SHORT);
-        //     return;
-        // }
+        if (isChecked === false) {
+            Toast.show('Please accept the terms of use.', Toast.SHORT);
+            return;
+        }
 
         // Passed validation, proceed with login
         try {
@@ -98,7 +98,7 @@ const LoginWithEmail = ({ navigation }) => {
             const response = await axios.post('auth/sign-in', body);
 
             if (response?.data?.data?.user?.email && response?.data?.data?.user?.profileCompleted === true) {
-             
+
 
                 loginWithEmail(email, password, fcmtoken, navigation);
             } else {
@@ -126,26 +126,41 @@ const LoginWithEmail = ({ navigation }) => {
 
 
 
-    // useEffect(() => {
-    //     if (Platform.OS === 'ios') {
-    //         getFcmPushToken();
-    //     }
-    // }, []);
+    useEffect(() => {
+        getFcmPushToken();
+    }, []);
 
-    // const getFcmPushToken = async () => {
-    //     try {
-    //         const permission = await request(PERMISSIONS.IOS.NOTIFICATIONS);
-    //         if (permission === RESULTS.GRANTED) {
-    //             const fcmToken = await messaging().getToken();
-    //             console.log('FCM TOKEN (iOS):', fcmToken);
-    //             setFcmToken(fcmToken);
-    //         } else {
-    //             console.warn('Notification permission not granted');
-    //         }
-    //     } catch (error) {
-    //         console.error('Failed to get FCM token:', error);
-    //     }
-    // };
+    const getFcmPushToken = async () => {
+        try {
+            if (Platform.OS === 'android') {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+                );
+                if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                    console.log('Notification permission denied on Android');
+                    return { authorized: false, token: null };
+                }
+            }
+
+            const authStatus = await messaging().requestPermission();
+            const enabled =
+                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+                authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+            if (enabled) {
+                const fcmToken = await messaging().getToken();
+                console.log('FCM Token:', fcmToken);
+                setFcmToken(fcmToken);
+                return { authorized: true, token: fcmToken };
+            } else {
+                console.log('User did not grant notification permission');
+                return { authorized: false, token: null };
+            }
+        } catch (error) {
+            console.log('Error getting FCM token:', error);
+            return { authorized: false, token: null };
+        }
+    };
 
 
     const validateEmail = (email) => {
@@ -163,6 +178,43 @@ const LoginWithEmail = ({ navigation }) => {
         }
     };
 
+    useEffect(() => {
+        // Handle credential revoked
+        return appleAuth.onCredentialRevoked(async () => {
+            console.warn('User Credentials have been revoked');
+            // Optionally alert user or take action
+        });
+    }, []);
+
+    const onAppleButtonPress = async () => {
+        try {
+            // Perform the login request
+            const appleAuthRequestResponse = await appleAuth.performRequest({
+                requestedOperation: appleAuth.Operation.LOGIN,
+                requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+            });
+
+            const {
+                user,
+                email,
+                fullName,
+                identityToken,
+                authorizationCode,
+            } = appleAuthRequestResponse;
+
+            if (!identityToken) {
+                throw 'Apple Sign-In failed - no identity token returned';
+            }
+            console.log('Apple Auth Response', appleAuthRequestResponse);
+            Alert.alert('Apple Sign-In Success', `User ID: ${user}`);
+
+        } catch (error) {
+            console.error(error);
+            // Alert.alert('Apple Sign-In Error', error?.message || error.toString());
+        }
+    };
+
+
     return (
         <View style={styles.main}>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
@@ -171,7 +223,7 @@ const LoginWithEmail = ({ navigation }) => {
 
             <Text style={styles.welcomeText}>Welcome to</Text>
             <Text style={styles.titleText}>Luxury Life!</Text>
-            <ScrollView style={{ marginBottom: 100 }}>
+            <ScrollView style={{ marginBottom: 100 }} showsVerticalScrollIndicator={false} >
                 <Text style={styles.subtitleText}>
                     Enter your email to continue to Luxury Life
                 </Text>
@@ -226,33 +278,54 @@ const LoginWithEmail = ({ navigation }) => {
                     </View>
                 </TouchableOpacity>
 
+                <TouchableOpacity style={styles.googleButton} onPress={onAppleButtonPress} disabled={isLoading}>
+                    <View style={styles.googleButtonContent}>
+                        <Image source={images.apple} style={styles.googleIcon} />
+                        {isLoading ? (
+                            <ActivityIndicator size="small" color="#000" />
+                        ) : (
+                            <Text style={styles.googleButtonText}>Continue with Apple</Text>
+                        )}
+                    </View>
+                </TouchableOpacity>
+
                 <View style={styles.cont3}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        {/* <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            {isLoadingCaptcha ? (
-                                <LottieView
-                                    source={require('../../assets/loading.json')}
-                                    autoPlay
-                                    loop
-                                    style={{ width: 40, height: 40 }}
-                                />
-                            ) : (
-                                <CheckBox
-                                    checked={isChecked}
-                                    onPress={handleCheckboxPress}
-                                    size={30}
-                                    containerStyle={{ margin: 0, padding: 0 }}
-                                />
-                            )}
-                            <Text style={[styles.txt9, { marginLeft: isLoadingCaptcha ? 20 : null }]}>I'm not a robot</Text>
-                        </View> */}
-                        <View style={{ marginRight: 10 }}>
-                            <Image source={images.captcha} style={{ height: 40, width: 40, left: 5 }} />
-                            <Text style={styles.txt10}>reCAPTCHA</Text>
-                            <Text style={styles.txt11}>Privacy-Terms</Text>
-                        </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                        <Pressable onPress={handleCheckboxPress} style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1 }}>
+                            <View
+                                style={{
+                                    height: 24,
+                                    width: 24,
+                                    borderRadius: 4,
+                                    borderWidth: 1,
+                                    borderColor: '#916008',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: isChecked ? '#916008' : 'white',
+                                    marginTop: 15,
+                                    marginLeft: 15
+                                }}
+                            >
+                                {isChecked && (
+                                    <Image source={images.tick1} style={{ height: 14, width: 14, tintColor: 'white' }} />
+                                )}
+                            </View>
+                            <Text
+                                style={{
+                                    marginLeft: 10,
+                                    fontFamily: 'Poppins-Regular',
+                                    fontSize: 12,
+                                    color: 'black',
+                                    flex: 1, // allow wrapping
+                                    flexWrap: 'wrap',
+                                }}
+                            >
+                                I agree to the Terms of Use and understand that objectionable content will not be tolerated.
+                            </Text>
+                        </Pressable>
                     </View>
                 </View>
+
                 <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
                     <View style={{ marginTop: 80 }}>
                         <Text style={styles.joinText}>Don't have an account?<Text style={{ color: '#916008', fontFamily: 'Poppins-Medium', textDecorationLine: 'underline' }}> Join Today</Text></Text>

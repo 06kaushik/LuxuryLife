@@ -956,7 +956,7 @@ const OneToOneChatFromNav = ({ navigation, route }) => {
                                                 <Image source={{ uri: item.files[0]?.url }} style={styles.messageImage} resizeMode="cover" />
                                             </TouchableOpacity>
                                         )}
-                                        {isAudioFile && item.files[0]?.url && (
+                                        {/* {isAudioFile && item.files[0]?.url && (
                                             <View style={styles.audioMessageContainer}>
                                                 <Text>🎙️ Audio File</Text>
                                                 <TouchableOpacity onPress={() => playAudio(item._id)}>
@@ -971,7 +971,7 @@ const OneToOneChatFromNav = ({ navigation, route }) => {
                                                     />
                                                 )}
                                             </View>
-                                        )}
+                                        )} */}
                                         {isPlaying && playingMessageId === item._id && (
                                             <LottieView
                                                 source={require('../../assets/play.json')}
@@ -1037,20 +1037,19 @@ const OneToOneChatFromNav = ({ navigation, route }) => {
                             value={message}
                             onChangeText={setMessage}
                             editable={!shouldShowModal}
-
                         />
                         {!keyboardVisible && (
                             <>
                                 <TouchableOpacity style={styles.iconButton} onPress={handleTakeSelfie}>
                                     <Image source={images.camera} style={styles.icon} />
                                 </TouchableOpacity>
-                                <TouchableOpacity
+                                {/* <TouchableOpacity
                                     style={styles.iconButton}
                                     onPressIn={startRecording}
                                     onPressOut={stopRecording}
                                 >
                                     <Image source={images.mic} style={styles.icon} />
-                                </TouchableOpacity>
+                                </TouchableOpacity> */}
                                 <TouchableOpacity style={styles.iconButton} onPress={handlePhotoSelection}>
                                     <Image source={images.gallery} style={styles.icon} />
                                 </TouchableOpacity>

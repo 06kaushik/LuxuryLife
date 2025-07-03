@@ -53,6 +53,8 @@ const RazorPayGateway = ({ navigation }) => {
     try {
       setIsLoading(true);
       const resp = await axios.get('payment/get-subscription/razorpay/live', { headers })
+      console.log('Plan detailss', resp.data);
+      
       setPlans(resp.data)
     } catch (error) {
       console.log('error from the get plans', error?.response?.data?.message);

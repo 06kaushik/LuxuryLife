@@ -208,7 +208,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         elevation: 5,
         width: '95%',
-        alignSelf: "center"
+        alignSelf: "center",
+        marginTop:40
     },
     innerRow: {
         flexDirection: 'row',

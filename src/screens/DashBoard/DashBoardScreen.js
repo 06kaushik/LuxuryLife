@@ -11,6 +11,7 @@ import {
     ImageBackground,
     AppState,
     BackHandler,
+    SafeAreaView
 
 } from "react-native";
 import LinearGradient from 'react-native-linear-gradient';
@@ -68,7 +69,6 @@ const DashBoardScreen = ({ navigation, route }) => {
         getUserFilteredData()
     }, [userdetails])
 
-    
 
     useEffect(() => {
         const handleNotificationResponse = (resp) => {
@@ -87,6 +87,7 @@ const DashBoardScreen = ({ navigation, route }) => {
         };
     }, [emit, on]);
 
+    
     useFocusEffect(
         React.useCallback(() => {
             const backAction = () => {
@@ -546,6 +547,7 @@ const DashBoardScreen = ({ navigation, route }) => {
 
 
     return (
+
         <View style={{ flex: 1 }}>
             {isFirstTimeUser && (
                 <View style={styles.demoOverlay}>

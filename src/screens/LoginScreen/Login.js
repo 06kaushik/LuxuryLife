@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, StyleSheet, Dimensions, ImageBackground, Image, TouchableOpacity, ActivityIndicator, Alert, Linking, AppState } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, ImageBackground, Image, TouchableOpacity, ActivityIndicator, Alert, Linking, AppState, Platform } from 'react-native';
 import images from '../../components/images';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { AuthContext } from '../../components/AuthProvider';
@@ -7,8 +7,9 @@ import axios from 'axios';
 import Toast from 'react-native-simple-toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AccessToken, LoginButton } from 'react-native-fbsdk-next';
-// import messaging from '@react-native-firebase/messaging'
+import messaging from '@react-native-firebase/messaging'
 // import analytics from '@react-native-firebase/analytics';
+import { appleAuth, AppleButton } from '@invertase/react-native-apple-authentication';
 
 
 
@@ -57,7 +58,7 @@ const LoginScreen = ({ navigation }) => {
             const userInfo = await GoogleSignin.signIn();
             const idToken = userInfo.idToken;
 
-            await login(idToken); // ← just call context login
+            await login(idToken, fcmtoken); // ← just call context login
         } catch (error) {
             await GoogleSignin.signOut();
 
@@ -72,6 +73,80 @@ const LoginScreen = ({ navigation }) => {
             }
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        getFcmPushToken();
+    }, []);
+
+
+    const getFcmPushToken = async () => {
+        try {
+            if (Platform.OS === 'android') {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+                );
+                if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                    console.log('Notification permission denied on Android');
+                    return { authorized: false, token: null };
+                }
+            }
+
+            const authStatus = await messaging().requestPermission();
+            const enabled =
+                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+                authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+            if (enabled) {
+                const fcmToken = await messaging().getToken();
+                // console.log('FCM Token:', fcmToken);
+                setFcmToken(fcmToken);
+                return { authorized: true, token: fcmToken };
+            } else {
+                console.log('User did not grant notification permission');
+                return { authorized: false, token: null };
+            }
+        } catch (error) {
+            console.log('Error getting FCM token:', error);
+            return { authorized: false, token: null };
+        }
+    };
+
+
+    useEffect(() => {
+        // Handle credential revoked
+        return appleAuth.onCredentialRevoked(async () => {
+            console.warn('User Credentials have been revoked');
+            // Optionally alert user or take action
+        });
+    }, []);
+
+    const onAppleButtonPress = async () => {
+        try {
+            // Perform the login request
+            const appleAuthRequestResponse = await appleAuth.performRequest({
+                requestedOperation: appleAuth.Operation.LOGIN,
+                requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+            });
+
+            const {
+                user,
+                email,
+                fullName,
+                identityToken,
+                authorizationCode,
+            } = appleAuthRequestResponse;
+
+            if (!identityToken) {
+                throw 'Apple Sign-In failed - no identity token returned';
+            }
+            console.log('Apple Auth Response', appleAuthRequestResponse);
+            Alert.alert('Apple Sign-In Success', `User ID: ${user}`);
+
+        } catch (error) {
+            console.error(error);
+            // Alert.alert('Apple Sign-In Error', error?.message || error.toString());
         }
     };
 
@@ -99,23 +174,18 @@ const LoginScreen = ({ navigation }) => {
                         </View>
                     </TouchableOpacity>
 
-                    {/* <LoginButton
-                        onLoginFinished={
-                            (error, result) => {
-                                if (error) {
-                                    //("login has error: " + result.error);
-                                } else if (result.isCancelled) {
-                                    //("login is cancelled.");
-                                } else {
-                                    AccessToken.getCurrentAccessToken().then(
-                                        (data) => {
-                                            //('facebook access token', data.accessToken.toString())
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                        onLogoutFinished={() => //("logout.")} /> */}
+                    <TouchableOpacity onPress={onAppleButtonPress} disabled={isLoading}>
+                        <View style={style.buttonContainer}>
+                            <View style={style.buttonContent}>
+                                <Image source={images.apple} style={style.icon} />
+                                {isLoading ? (
+                                    <ActivityIndicator size="small" color="#000" />
+                                ) : (
+                                    <Text style={style.buttonText}>Sign In with Apple</Text>
+                                )}
+                            </View>
+                        </View>
+                    </TouchableOpacity>
 
                     <TouchableOpacity onPress={() => navigation.navigate('LoginWithEmail')}>
                         <View style={style.buttonContainer}>
@@ -130,7 +200,7 @@ const LoginScreen = ({ navigation }) => {
                 {/* Last two texts at the bottom */}
                 <View style={style.bottomContainer}>
                     <Text style={style.bottomText}>You don't have an account?</Text>
-                    <TouchableOpacity style={{ borderWidth: 0.5, height: height * 0.065, width: width * 0.85, borderRadius: 100, justifyContent: 'center', borderColor: 'white', top: 15, }} onPress={() => { navigation.navigate('SignUp');  }}>
+                    <TouchableOpacity style={{ borderWidth: 0.5, height: height * 0.065, width: width * 0.85, borderRadius: 100, justifyContent: 'center', borderColor: 'white', top: 15, }} onPress={() => { navigation.navigate('SignUp'); }}>
                         <Text style={[style.signupText, { textAlign: 'center' }]}>Signup</Text>
                     </TouchableOpacity>
 
@@ -169,7 +239,7 @@ const style = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 20, // Responsive padding on the sides
-        top: 50,
+        // top: 30,
     },
     welcomeText: {
         fontSize: width * 0.08, // Responsive font size based on screen width

@@ -298,7 +298,7 @@ const ProfileScreen = ({ navigation }) => {
                     </TouchableOpacity>
                 }
 
-                {
+                {/* {
                     userprofiledata?.isSubscribed === undefined ? (
                         // Show loader inside the LinearGradient for the "Upgrade to Luxury" card while data is loading
                         <View style={[styles.cont2, { backgroundColor: '#FF9789' }]}>
@@ -335,7 +335,16 @@ const ProfileScreen = ({ navigation }) => {
                             </View>
                         </TouchableOpacity>
                     )
-                }
+                } */}
+
+                <View style={styles.cont2}>
+                            <Text style={styles.txt4}>Get 3x more benefits</Text>
+                            <LinearGradient colors={['#916008', '#CC9933']} style={styles.cont3}>
+                                <TouchableOpacity onPress={() => navigation.navigate('ApplePayment')}>
+                                    <Text style={styles.txt5}>Become A VIP Member Today</Text>
+                                </TouchableOpacity>
+                            </LinearGradient>
+                        </View>
 
 
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useContext } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, TouchableWithoutFeedback,Vibration } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Vibration } from 'react-native';
 import useSocket from '../socket/SocketMain';
 import { useNavigation } from '@react-navigation/native';
 import images from './images';
@@ -228,7 +228,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         elevation: 5,
         width: '95%',
-        alignSelf: "center"
+        alignSelf: "center",
+        marginTop: 40
+
     },
     innerRow: {
         flexDirection: 'row',

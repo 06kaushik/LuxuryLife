@@ -148,7 +148,7 @@ const BottomTabNavigator = () => {
                                     source={iconSource}
                                     style={{
                                         width: 36,
-                                        height: 35,
+                                        height: 36,
                                         tintColor: focused ? "white" : "#6A513E",
                                         marginTop: 20,
                                     }}
@@ -231,10 +231,10 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
         // marginBottom: 20,
         justifyContent: "center",
-        elevation: 0,
-        shadowOpacity: 0,
+        elevation: 5,
         borderTopWidth: 0,
-        marginTop: 8
+        marginTop: 8,
+        bottom: 5
     },
 
     iconContainer: {

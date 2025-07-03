@@ -8,7 +8,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Luxury_Life</string>
+	<string>Luxury Life</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -49,15 +49,19 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>This app requires camera access to take photos or videos.</string>
+	<string>We use your camera so you can take and upload a profile picture.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app uses your location to enhance your experience.</string>
+	<string>We use your location to show profiles of people near you for better matches.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>This app needs microphone access for recording audio during calls.</string>
+	<string>We use your microphone so you can make voice or video calls with matches.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to your photo library to upload photos.</string>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>This identifier is used to deliver personalized content and notifications.</string>
+	<key>NSUserAuthenticationUsageDescription</key>
+<string>We use your Apple ID to authenticate you securely.</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>We use your location to show nearby profiles and improve matching. For example, you will see users near your current location.</string>
+
+	
 	<key>UIAppFonts</key>
 	<array>
 		<string>Playfair_9pt-Light.ttf</string>
