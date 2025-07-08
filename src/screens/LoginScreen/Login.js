@@ -10,6 +10,8 @@ import { AccessToken, LoginButton } from 'react-native-fbsdk-next';
 import messaging from '@react-native-firebase/messaging'
 import { PermissionsAndroid } from 'react-native';
 import analytics from '@react-native-firebase/analytics';
+import * as Clarity from '@microsoft/react-native-clarity';
+
 
 
 
@@ -55,6 +57,7 @@ const LoginScreen = ({ navigation }) => {
     }, []);
 
     const handleGoogleSignIn = async () => {
+        Clarity.sendCustomEvent('login_started')
         await analytics().logEvent('login_started');
         try {
             setIsLoading(true);
@@ -148,7 +151,7 @@ const LoginScreen = ({ navigation }) => {
                         }
                         onLogoutFinished={() => //("logout.")} /> */}
 
-                    <TouchableOpacity onPress={() => navigation.navigate('LoginWithEmail')}>
+                    <TouchableOpacity onPress={() => { navigation.navigate('LoginWithEmail'); Clarity.sendCustomEvent('login_started'); }}>
                         <View style={style.buttonContainer}>
                             <View style={style.buttonContent}>
                                 {/* <Image source={images.google} style={style.icon} /> */}
@@ -161,7 +164,7 @@ const LoginScreen = ({ navigation }) => {
                 {/* Last two texts at the bottom */}
                 <View style={style.bottomContainer}>
                     <Text style={style.bottomText}>You don't have an account?</Text>
-                    <TouchableOpacity style={{ borderWidth: 0.5, height: height * 0.065, width: width * 0.85, borderRadius: 100, justifyContent: 'center', borderColor: 'white', top: 15, }} onPress={() => { navigation.navigate('SignUp'); analytics()?.logEvent('signup_starting'); }}>
+                    <TouchableOpacity style={{ borderWidth: 0.5, height: height * 0.065, width: width * 0.85, borderRadius: 100, justifyContent: 'center', borderColor: 'white', top: 15, }} onPress={() => { navigation.navigate('SignUp'); analytics()?.logEvent('signup_starting'); Clarity.sendCustomEvent('signup_starting') }}>
                         <Text style={[style.signupText, { textAlign: 'center' }]}>Signup</Text>
                     </TouchableOpacity>
 

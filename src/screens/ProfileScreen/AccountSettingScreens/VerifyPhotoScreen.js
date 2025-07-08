@@ -53,8 +53,19 @@ const VerifySelfie = ({ navigation }) => {
             Alert.alert('Photo Uploaded, Now Click on Submit')
 
         } catch (error) {
-            console.error('Error uploading file:', error.response?.data || error.message);
-            Toast.show('Failed to upload the selfie. Please try again.', Toast.SHORT);
+            console.error('Error uploading file:', {
+                message: error.message,
+                responseData: error.response?.data,
+                status: error.response?.status,
+                headers: error.response?.headers,
+            });
+
+            const errorMessage =
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                'Failed to upload the selfie. Please try again.';
+
+            Toast.show(errorMessage, Toast.SHORT);
             throw error;
         }
     };

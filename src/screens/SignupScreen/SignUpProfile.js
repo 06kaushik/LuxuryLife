@@ -17,6 +17,8 @@ import RBSheet from 'react-native-raw-bottom-sheet';
 import { PLAYFAIRFONTS, POPPINSRFONTS } from '../../components/GlobalStyle';
 import ImageCropPicker from 'react-native-image-crop-picker';
 import analytics from '@react-native-firebase/analytics';
+import * as Clarity from '@microsoft/react-native-clarity';
+
 
 
 
@@ -80,7 +82,6 @@ const ProfileSignUp = ({ navigation, route }) => {
     const [educationskip, setEducationSkip] = useState(false)
     const [hobbieskip, setHobbieSkip] = useState(false)
     const [ageskip, setAgeSkip] = useState(false)
-
     const rbSheetRef = useRef();
     const [attemptedUsernames, setAttemptedUsernames] = useState([]);
     const [attemptCount, setAttemptCount] = useState(0);
@@ -555,7 +556,7 @@ const ProfileSignUp = ({ navigation, route }) => {
             await new Promise((resolve) => setTimeout(resolve, 5000));
             setIsUploading(false);
             setSubmitSelfie(false)
-            //(`Response from ${endpoint}:`, response.data);
+            console.log(`Response from ${endpoint}:`, response.data);
 
             // Extract and return the URL of the uploaded photo
             const uploadedUrl = response.data?.data?.url
@@ -568,6 +569,8 @@ const ProfileSignUp = ({ navigation, route }) => {
             throw error;
         }
     };
+
+
 
 
     const handleSubmit = async () => {
@@ -603,6 +606,8 @@ const ProfileSignUp = ({ navigation, route }) => {
             const response = await axios.put(`auth/update-account/${userId}`, accountUpdatePayload, { headers });
             if (response.status === 200) {
                 Toast.show('Photos uploaded successfully!', Toast.SHORT);
+                await Clarity.sendCustomEvent('signup_imageSharing_24')
+                await analytics().logEvent('signup_imageSharing_24');
                 setLoading(false)
                 return true;  // Return true to indicate success
             } else {
@@ -635,7 +640,7 @@ const ProfileSignUp = ({ navigation, route }) => {
                 setLoad(false);
                 return;
             }
-            const realTimePictureUrl = await uploadPhoto(selfie, false);
+            const realTimePictureUrl = await uploadPhoto(selfie, true);
             //('Uploaded selfie URL:', realTimePictureUrl);
             setSubmitSelfie(true)
             const accountUpdatePayload = {
@@ -647,8 +652,13 @@ const ProfileSignUp = ({ navigation, route }) => {
             //('Payload for account update (selfie):', accountUpdatePayload);
             const response = await axios.put(`auth/update-account/${userId}`, accountUpdatePayload, { headers });
             //('Response from account update:', response.data);
+
             if (response.status === 200) {
                 Toast.show('Selfie uploaded successfully!', Toast.SHORT);
+                await Clarity.sendCustomEvent('signup_startVerification_27')
+                await analytics().logEvent('signup_startVerification_27', {
+                    realTimePicture: realTimePictureUrl,
+                });
                 return true;
             } else {
                 Toast.show('Failed to upload selfie. Please try again.', Toast.SHORT);
@@ -797,7 +807,8 @@ const ProfileSignUp = ({ navigation, route }) => {
 
                     const resp = await axios.post('auth/check-username-available', body, { headers });
                     //('response from username api', resp.data);
-
+                    await Clarity.sendCustomEvent('signup_username_8')
+                    await analytics().logEvent('signup_username_8');
                     if (resp.data.message === 'Username already exists') {
                         // Third attempt: even if exists, move ahead
                         await userUserName();
@@ -817,6 +828,8 @@ const ProfileSignUp = ({ navigation, route }) => {
             }
         }
         else if (currentStep === 5) {
+            await Clarity.sendCustomEvent('signup_location_9')
+            await analytics().logEvent('signup_location_9');
             if (!search || search.length < 3 || !city) {
                 Toast.show('Please select your location to continue.', Toast.SHORT);
                 setLoading(false);
@@ -2304,6 +2317,8 @@ const ProfileSignUp = ({ navigation, route }) => {
         const headers = {
             Authorization: token,
         };
+
+
         let body = {
             step: 6,
             accountUpdatePayload: {
@@ -2313,9 +2328,11 @@ const ProfileSignUp = ({ navigation, route }) => {
                 }
             }
         }
-        //('body response of the height', body);
+        console.log('body response of the height', body);
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
+            await Clarity.sendCustomEvent('signup_height_10')
+            await analytics().logEvent('signup_height_10');
             //('response from the user height api', resp.data.message);
         } catch (error) {
             //('error from user height', error);
@@ -2336,6 +2353,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         //('body response of the bodytype', body);
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
+            await Clarity.sendCustomEvent('signup_bodyType_11')
+            await analytics().logEvent('signup_bodyType_11', {
+                bodyType: selectedBodyType
+            });
             //('response from the user bodytype api', resp.data.message);
         } catch (error) {
             //('error from user bodytype', error);
@@ -2357,6 +2378,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         //('body response of the ethnicity', body);
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
+            await Clarity.sendCustomEvent('signup_ethenicity_12')
+            await analytics().logEvent('signup_ethenicity_12', {
+                ethnicity: selectethnicity
+            });
             //('response from the user ethnicity api', resp.data.message);
         } catch (error) {
             //('error from user ethnicity', error);
@@ -2377,6 +2402,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         //('body response of the highestEducation', body);
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
+            await Clarity.sendCustomEvent('signup_education_13')
+            await analytics().logEvent('signup_education_13', {
+                highestEducation: selecteducation
+            });
             //('response from the user highestEducation api', resp.data.message);
         } catch (error) {
             //('error from user highestEducation', error);
@@ -2398,6 +2427,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
             //('response from the user workField api', resp.data.message);
+            await Clarity.sendCustomEvent('signup_profession_14')
+            await analytics().logEvent('signup_profession_14', {
+                workField: workfield
+            });
         } catch (error) {
             //('error from user workField', error);
         }
@@ -2417,6 +2450,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         //('body response of the relation', body);
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
+            await Clarity.sendCustomEvent('signup_relationshipStatus_15')
+            await analytics().logEvent('signup_relationshipStatus_15', {
+                currentRelationshipStatus: rstatus
+            });
             //('response from the user relation api', resp.data.message);
         } catch (error) {
             //('error from user relation', error);
@@ -2437,6 +2474,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         //('body response of the children', body);
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
+            await Clarity.sendCustomEvent('signup_childrenStatus_16')
+            await analytics().logEvent('signup_childrenStatus_16', {
+                children: child
+            });
             //('response from the user children api', resp.data.message);
         } catch (error) {
             //('error from user children', error);
@@ -2458,6 +2499,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
             //('response from the user networth api', resp.data.message);
+            await Clarity.sendCustomEvent('signup_networth_17')
+            await analytics().logEvent('signup_networth_17', {
+                netWorthRange: networth
+            });
         } catch (error) {
             //('error from user networth', error);
         }
@@ -2483,6 +2528,8 @@ const ProfileSignUp = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
             //('response from the user ageRange api', resp.data.message);
+            await Clarity.sendCustomEvent('signup_agePreference_18')
+            await analytics().logEvent('signup_agePreference_18');
         } catch (error) {
             //('error from user ageRange', error);
         }
@@ -2503,6 +2550,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
             console.log('response from the user hobbies api', resp.data.message);
+            await Clarity.sendCustomEvent('signup_hobbies_19')
+            await analytics().logEvent('signup_hobbies_19', {
+                hobbies: userhobbies
+            });
         } catch (error) {
             console.log('error from user hobbies', error);
         }
@@ -2523,6 +2574,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
             //('response from the user smoke api', resp.data.message);
+            await Clarity.sendCustomEvent('signup_smoke_20')
+            await analytics().logEvent('signup_smoke_20', {
+                smoke: smoke
+            });
         } catch (error) {
             //('error from user smoke', error);
         }
@@ -2543,6 +2598,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
             //('response from the user drinking api', resp.data.message);
+            await Clarity.sendCustomEvent('signup_drink_21')
+            await analytics().logEvent('signup_drink_21', {
+                drink: drinking
+            });
         } catch (error) {
             //('error from user drinking', error);
         }
@@ -2563,6 +2622,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
             //('response from the user interest api', resp.data.message);
+            await Clarity.sendCustomEvent('signup_interest_22')
+            await analytics().logEvent('signup_interest_22', {
+                luxuryInterests: userinterest
+            });
         } catch (error) {
             //('error from user interest', error);
         }
@@ -2585,6 +2648,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
             //('response from the user aboutpartner api', resp.data.message);
+            await Clarity.sendCustomEvent('signup_lookingPartner_23')
+            await analytics().logEvent('signup_lookingPartner_23', {
+                aboutPartnerDescription: aboutpartner
+            });
         } catch (error) {
             //('error from user aboutpartner', error);
         }
@@ -2605,6 +2672,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
             //('response from the user profileheading api', resp.data.message);
+            await Clarity.sendCustomEvent('signup_catchyHeading_25')
+            await analytics().logEvent('signup_catchyHeading_25', {
+                myHeading: profileheading
+            });
         } catch (error) {
             //('error from user profileheading', error);
         }
@@ -2625,6 +2696,10 @@ const ProfileSignUp = ({ navigation, route }) => {
         try {
             const resp = await axios.put(`auth/update-account/${userId}`, body, { headers })
             //('response from the user aboutyou api', resp.data.message);
+            await Clarity.sendCustomEvent('signup_describeYourSelf_26')
+            await analytics().logEvent('signup_describeYourSelf_26', {
+                aboutUsDescription: aboutyou
+            });
         } catch (error) {
             //('error from user aboutyou', error);
         }

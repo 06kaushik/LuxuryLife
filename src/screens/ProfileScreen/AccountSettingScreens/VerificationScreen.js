@@ -142,15 +142,15 @@ const Verification = ({ navigation }) => {
                         refreshing={refreshing}
                         onRefresh={onRefresh} // Trigger the refresh logic
                     />
-                }
-            >
+                }>
+
                 <View style={styles.cont1}>
                     <Text style={styles.txt3}>ID Verification</Text>
                     <Image source={images.id} style={styles.img} />
                     <Text style={styles.txt4}>Having an ID verification badge proves that you are, in fact, who you say you are. It's as simple as taking a quick photo of your government-issued ID (front and back) and a selfie, which will be compared to your profile. </Text>
                     <Text style={styles.txt5}>(Note: If you fail the background check, you will not recieve the verification badge. We do not provide refunds for those who fail the background check, as the background check was performed.)</Text>
                     <Text style={{ textAlign: 'center', fontFamily: 'Poppins-Bold', top: 8 }}>Status: <Text style={{ fontFamily: 'Poppins-Bold', top: 8, color: userprofiledata?.documents?.status === 'Pending' ? '#916008' : userprofiledata?.documents?.status === 'Rejected' ? 'red' : userprofiledata?.documents?.status === 'Approved' ? 'green' : 'black' }}>{userprofiledata?.documents?.status}</Text></Text>
-                    {counterattempt > 0 ?
+                    {(userprofiledata?.selfieVerificationStatus === 'Rejected' && counterattempt) > 0 ?
                         <Text style={{ textAlign: 'center', color: 'black', fontFamily: 'Poppins-Bold', top: 8 }}>
                             Remaining Attempts: {counterattempt !== undefined ? counterattempt : 0} of 3
                         </Text> : null}
@@ -189,12 +189,12 @@ const Verification = ({ navigation }) => {
                     <Text style={styles.txt4}>You can use this verification to prove that your profile photos are truly photos of you. It's as simple as taking a quick photo mimicking an example photo we'll show you and submitting it to us to compare to your profile.</Text>
                     <Text style={styles.txt5}>(Note: You must have at least one approved photo before verifying photos.)</Text>
                     <Text style={{ textAlign: 'center', fontFamily: 'Poppins-Bold', top: 8 }}>Status: <Text style={{ fontFamily: 'Poppins-Bold', top: 8, color: userprofiledata?.selfieVerificationStatus === 'Pending' ? '#916008' : userprofiledata?.selfieVerificationStatus === 'Rejected' ? 'red' : userprofiledata?.selfieVerificationStatus === 'Approved' ? 'green' : 'black' }}>{userprofiledata?.selfieVerificationStatus}</Text></Text>
-                    {photocounter > 0 ?
+                    {(userprofiledata?.selfieVerificationStatus === 'Rejected' && photocounter > 0) && (
                         <Text style={{ textAlign: 'center', color: 'black', fontFamily: 'Poppins-Bold', top: 8 }}>
-                            Remaining Attempts: {photocounter !== undefined ? photocounter : 0} of 3
+                            Remaining Attempts: {photocounter} of 3
                         </Text>
-                        : null}
-                    {userprofiledata?.selfieVerificationStatus === 'Unverified' || userprofiledata?.selfieVerificationStatus === 'Rejected' ? (
+                    )}
+                    {(userprofiledata?.selfieVerificationStatus === 'Unverified' || userprofiledata?.selfieVerificationStatus === 'Rejected') ? (
                         photocounter < 3 ? ( // Only show the button if attempts are remaining
                             <TouchableOpacity onPress={() => navigation.navigate('VerifySelfie')}>
                                 <View style={[styles.cont2, { marginBottom: 100 }]}>

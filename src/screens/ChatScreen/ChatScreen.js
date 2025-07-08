@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontFamily: "Poppins-Regular",
         color: "#C4C4C4",
-        top: 5
+        top: 8
     },
     onlineIndicator: {
         position: "absolute",
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
     },
     unreadBadge: {
         position: "absolute",
-        top: 5,
+        // top: 5,
         right: 5,
         backgroundColor: "red",
         borderRadius: 100,

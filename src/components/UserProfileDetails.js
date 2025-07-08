@@ -27,6 +27,7 @@ import { Picker } from '@react-native-picker/picker';
 import LottieView from "lottie-react-native";
 import { Dropdown } from 'react-native-element-dropdown';
 import analytics from '@react-native-firebase/analytics';
+import * as Clarity from '@microsoft/react-native-clarity';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 
 
@@ -81,6 +82,7 @@ const UserProfileDetails = ({ navigation, route }) => {
             City: userdetails?.city,
             Profile_UserId: userprofiledata?._id
         });
+        Clarity.sendCustomEvent('first_profile_visit')
     }, [userdetails, userprofiledata])
 
 

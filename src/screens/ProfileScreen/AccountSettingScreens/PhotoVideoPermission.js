@@ -53,6 +53,7 @@ const PhotoVideoPermissions = ({ navigation }) => {
 
 
 
+
     const reasonList = [
 
         { label: 'Found a Match', value: 'q1' },
@@ -809,13 +810,22 @@ const PhotoVideoPermissions = ({ navigation }) => {
                         thumbColor={"#FFF"}
                     />
                 </View>
-                {!userprofiledata?.isSubscribed ?
+                {(!userprofiledata?.isSubscribed || (userprofiledata?.isSubscribed && userprofiledata?.subscriptionType !== 'Luxury')) ? (
                     <TouchableOpacity onPress={() => setIsModalVisible(true)}>
                         <Text style={{ marginLeft: 16, color: '#916008' }}>(Upgrade required)</Text>
-                        <Image source={images.lock} style={{ height: 20, width: 20, tintColor: '#916008', position: 'absolute', left: 140 }} />
+                        <Image
+                            source={images.lock}
+                            style={{
+                                height: 20,
+                                width: 20,
+                                tintColor: '#916008',
+                                position: 'absolute',
+                                left: 140
+                            }}
+                        />
                     </TouchableOpacity>
-                    :
-                    null}
+                ) : null}
+
 
                 <Text style={{ fontSize: 16, fontFamily: GARAMOND.bold, marginLeft: 16, marginTop: 20, color: '#7A7A7A' }}>Online Status</Text>
                 <Text style={{ marginTop: 10, top: 10, marginLeft: 16, color: 'black', fontFamily: POPPINSRFONTS.bold }}>Status</Text>

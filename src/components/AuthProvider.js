@@ -5,6 +5,8 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import Toast from 'react-native-simple-toast';
 import analytics from '@react-native-firebase/analytics';
 import { navigationRef } from './NavigationService';
+import * as Clarity from '@microsoft/react-native-clarity';
+
 
 
 export const AuthContext = createContext();
@@ -13,8 +15,6 @@ const AuthProvider = ({ children, navigation }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isNewUser, setIsNewUser] = useState(false);
-
-
 
 
   useEffect(() => {
@@ -49,6 +49,7 @@ const AuthProvider = ({ children, navigation }) => {
     checkAuthStatus();
   }, []);
 
+
   const login = async (idToken, fcmtoken) => {
     try {
       const response = await axios.post('auth/sign-in-google', { idToken, fcm_token: fcmtoken });
@@ -64,6 +65,7 @@ const AuthProvider = ({ children, navigation }) => {
           Country: user?.country,
           City: user?.city
         });
+        await Clarity.sendCustomEvent('Signup_complete')
 
         await AsyncStorage.setItem('authToken', token);
         await AsyncStorage.setItem('verifcationToken', token);
@@ -88,6 +90,7 @@ const AuthProvider = ({ children, navigation }) => {
         }
 
         Toast.show('Complete Your Profile', Toast.SHORT);
+        // Toast.show(response?.data?.message, Toast.SHORT);
       }
     } catch (error) {
       await GoogleSignin.signOut();
@@ -144,6 +147,7 @@ const AuthProvider = ({ children, navigation }) => {
         Country: response?.data?.data?.user?.country,
         City: response?.data?.data?.user?.city
       });
+      await Clarity.sendCustomEvent('Signup_complete')
       await AsyncStorage.setItem('authToken', token);
       await AsyncStorage.setItem('verifcationToken', token);
       await AsyncStorage.setItem('UserData', JSON.stringify(response.data.data));

@@ -8,6 +8,8 @@ import axios from "axios";
 import Modal from "react-native-modal";
 import LottieView from 'lottie-react-native';
 import analytics from '@react-native-firebase/analytics';
+import * as Clarity from '@microsoft/react-native-clarity';
+
 
 
 const RazorPayGatewayChat = ({ navigation }) => {
@@ -22,6 +24,7 @@ const RazorPayGatewayChat = ({ navigation }) => {
 
     useEffect(() => {
         analytics().logEvent('subscription_planView');
+        Clarity.sendCustomEvent('subscription_planView')
     }, [])
 
     useEffect(() => {
@@ -121,6 +124,7 @@ const RazorPayGatewayChat = ({ navigation }) => {
                     value: selectedPlan.price
 
                 });
+                await Clarity.sendCustomEvent('begin_checkout')
                 const options = {
                     description: 'Upgrade to premium',
                     image: 'https://i.imgur.com/3g7nmJC.jpg',
@@ -151,6 +155,7 @@ const RazorPayGatewayChat = ({ navigation }) => {
                         currency: 'INR',
                         transaction_id: data?.razorpay_payment_id
                     });
+                    Clarity.sendCustomEvent('purchase')
                 }).catch((error) => {
                     console.error('Payment failed response:', error?.error?.description);
                     ToastAndroid.show(error?.error?.description || 'Payment failed, please try again', ToastAndroid.BOTTOM);

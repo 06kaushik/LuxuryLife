@@ -148,6 +148,7 @@ const DashBoardScreen = ({ navigation, route }) => {
         checkIfFirstTimeUser();
     }, []);
 
+
     useEffect(() => {
         const subscription = AppState.addEventListener("change", (nextAppState) => {
             setAppState(nextAppState);
@@ -187,7 +188,6 @@ const DashBoardScreen = ({ navigation, route }) => {
         };
         getUserProfileData()
     }, [])
-
 
 
     useEffect(() => {
@@ -583,7 +583,7 @@ const DashBoardScreen = ({ navigation, route }) => {
                     {userData
                         .map((item, index) => (
                             <Animated.View
-                                key={item._id}
+                                key={`${item._id}_${index}`}
                                 style={[
                                     styles.card,
                                     {

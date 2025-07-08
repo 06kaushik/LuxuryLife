@@ -22,41 +22,41 @@ const AdditionalSecurity = ({ navigation }) => {
             <Text style={styles.txt2}>Request an export or the deletion of your personal data</Text>
             <View style={styles.line} />
             <ScrollView>
-            <View style={styles.cont1}>
-                <Text style={styles.txt3}>Request for information</Text>
-                <Text style={styles.txt4}>If you would like to request an export of your data from {'\n'}Seeking, you may do so below. This is not instantaneous {'\n'}and you will recieve an email when the export is ready.</Text>
-                <Text style={styles.txt5}>To Confirm request, type "ConfirmRequest" {'\n'}without quotes in the field below.</Text>
+                <View style={styles.cont1}>
+                    <Text style={styles.txt3}>Request for information</Text>
+                    <Text style={styles.txt4}>If you would like to request an export of your data from {'\n'}Seeking, you may do so below. This is not instantaneous {'\n'}and you will recieve an email when the export is ready.</Text>
+                    <Text style={styles.txt5}>To Confirm request, type "ConfirmRequest" {'\n'}without quotes in the field below.</Text>
 
-                <TextInput
-                    placeholder="Type here"
-                    placeholderTextColor={'#ABABAB'}
-                    style={styles.input}
-                    value={request}
-                    onChangeText={setRequest}
-                />
-                <View style={styles.cont2}>
-                    <Text style={styles.txt6}>Request Information</Text>
+                    <TextInput
+                        placeholder="Type here"
+                        placeholderTextColor={'#ABABAB'}
+                        style={styles.input}
+                        value={request}
+                        onChangeText={setRequest}
+                    />
+                    <View style={styles.cont2}>
+                        <Text style={styles.txt6}>Request Information</Text>
+                    </View>
                 </View>
-            </View>
-            <View style={styles.line} />
+                <View style={styles.line} />
 
 
-            <View style={styles.cont3}>
-                <Text style={styles.txt3}>Request deletion of information</Text>
-                <Text style={styles.txt4}>If you would like to request your Seeking account and{'\n'}associated personal data to be deleted, you may do so {'\n'}below. While this is not instantaneous, it is irreversible.</Text>
-                <Text style={styles.txt7}>Note: If you have submitted an information request above, {'\n'}you should wait to delete your account until that process is {'\n'}completed otherwise your information request may not successfully process.</Text>
-                <Text style={styles.txt5}>To Confirm deletion, type "ConfirmRequest" {'\n'}without qoutes in the field below.</Text>
-                <TextInput
-                    placeholder="Type here"
-                    placeholderTextColor={'#ABABAB'}
-                    style={styles.input}
-                    value={deletion}
-                    onChangeText={setDeletion}
-                />
-                <View style={[styles.cont2,{marginBottom:100}]}>
-                    <Text style={styles.txt6}>Delete account and information</Text>
+                <View style={styles.cont3}>
+                    <Text style={styles.txt3}>Request deletion of information</Text>
+                    <Text style={styles.txt4}>If you would like to request your Seeking account and{'\n'}associated personal data to be deleted, you may do so {'\n'}below. While this is not instantaneous, it is irreversible.</Text>
+                    <Text style={styles.txt7}>Note: If you have submitted an information request above, {'\n'}you should wait to delete your account until that process is {'\n'}completed otherwise your information request may not successfully process.</Text>
+                    <Text style={styles.txt5}>To Confirm deletion, type "ConfirmRequest" {'\n'}without qoutes in the field below.</Text>
+                    <TextInput
+                        placeholder="Type here"
+                        placeholderTextColor={'#ABABAB'}
+                        style={styles.input}
+                        value={deletion}
+                        onChangeText={setDeletion}
+                    />
+                    <View style={[styles.cont2, { marginBottom: 100 }]}>
+                        <Text style={styles.txt6}>Delete account and information</Text>
+                    </View>
                 </View>
-            </View>
             </ScrollView>
 
         </View>

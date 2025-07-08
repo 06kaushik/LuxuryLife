@@ -11,6 +11,7 @@ import { ScrollView } from "react-native-gesture-handler";
 import messaging from '@react-native-firebase/messaging'
 import { PermissionsAndroid } from 'react-native';
 import analytics from '@react-native-firebase/analytics';
+import * as Clarity from '@microsoft/react-native-clarity';
 
 
 const LoginWithEmail = ({ navigation }) => {
@@ -37,6 +38,7 @@ const LoginWithEmail = ({ navigation }) => {
     }, []);
 
     const handleGoogleSignIn = async () => {
+        await Clarity.sendCustomEvent('started')
         await analytics().logEvent('login_started');
         try {
             setIsLoading(true);
@@ -67,6 +69,7 @@ const LoginWithEmail = ({ navigation }) => {
     };
 
     const emailLogin = async () => {
+        await Clarity.sendCustomEvent('started')
         await analytics().logEvent('login_started');
 
         // Input validation

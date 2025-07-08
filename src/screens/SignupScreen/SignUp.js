@@ -15,6 +15,7 @@ import { PLAYFAIRFONTS, POPPINSRFONTS } from '../../components/GlobalStyle';
 import { PermissionsAndroid } from 'react-native';
 import messaging from '@react-native-firebase/messaging'
 import analytics from '@react-native-firebase/analytics';
+import * as Clarity from '@microsoft/react-native-clarity';
 
 
 
@@ -169,6 +170,7 @@ const SignUp = ({ navigation }) => {
     };
 
     const createSignUp = async () => {
+        await Clarity.sendCustomEvent('signup_manualEmail_4')
         await analytics().logEvent('signup_manualEmail_4');
         if (!email) {
             Toast.show('Please enter your email.', Toast.SHORT);
@@ -186,7 +188,6 @@ const SignUp = ({ navigation }) => {
                 lookingFor: selectinterest,
                 dateOfBirth: moment(selectedDate).format('YYYY-MM-DD'),
             };
-
 
             try {
                 const response = await axios.post('auth/sign-up', body);
@@ -226,6 +227,8 @@ const SignUp = ({ navigation }) => {
         try {
             const resp = await axios.put('auth/verify-otp', body);
             //('Response from OTP verification:', resp.data.data.token);
+
+            await Clarity.sendCustomEvent('signup_OTP_5')
             await analytics().logEvent('signup_OTP_5');
             if (resp?.data?.data?.user) {
                 const userId = resp.data.data.user._id;
@@ -280,6 +283,7 @@ const SignUp = ({ navigation }) => {
             const resp = await axios.post('auth/create-password', body, { headers });
             //('Password created successfully:', resp.data);
             Toast.show('Password created successfully.', Toast.SHORT);
+            await Clarity.sendCustomEvent('signup_password_6')
             await analytics().logEvent('signup_password_6');
             return resp.data;
         } catch (error) {
@@ -327,6 +331,7 @@ const SignUp = ({ navigation }) => {
         try {
             const resp = await axios.put(`auth/update-security-questions/${userId}`, body, { headers });
             // //('Response from the security questions:', resp);
+            await Clarity.sendCustomEvent('signup_secureQuestion_7')
             await analytics().logEvent('signup_secureQuestion_7');
         } catch (error) {
             console.error('Error from the security question API:', error.response || error.message);
@@ -343,7 +348,7 @@ const SignUp = ({ navigation }) => {
     }, []);
 
     const handleGoogleSignIn = async () => {
-        //('inside handle google sign in function');
+        await Clarity.sendCustomEvent('signup_loginOption_3')
         await analytics().logEvent('signup_loginOption_3');
 
         try {
@@ -417,6 +422,7 @@ const SignUp = ({ navigation }) => {
 
     const handleGenderSelect = async (type) => {
         setSelectedGender(type);
+        await Clarity.sendCustomEvent('signup_gender_1')
         await analytics().logEvent('signup_gender_1', {
             selectedgender: type,
         });
@@ -425,6 +431,7 @@ const SignUp = ({ navigation }) => {
 
     const handleInteretSelect = async (type) => {
         setSelectInterest([type]); // Always store one selected option in the array
+        await Clarity.sendCustomEvent('signup_gender_1')
         await analytics().logEvent('signup_gender_1', {
             selectinterest: type,
         });
@@ -439,6 +446,7 @@ const SignUp = ({ navigation }) => {
     }
 
     const handleDateConfirm = async (date) => {
+        await Clarity.sendCustomEvent('signup_dob_2')
         await analytics()?.logEvent('signup_dob_2', {
             usersAge: calculateAge(date),
         });

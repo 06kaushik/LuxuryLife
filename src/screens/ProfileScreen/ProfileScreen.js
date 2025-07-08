@@ -21,6 +21,7 @@ import RBSheet from 'react-native-raw-bottom-sheet';
 
 const ProfileScreen = ({ navigation }) => {
 
+
     const { logout } = useContext(AuthContext);
     const appVersion = DeviceInfo.getVersion();
     const [selfie, setSelfie] = useState(null);

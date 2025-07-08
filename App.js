@@ -24,6 +24,7 @@ import { navigationRef } from './src/components/NavigationService';
 import PushNotification from 'react-native-push-notification';
 import OfflineNotice from './src/components/OfflineNotice';
 import { UserProvider } from './src/components/UserContext';
+import * as Clarity from '@microsoft/react-native-clarity';
 
 
 
@@ -43,6 +44,12 @@ const App = () => {
 
   // const { emit, on, removeListener, socketId } = useSocket(onSocketConnect);
   // const onSocketConnect = () => { };
+
+  useEffect(() => {
+    Clarity.initialize('ris6mdtxwu')
+  }, []);
+
+
 
 
   useEffect(() => {
@@ -172,7 +179,7 @@ const App = () => {
   }, []);
 
 
- 
+
 
   useEffect(() => {
     if (userdetails) {
@@ -339,25 +346,25 @@ const App = () => {
 
   return (
     <UserProvider>
-    <ViewLikeProvider>
-      <NotificationProvider>
-        <AuthProvider>
-          <SocketProvider>
-            <OfflineNotice />
-            <NavigationContainer ref={navigationRef}>
-              <AppContent />
-              <IncomingCallHandler />
-              <IncomingAudioCallHandler userId={userdetails?._id} userprofiledata={userprofiledata} />
-            </NavigationContainer>
-            <UpdateModal
-              visible={isModalVisible}
-              onClose={() => setIsModalVisible(false)}
-              onUpdate={handleUpdate}
-            />
-          </SocketProvider>
-        </AuthProvider>
-      </NotificationProvider>
-    </ViewLikeProvider>
+      <ViewLikeProvider>
+        <NotificationProvider>
+          <AuthProvider>
+            <SocketProvider>
+              <OfflineNotice />
+              <NavigationContainer ref={navigationRef}>
+                <AppContent />
+                <IncomingCallHandler />
+                <IncomingAudioCallHandler userId={userdetails?._id} userprofiledata={userprofiledata} />
+              </NavigationContainer>
+              <UpdateModal
+                visible={isModalVisible}
+                onClose={() => setIsModalVisible(false)}
+                onUpdate={handleUpdate}
+              />
+            </SocketProvider>
+          </AuthProvider>
+        </NotificationProvider>
+      </ViewLikeProvider>
     </UserProvider>
   );
 

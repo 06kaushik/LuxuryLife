@@ -17,6 +17,8 @@ import Toast from 'react-native-simple-toast'
 import { GARAMOND, POPPINSRFONTS } from '../../components/GlobalStyle';
 import analytics from '@react-native-firebase/analytics';
 import { UserContext } from '../../components/UserContext';
+import * as Clarity from '@microsoft/react-native-clarity';
+
 
 const OneToOneChat = ({ navigation, route }) => {
     const { roomId, initialMessages, item, useronline, userName, profilepic, id } = route.params;
@@ -379,7 +381,8 @@ const OneToOneChat = ({ navigation, route }) => {
 
 
     const sendMessage = async () => {
-        await analytics().logEvent('subscription_planView');
+        await analytics().logEvent('message_sendingStarting');
+        await Clarity.sendCustomEvent('message_sendingStarting')
         if (!message.trim() && !audioFile && !fileid) {
             return;
         }
