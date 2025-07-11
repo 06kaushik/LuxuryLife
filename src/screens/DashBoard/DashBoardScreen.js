@@ -258,6 +258,8 @@ const DashBoardScreen = ({ navigation, route }) => {
         }
     }, [currentPage]);
 
+
+
     const getUserFilteredData = async () => {
 
         const token = await AsyncStorage.getItem('authToken');
@@ -397,8 +399,6 @@ const DashBoardScreen = ({ navigation, route }) => {
             }
         });
     };
-
-
 
     const translateX = (index) => {
         const position = positions[index];
@@ -714,7 +714,7 @@ const DashBoardScreen = ({ navigation, route }) => {
                                             {item?.isTwitterVerified ?
                                                 <Image source={images.x} style={{ height: 23, width: 23, margin: 3 }} /> : null}
                                             {item?.isIdVerified ?
-                                                <Image source={images.s} style={{ height: 23, width: 23, margin: 3 }} /> : null}
+                                                <Image source={images.document} style={{ height: 23, width: 23, margin: 3 }} /> : null}
                                             {item?.isProfileVerified ?
                                                 <Image source={images.sv} style={{ height: 23, width: 23, margin: 3 }} /> : null}
                                         </View>

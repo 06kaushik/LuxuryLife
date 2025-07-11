@@ -27,6 +27,7 @@ const ViewProfile = ({ navigation }) => {
 
 
     const [userdetails, setUserDetails] = useState(null)
+    // console.log('userdetailsss', userdetails);
     const [selectedButton1, setSelectedButton1] = useState('Rejected');
     const [isEditing, setIsEditing] = useState(false);
     const [text, setText] = useState('');
@@ -42,6 +43,7 @@ const ViewProfile = ({ navigation }) => {
     const [isethnicity, setIsEthnicity] = useState(false)
     const [unit, setUnit] = useState('');
     const [height, setHeight] = useState([122, 0]);
+
     const [isheight, setIsHeight] = useState(false)
     const [selectedBodyType, setSelectedBodyType] = useState('');
     const [isbodytype, setIsBodyType] = useState(false)
@@ -70,6 +72,24 @@ const ViewProfile = ({ navigation }) => {
     const [isluxinterest, setIsLuxInterest] = useState(false)
     const [userprofiledata, setUserProfileData] = useState();
     const [isUploadingAny, setIsUploadingAny] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [loading1, setLoading1] = useState(false);
+    const [loading2, setLoading2] = useState(false);
+    const [loading3, setLoading3] = useState(false);
+    const [loading4, setLoading4] = useState(false);
+    const [loading5, setLoading5] = useState(false);
+    const [loading6, setLoading6] = useState(false);
+    const [loading7, setLoading7] = useState(false);
+    const [loading8, setLoading8] = useState(false);
+    const [loading9, setLoading9] = useState(false);
+    const [loading10, setLoading10] = useState(false);
+    const [loading11, setLoading11] = useState(false);
+    const [loading12, setLoading12] = useState(false);
+    const [loading13, setLoading13] = useState(false);
+    const [loading14, setLoading14] = useState(false);
+    const [loading15, setLoading15] = useState(false);
+
+
 
 
     const isFocused = useIsFocused()
@@ -139,7 +159,7 @@ const ViewProfile = ({ navigation }) => {
                 setEthnicity(parsedData?.ethnicity)
                 if (parsedData?.tall?.value) {
                     // Set the value for index 1 from parsedData
-                    setHeight([122, parseFloat(parsedData?.tall?.value)]);
+                    setHeight([122, parsedData?.tall?.cm]);
                 }
                 setUnit(parsedData?.tall?.unit)
                 setSelectedBodyType(parsedData?.bodyType)
@@ -449,21 +469,28 @@ const ViewProfile = ({ navigation }) => {
 
     const handleEditSave = async () => {
         if (isEditing) {
-            await userHeading()
+            setLoading(true);
+            await userHeading();
+            setLoading(false);
         }
         setIsEditing(!isEditing);
     };
 
+
     const handleEditAbout = async () => {
         if (iseditabout) {
-            await userAboutYou(); // Save changes when exiting edit mode
+            setLoading1(true);
+            await userAboutYou();
+            setLoading1(false)
         }
         setEditAbout(!iseditabout);  // Toggle the edit state
     };
 
     const handleEditLookingFor = async () => {
         if (iseditlookingfor) {
+            setLoading2(true)
             await userLookingFor(); // Save changes when exiting edit mode
+            setLoading2(false)
         }
         setIsEditLookingFor(!iseditlookingfor);  // Toggle the edit state
     };
@@ -484,7 +511,9 @@ const ViewProfile = ({ navigation }) => {
 
     const handleHobbie = async () => {
         if (isHobbies) {
+            setLoading5(true)
             await userHobbies()
+            setLoading5(false)
         }
         setIsHobbies(!isHobbies)
     }
@@ -519,7 +548,9 @@ const ViewProfile = ({ navigation }) => {
 
     const handleIsRelationship = async () => {
         if (isrelationstatus) {
+            setLoading3(true)
             await userRelationshipStatus()
+            setLoading3(false)
         }
         setIsRelationStatus(!isrelationstatus)
     }
@@ -530,7 +561,10 @@ const ViewProfile = ({ navigation }) => {
 
     const handleIsLuxeInterest = async () => {
         if (isluxinterest) {
+            setLoading4(true)
             await userLuxuryIntrst()
+            setLoading4(false)
+
         }
         setIsLuxInterest(!isluxinterest)
     }
@@ -548,7 +582,9 @@ const ViewProfile = ({ navigation }) => {
 
     const handleIsAge = async () => {
         if (isagerange) {
+            setLoading6(true)
             await userAgeRange()
+            setLoading6(false)
         }
         setIsRangeRange(!isagerange)
     }
@@ -563,7 +599,9 @@ const ViewProfile = ({ navigation }) => {
 
     const handleIsEthni = async () => {
         if (isethnicity) {
+            setLoading7(true)
             await userEthnicity()
+            setLoading7(false)
         }
         setIsEthnicity(!isethnicity)
     }
@@ -577,14 +615,18 @@ const ViewProfile = ({ navigation }) => {
 
     const handleIsHeight = async () => {
         if (isheight) {
+            setLoading8(true)
             await userHeight()
+            setLoading8(false)
         }
         setIsHeight(!isheight)
     }
 
     const handleIsBodyType = async () => {
         if (isbodytype) {
+            setLoading9(true)
             await userBodyType()
+            setLoading9(false)
         }
         setIsBodyType(!isbodytype)
     }
@@ -600,7 +642,9 @@ const ViewProfile = ({ navigation }) => {
 
     const handleIsChild = async () => {
         if (ischild) {
+            setLoading10(true)
             await userChildren()
+            setLoading10(false)
         }
         setIsChild(!ischild)
     }
@@ -611,7 +655,9 @@ const ViewProfile = ({ navigation }) => {
 
     const handleIsSmoke = async () => {
         if (issmoke) {
+            setLoading11(true)
             await userSmoking()
+            setLoading11(false)
         }
         setIsSmoke(!issmoke)
     }
@@ -622,7 +668,9 @@ const ViewProfile = ({ navigation }) => {
 
     const handleIsDrinking = async () => {
         if (isdrinking) {
+            setLoading12(true)
             await userDrinking()
+            setLoading12(false)
         }
         setIsDrinking(!isdrinking)
     }
@@ -633,7 +681,9 @@ const ViewProfile = ({ navigation }) => {
 
     const handleIsEducation = async () => {
         if (iseducation) {
+            setLoading13(true)
             await userEducation()
+            setLoading13(false)
         }
         setIsEducation(!iseducation)
     }
@@ -644,7 +694,9 @@ const ViewProfile = ({ navigation }) => {
 
     const handleIsWork = async () => {
         if (isworkfield) {
+            setLoading14(true)
             await userWorkField()
+            setLoading14(false)
         }
         setIsWorkField(!isworkfield)
     }
@@ -655,7 +707,9 @@ const ViewProfile = ({ navigation }) => {
 
     const handleIsNet = async () => {
         if (isnetworth) {
+            setLoading15(true)
             await userNetWorthRange()
+            setLoading15(false)
         }
         setIsNetworth(!isnetworth)
     }
@@ -1230,18 +1284,21 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Heading</Text>
-                    <TouchableOpacity onPress={handleEditSave}>
-                        {isEditing === false ?
+                    <TouchableOpacity onPress={handleEditSave} disabled={loading}>
+                        {isEditing === false ? (
                             <Image
                                 source={images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={styles.cont8}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
+
                 </View>
                 {isEditing === true ?
                     <TextInput
@@ -1257,17 +1314,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>About</Text>
-                    <TouchableOpacity onPress={handleEditAbout}>
-                        {iseditabout === false ?
+                    <TouchableOpacity onPress={handleEditAbout} disabled={loading1}>
+                        {iseditabout === false ? (
                             <Image
                                 source={images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading1 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={styles.cont8}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {iseditabout === true ?
@@ -1284,17 +1343,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Describe your perfect match<Text style={{ color: '#DDDDDD', fontFamily: 'Poppins-Regular', fontSize: 12 }}>   {userprofiledata?.preferences?.aboutPartnerDescription === undefined || userprofiledata?.preferences?.aboutPartnerDescription === null || userdetails?.preferences?.aboutPartnerDescription?.length === 0 ? 'Skipped' : null}</Text></Text>
-                    <TouchableOpacity onPress={handleEditLookingFor}>
-                        {iseditlookingfor === false ?
+                    <TouchableOpacity onPress={handleEditLookingFor} disabled={loading2}>
+                        {iseditlookingfor === false ? (
                             <Image
                                 source={userprofiledata?.preferences?.aboutPartnerDescription === undefined || userprofiledata?.preferences?.aboutPartnerDescription === null || userprofiledata?.preferences?.aboutPartnerDescription?.length === 0 ? images.plus : images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading2 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={styles.cont8}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {iseditlookingfor === true ?
@@ -1378,17 +1439,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Relationship status</Text>
-                    <TouchableOpacity onPress={handleIsRelationship}>
-                        {isrelationstatus === false ?
+                    <TouchableOpacity onPress={handleIsRelationship} disabled={loading3}>
+                        {isrelationstatus === false ? (
                             <Image
                                 source={images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading3 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {isrelationstatus === true ?
@@ -1421,17 +1484,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Luxe Interests</Text>
-                    <TouchableOpacity onPress={handleIsLuxeInterest}>
-                        {isluxinterest === false ?
+                    <TouchableOpacity onPress={handleIsLuxeInterest} disabled={loading4}>
+                        {isluxinterest === false ? (
                             <Image
                                 source={images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading4 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {isluxinterest === true ?
@@ -1464,17 +1529,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Hobbies</Text>
-                    <TouchableOpacity onPress={handleHobbie}>
-                        {isHobbies === false ?
+                    <TouchableOpacity onPress={handleHobbie} disabled={loading5}>
+                        {isHobbies === false ? (
                             <Image
                                 source={images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading5 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {isHobbies === true ?
@@ -1507,17 +1574,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Age Preferences</Text>
-                    <TouchableOpacity onPress={handleIsAge}>
-                        {isagerange === false ?
+                    <TouchableOpacity onPress={handleIsAge} disabled={loading6}>
+                        {isagerange === false ? (
                             <Image
                                 source={images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading6 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {isagerange === true ?
@@ -1563,17 +1632,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Ethnicity</Text>
-                    <TouchableOpacity onPress={handleIsEthni}>
-                        {isethnicity === false ?
+                    <TouchableOpacity onPress={handleIsEthni} disabled={loading7}>
+                        {isethnicity === false ? (
                             <Image
                                 source={images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading7 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {isethnicity === true ?
@@ -1606,17 +1677,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Height</Text>
-                    <TouchableOpacity onPress={handleIsHeight}>
-                        {isheight === false ?
+                    <TouchableOpacity onPress={handleIsHeight} disabled={loading8}>
+                        {isheight === false ? (
                             <Image
                                 source={images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading8 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {isheight === true ?
@@ -1632,7 +1705,7 @@ const ViewProfile = ({ navigation }) => {
                                 style={[styles.toggleButton, unit === 'feet' && styles.activeButton]}
                                 onPress={() => setUnit('feet')}
                             >
-                                <Text style={[styles.toggleText, unit === 'feet' && styles.activeText]}>feet/inch</Text>
+                                <Text style={[styles.toggleText, unit === 'feet' && styles.activeText]}>feet</Text>
                             </TouchableOpacity>
                         </View>
                         <Text style={styles.heightText}>
@@ -1672,24 +1745,26 @@ const ViewProfile = ({ navigation }) => {
                 {isheight != true ?
                     <View style={{ borderWidth: 1, height: 50, width: '90%', alignSelf: 'center', borderRadius: 5, borderColor: '#DDDDDD', justifyContent: 'center', marginTop: 10 }}>
                         <Text style={{ paddingLeft: 20, color: '#7A7A7A', fontSize: 14, fontFamily: POPPINSRFONTS.regular, top: 3 }}>
-                            {formattedHeight}
+                            {userdetails?.tall?.value} {userdetails?.tall?.unit === 'cm' ? 'cm' : 'feet'}
                         </Text>
 
                     </View> : null}
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Body Type</Text>
-                    <TouchableOpacity onPress={handleIsBodyType}>
-                        {isbodytype === false ?
+                    <TouchableOpacity onPress={handleIsBodyType} disabled={loading9}>
+                        {isbodytype === false ? (
                             <Image
                                 source={images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading9 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {isbodytype === true ?
@@ -1725,17 +1800,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Children<Text style={{ color: '#DDDDDD', fontFamily: 'Poppins-Regular' }}>   {userprofiledata?.children === undefined || userprofiledata?.children === null || userprofiledata?.children?.length === 0 ? 'Skipped' : null}</Text></Text>
-                    <TouchableOpacity onPress={handleIsChild}>
-                        {ischild === false ?
+                    <TouchableOpacity onPress={handleIsChild} disabled={loading10}>
+                        {ischild === false ? (
                             <Image
                                 source={userprofiledata?.children === undefined || userprofiledata?.children === null || userprofiledata?.children?.length === 0 ? images.plus : images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading10 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {ischild === true ?
@@ -1767,17 +1844,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Do you smoke?</Text>
-                    <TouchableOpacity onPress={handleIsSmoke}>
-                        {issmoke === false ?
+                    <TouchableOpacity onPress={handleIsSmoke} disabled={loading11}>
+                        {issmoke === false ? (
                             <Image
                                 source={images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading11 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {issmoke === true ?
@@ -1810,17 +1889,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Do you drink?</Text>
-                    <TouchableOpacity onPress={handleIsDrinking}>
-                        {isdrinking === false ?
+                    <TouchableOpacity onPress={handleIsDrinking} disabled={loading12}>
+                        {isdrinking === false ? (
                             <Image
                                 source={images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading12 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {isdrinking === true ?
@@ -1853,17 +1934,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Education</Text>
-                    <TouchableOpacity onPress={handleIsEducation}>
-                        {iseducation === false ?
+                    <TouchableOpacity onPress={handleIsEducation} disabled={loading13}>
+                        {iseducation === false ? (
                             <Image
                                 source={images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading13 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {iseducation === true ?
@@ -1896,17 +1979,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={styles.cont6}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Profession<Text style={{ color: '#DDDDDD', fontFamily: 'Poppins-Regular' }}>   {userprofiledata?.workField === undefined || userprofiledata?.workField === null || userprofiledata?.workField?.length === 0 ? 'Skipped' : null}</Text></Text>
-                    <TouchableOpacity onPress={handleIsWork}>
-                        {isworkfield === false ?
+                    <TouchableOpacity onPress={handleIsWork} disabled={loading14}>
+                        {isworkfield === false ? (
                             <Image
                                 source={userprofiledata?.workField === undefined || userprofiledata?.workField === null || userprofiledata?.workField?.length === 0 ? images.plus : images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading14 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {isworkfield === true ?
@@ -1939,17 +2024,19 @@ const ViewProfile = ({ navigation }) => {
 
                 <View style={[styles.cont6, { marginBottom: 20 }]}>
                     <Text style={[styles.txt6, { fontFamily: PLAYFAIRFONTS.bold, fontSize: 25 }]}>Net worth<Text style={{ color: '#DDDDDD', fontFamily: 'Poppins-Regular' }}>   {userprofiledata?.netWorthRange === undefined || userprofiledata?.netWorthRange === null || userprofiledata?.netWorthRange?.length === 0 ? 'Skipped' : null}</Text></Text>
-                    <TouchableOpacity onPress={handleIsNet}>
-                        {isnetworth === false ?
+                    <TouchableOpacity onPress={handleIsNet} disabled={loading15}>
+                        {isnetworth === false ? (
                             <Image
                                 source={userprofiledata?.netWorthRange === undefined || userprofiledata?.netWorthRange === null || userprofiledata?.netWorthRange?.length === 0 ? images.plus : images.edit}
                                 style={{ height: 25, width: 25, tintColor: 'grey' }}
                             />
-                            :
+                        ) : loading15 ? (
+                            <ActivityIndicator size="small" color="white" style={styles.cont8} />
+                        ) : (
                             <View style={[styles.cont8, { top: 3 }]}>
                                 <Text style={{ textAlign: 'center', color: 'white' }}>Save</Text>
                             </View>
-                        }
+                        )}
                     </TouchableOpacity>
                 </View>
                 {isnetworth === true ?

@@ -165,7 +165,7 @@ const ProfileSignUp = ({ navigation, route }) => {
 
 
     useEffect(() => {
-        if (search.length >= 3) { // Trigger API call if 3 or more characters are entered
+        if (search.length >= 3) {
             fetchLocationSuggestions(search);
         } else {
             setSuggestions([]); // Clear suggestions if input length is less than 3
@@ -326,6 +326,8 @@ const ProfileSignUp = ({ navigation, route }) => {
         const totalInches = cm / 2.54;
         const feet = Math.floor(totalInches / 12);
         const inches = Math.round(totalInches % 12);
+        const formattedHeight = `${feet}.${inches < 10 ? + inches : inches}`;
+        console.log('feeet and incccc', formattedHeight);
         return `${feet}ft ${inches}in`;
     };
 
@@ -2318,12 +2320,19 @@ const ProfileSignUp = ({ navigation, route }) => {
             Authorization: token,
         };
 
+        let formattedHeight = height;
+        if (unit === 'feet') {
+            const totalInches = height / 2.54;
+            const feet = Math.floor(totalInches / 12);
+            const inches = Math.round(totalInches % 12);
+            formattedHeight = `${feet}.${inches < 10 ? + inches : inches}`;
+        }
 
         let body = {
             step: 6,
             accountUpdatePayload: {
                 tall: {
-                    value: height,
+                    value: formattedHeight,
                     unit: unit
                 }
             }

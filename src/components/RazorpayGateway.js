@@ -31,6 +31,7 @@ const RazorPayGateway = ({ navigation }) => {
     getPlans()
   }, [])
 
+
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
@@ -45,7 +46,6 @@ const RazorPayGateway = ({ navigation }) => {
     };
     fetchUserDetails();
   }, []);
-
 
   const getPlans = async () => {
     const token = await AsyncStorage.getItem('authToken')
@@ -75,7 +75,6 @@ const RazorPayGateway = ({ navigation }) => {
 
     return Math.round(price).toLocaleString('en-IN');
   };
-
 
   const createSubscription = async (planType) => {
     try {
@@ -173,7 +172,6 @@ const RazorPayGateway = ({ navigation }) => {
       setLoading(false);
     }
   };
-
 
   const getVerifyPayment = async (razorpay_payment_id, planId, razorpay_subscription_id, razorpay_signature) => {
     const token = await AsyncStorage.getItem('authToken');

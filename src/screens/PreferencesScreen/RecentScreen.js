@@ -49,7 +49,6 @@ const RecentScreen = ({ navigation, index }) => {
     }, [filterdata]);
 
 
-
     useEffect(() => {
         const fetchUserDetails = async () => {
             try {
@@ -108,6 +107,7 @@ const RecentScreen = ({ navigation, index }) => {
     }
 
     const getUserFilteredData = async (page = 0) => {
+
         if (!filterdata) {
             return;
         }

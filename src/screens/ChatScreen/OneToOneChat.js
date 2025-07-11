@@ -557,49 +557,43 @@ const OneToOneChat = ({ navigation, route }) => {
 
 
     const playAudio = (messageId) => {
-        console.log('message id', messageId);
+        if (isPlaying && playingMessageId === messageId) return;
 
-        // Prevent playing a new audio if another is already playing
-        if (isPlaying && playingMessageId !== messageId) {
-            // Stop the previous audio if it's still playing
-            setIsPlaying(false);
-            setPlayingMessageId(null);
-        }
-
-        // Set the playing message ID and start the audio
         setPlayingMessageId(messageId);
         setIsPlaying(true);
 
         const soundMessage = messages.find(msg => msg._id === messageId);
-        console.log('sound message', soundMessage);
+        const audioUri = soundMessage?.files?.[0]?.url;
 
-        if (soundMessage) {
-            const audioUri = soundMessage.files[0]?.url; // Get the audio URI from the message field
-
-            if (audioUri) {
-                const sound = new Sound(audioUri, '', (err) => {
-                    if (err) {
-                        console.log('Failed to load the sound', err);
-                    } else {
-                        sound.play((success) => {
-                            if (success) {
-                                console.log('Audio played successfully');
-                            } else {
-                                console.log('Audio playback failed');
-                            }
-                            // Reset isPlaying and playingMessageId after audio finishes
-                            setIsPlaying(false);
-                            setPlayingMessageId(null);
-                        });
-                    }
-                });
-            } else {
-                console.log('Audio URI is undefined');
-            }
-        } else {
-            console.log('Message not found');
+        if (audioUri) {
+            const newSound = new Sound(audioUri, '', (err) => {
+                if (err) {
+                    console.log('Failed to load the sound', err);
+                } else {
+                    setSound(newSound); // ✅ Store the sound globally
+                    newSound.play((success) => {
+                        setIsPlaying(false);
+                        setPlayingMessageId(null);
+                        newSound.release();
+                    });
+                }
+            });
         }
     };
+
+
+    const stopAudio = () => {
+        if (sound) {
+            sound.stop(() => {
+                console.log('Stopped playback');
+            });
+            sound.release();
+            setSound(null);
+            setIsPlaying(false);
+            setPlayingMessageId(null);
+        }
+    };
+
 
     const formatTime = (timestamp) => {
         const date = new Date(timestamp);
@@ -939,19 +933,27 @@ const OneToOneChat = ({ navigation, route }) => {
                                         {isAudioFile && item.files[0]?.url && (
                                             <View style={styles.audioMessageContainer}>
                                                 <Text>🎙️ Audio File</Text>
-                                                <TouchableOpacity onPress={() => playAudio(item._id)}>
-                                                    <Text style={styles.playButton}>Play</Text>
-                                                </TouchableOpacity>
-                                                {isPlaying && playingMessageId === item._id && (
-                                                    <LottieView
-                                                        source={require('../../assets/recording.json')}
-                                                        autoPlay
-                                                        loop
-                                                        style={styles.recordingAnimation}
-                                                    />
+
+                                                {isPlaying && playingMessageId === item._id ? (
+                                                    <>
+                                                        <TouchableOpacity onPress={stopAudio}>
+                                                            <Text style={[styles.playButton, { color: 'red' }]}>Stop</Text>
+                                                        </TouchableOpacity>
+                                                        <LottieView
+                                                            source={require('../../assets/recording.json')}
+                                                            autoPlay
+                                                            loop
+                                                            style={styles.recordingAnimation}
+                                                        />
+                                                    </>
+                                                ) : (
+                                                    <TouchableOpacity onPress={() => playAudio(item._id)}>
+                                                        <Text style={styles.playButton}>Play</Text>
+                                                    </TouchableOpacity>
                                                 )}
                                             </View>
                                         )}
+
                                         {isPlaying && playingMessageId === item._id && (
                                             <LottieView
                                                 source={require('../../assets/play.json')}

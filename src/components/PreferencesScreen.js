@@ -863,7 +863,7 @@ const PreferencesScreen = ({ navigation }) => {
                 {/* Loading indicator */}
                 {isLoading && <Text>Loading...</Text>}
                 <Text style={styles.sectionTitle}>MAXIMUM DISTANCE</Text>
-                <Text style={styles.sliderLabel}>{distanceRange[0]} - {distanceRange[1]} {userprofiledata?.preferredMeasurement === true ? 'km' : 'miles'}</Text>
+                <Text style={styles.sliderLabel}>{distanceRange[0]} - {distanceRange[1]} {userprofiledata?.preferredMeasurement === true ? 'miles' : 'km'}</Text>
                 <MultiSlider
                     values={distanceRange}
                     sliderLength={width * 0.8}

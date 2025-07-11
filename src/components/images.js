@@ -130,6 +130,8 @@ const images = {
     video1: require('../assets/video1.png'),
     speakeron: require('../assets/speakeron.png'),
     speakeroff: require('../assets/speakeroff.png'),
+    document: require('../assets/document.png'),
+
 
 
 

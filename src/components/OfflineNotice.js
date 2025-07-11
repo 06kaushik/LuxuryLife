@@ -21,6 +21,8 @@ const OfflineNotice = () => {
         return () => unsubscribe();
     }, []);
 
+
+
     const checkNetworkSpeed = async () => {
         try {
             const start = Date.now();

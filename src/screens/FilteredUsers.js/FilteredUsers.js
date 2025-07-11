@@ -11,7 +11,6 @@ import Toast from 'react-native-simple-toast'
 
 
 
-
 const { width } = Dimensions.get("window");
 
 const FileredUsers = ({ navigation }) => {
@@ -23,7 +22,7 @@ const FileredUsers = ({ navigation }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [location, setLocation] = useState(null);
     const [showSearch, setShowSearch] = useState(true);
-    const [distanceRange, setDistanceRange] = useState([1, 150]);
+    const [distanceRange, setDistanceRange] = useState([1, 50]);
     const [ageRange, setAgeRange] = useState([18, 70]);
     const [selectedOptions, setSelectedOptions] = useState({
         "Verified": false,
@@ -72,11 +71,9 @@ const FileredUsers = ({ navigation }) => {
     const [selectedLocation, setSelectedLocation] = useState('')
     const [unit, setUnit] = useState('cm');
     const [userprofiledata, setUserProfileData] = useState();
-    // //('userprofile daraaaa', userprofiledata);
+    // console.log('userprofile daraaaa', userprofiledata);
     const isFocused = useIsFocused()
     const [isApplying, setIsApplying] = useState(false);
-
-
 
 
     useEffect(() => {
@@ -169,6 +166,7 @@ const FileredUsers = ({ navigation }) => {
             //('error frm the user profile', error.response.data.message);
         }
     }
+
 
     const mapToApiFormat = (selectedOptions) => {
         return {
@@ -867,13 +865,13 @@ const FileredUsers = ({ navigation }) => {
                 {/* Loading indicator */}
                 {isLoading && <Text>Loading...</Text>}
                 <Text style={styles.sectionTitle}>MAXIMUM DISTANCE</Text>
-                <Text style={styles.sliderLabel}>{distanceRange[0]} - {distanceRange[1]} {userprofiledata?.preferredMeasurement === false ? 'km' : 'miles'}</Text>
+                <Text style={styles.sliderLabel}>{distanceRange[0]} - {distanceRange[1]} {userprofiledata?.preferredMeasurement === true ? 'miles' : 'km'}</Text>
                 <MultiSlider
                     values={distanceRange}
                     sliderLength={width * 0.8}
                     onValuesChange={(values) => setDistanceRange(values)}
                     min={1}
-                    max={150}
+                    max={50}
                     step={10}
                     snapped
                     trackStyle={{

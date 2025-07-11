@@ -5,10 +5,15 @@ import images from './images'; // adjust this import path to match your project
 import { GARAMOND, PLAYFAIRFONTS, POPPINSRFONTS } from './GlobalStyle'; // adjust if needed
 
 const RecentCard = ({ item, onChatPress, onLikePress, navigation }) => {
+
+
   const hasLiked = item.localLiked;
   const truncatedUserName = item.userName.length > 5 ? item.userName.slice(0, 5) : item.userName;
 
+
+
   return (
+
     <View style={styles.card}>
       <TouchableOpacity onPress={() => navigation.navigate('UserProfileDetails', { item: item?.userId })}>
         <ImageBackground source={{ uri: item?.profilePicture }} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
@@ -23,6 +28,7 @@ const RecentCard = ({ item, onChatPress, onLikePress, navigation }) => {
               <Image source={images.stars} style={styles.goldIcon} />
             </View>
           )}
+
           {item?.subscriptionsType === 'Luxury' && (
             <View style={styles.luxuryBadge}>
               <Image source={images.crown} style={styles.luxuryIcon} />
@@ -63,6 +69,7 @@ const RecentCard = ({ item, onChatPress, onLikePress, navigation }) => {
               </View>
             </View>
           </View>
+
         </ImageBackground>
       </TouchableOpacity>
     </View>
