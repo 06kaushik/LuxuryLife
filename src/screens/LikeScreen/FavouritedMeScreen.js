@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef,useContext } from "react";
 import { Text, View, StyleSheet, Image, TouchableOpacity, FlatList, ImageBackground, ActivityIndicator, Dimensions } from 'react-native'
 import images from "../../components/images";
 import LinearGradient from 'react-native-linear-gradient';
@@ -11,7 +11,7 @@ import RBSheet from "react-native-raw-bottom-sheet";
 import { GARAMOND, PLAYFAIRFONTS, POPPINSRFONTS } from "../../components/GlobalStyle";
 import Modal from "react-native-modal";
 import LottieView from "lottie-react-native";
-
+import { UserContext } from "../../components/UserContext"; 
 
 const { width, height } = Dimensions.get('window')
 
@@ -31,6 +31,7 @@ const FavouriteMeScreen = ({ navigation, index }) => {
     const [isModalVisible, setModalVisible] = useState(false);
     const [modalContent, setModalContent] = useState({ title: "", description: "", action: "" });
     const [hasSeenHideModal, setHasSeenHideModal] = useState(false);
+    const { userprofiledata } = useContext(UserContext);
 
     const onSocketConnect = () => {
         console.log('Socket connected in chat screen');
@@ -301,7 +302,7 @@ const FavouriteMeScreen = ({ navigation, index }) => {
                         <View style={styles.overlayContainer}>
                             <Text style={styles.memberName}>{`${item.user?.userName.charAt(0).toUpperCase() + item.user?.userName.slice(1)}, ${item?.user?.age}`}</Text>
                             <Text style={styles.memberLocation}>{item.city}, {item?.country}</Text>
-                            <Text style={styles.memberDistance}> {item?.distance === null || item?.distance === 0 ? 1 : item.distance} mile away</Text>
+                            <Text style={styles.memberDistance}> {item?.distance === null || item?.distance === 0 ? 1 : item.distance} {userprofiledata?.preferredMeasurement === false ? 'km' : 'miles'} away</Text>
                         </View>
                     </ImageBackground>
                 </TouchableOpacity>

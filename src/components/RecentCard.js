@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useContext, useState } from 'react';
 import { View, Text, TouchableOpacity, ImageBackground, Image, StyleSheet } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import images from './images'; // adjust this import path to match your project
 import { GARAMOND, PLAYFAIRFONTS, POPPINSRFONTS } from './GlobalStyle'; // adjust if needed
+import { UserContext } from './UserContext';
+
 
 const RecentCard = ({ item, onChatPress, onLikePress, navigation }) => {
 
 
   const hasLiked = item.localLiked;
   const truncatedUserName = item.userName.length > 5 ? item.userName.slice(0, 5) : item.userName;
+  const { userprofiledata } = useContext(UserContext);
+
 
 
   return (
@@ -49,7 +53,7 @@ const RecentCard = ({ item, onChatPress, onLikePress, navigation }) => {
                   {`${truncatedUserName.charAt(0).toUpperCase() + truncatedUserName.slice(1)}, ${item.age}`}
                 </Text>
                 <Text style={styles.memberLocation}>{item.city}</Text>
-                <Text style={styles.memberDistance}>{item.distance === 0 ? 1 : item?.distance} mile away</Text>
+                <Text style={styles.memberDistance}>{item.distance === 0 ? 1 : item?.distance} {userprofiledata?.preferredMeasurement === false ? 'km' : 'miles'} away</Text>
               </View>
 
               <View>

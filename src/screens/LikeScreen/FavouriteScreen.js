@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef,useContext } from "react";
 import { Text, View, StyleSheet, Image, TouchableOpacity, FlatList, ImageBackground, ActivityIndicator, Dimensions } from 'react-native'
 import images from "../../components/images";
 import LinearGradient from 'react-native-linear-gradient';
@@ -12,7 +12,7 @@ import { GARAMOND, PLAYFAIRFONTS, POPPINSRFONTS } from "../../components/GlobalS
 import Toast from 'react-native-simple-toast'
 import Modal from "react-native-modal";
 import LottieView from "lottie-react-native";
-
+import { UserContext } from "../../components/UserContext";
 
 
 
@@ -35,6 +35,7 @@ const FavouriteScreen = ({ navigation, index }) => {
     const [isModalVisible, setModalVisible] = useState(false);
     const [modalContent, setModalContent] = useState({ title: "", description: "", action: "" });
     const [hasSeenHideModal, setHasSeenHideModal] = useState(false);
+    const { userprofiledata } = useContext(UserContext);
 
 
     const closeModal = () => {
@@ -316,7 +317,7 @@ const FavouriteScreen = ({ navigation, index }) => {
                             <Text style={styles.memberName}>{`${item.targetUser?.userName.charAt(0).toUpperCase() + item.targetUser?.userName.slice(1)}, ${item?.targetUser?.age}`}</Text>
                             <Text style={styles.memberLocation}>{item.city}, {item?.country}</Text>
                             <Text style={styles.memberDistance}>
-                                {item?.distance === null || item?.distance === 0 ? 1 : item.distance} mile away
+                                {item?.distance === null || item?.distance === 0 ? 1 : item.distance} {userprofiledata?.preferredMeasurement === false ? 'km' : 'miles'} away
                             </Text>
 
                         </View>

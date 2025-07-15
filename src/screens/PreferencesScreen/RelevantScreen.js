@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useContext } from "react";
 import { Text, View, StyleSheet, Image, TouchableOpacity, FlatList, ImageBackground, Dimensions, ActivityIndicator } from 'react-native'
 import images from "../../components/images";
 import LinearGradient from 'react-native-linear-gradient';
@@ -8,6 +8,8 @@ import useSocket from "../../socket/SocketMain";
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { GARAMOND, PLAYFAIRFONTS, POPPINSRFONTS } from "../../components/GlobalStyle";
 import LottieView from "lottie-react-native";
+import { UserContext } from "../../components/UserContext";
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -23,6 +25,7 @@ const RelevantScreen = ({ navigation, index }) => {
     const { emit, on, removeListener, once } = useSocket(onSocketConnect);
     const isFocused = useIsFocused()
     const [likesetting, setManageLikeSetting] = useState()
+    const { userprofiledata } = useContext(UserContext);
 
 
 
@@ -330,7 +333,7 @@ const RelevantScreen = ({ navigation, index }) => {
                                         {`${truncatedUserName.charAt(0).toUpperCase() + truncatedUserName.slice(1)}, ${item.age}`}
                                     </Text>
                                     <Text style={styles.memberLocation}>{item.city}</Text>
-                                    <Text style={styles.memberDistance}>{item.distance === 0 ? 1 : item?.distance} mile away</Text>
+                                    <Text style={styles.memberDistance}>{item.distance === 0 ? 1 : item?.distance} {userprofiledata?.preferredMeasurement === false ? 'km' : 'miles'} away</Text>
                                 </View>
                                 <View style={{}}>
                                     <TouchableOpacity onPress={() => handleChatPress(item)} style={{ borderWidth: 1, borderColor: '#E0E2E9', borderRadius: 100, height: 30, width: 30, justifyContent: 'center', backgroundColor: 'white', position: 'absolute', right: 1 }}>

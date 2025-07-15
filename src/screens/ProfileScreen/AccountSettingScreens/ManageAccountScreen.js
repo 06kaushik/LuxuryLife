@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Text, View, StyleSheet, TouchableOpacity, Image, Switch, ScrollView, TextInput, Linking } from "react-native";
 import images from "../../../components/images";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -7,6 +7,7 @@ import Toast from 'react-native-simple-toast';
 import { GARAMOND, PLAYFAIRFONTS, POPPINSRFONTS } from "../../../components/GlobalStyle";
 import Modal from "react-native-modal";
 import moment from 'moment'
+import { UserContext } from "../../../components/UserContext";
 
 
 const ManageAccount = ({ navigation }) => {
@@ -32,7 +33,8 @@ const ManageAccount = ({ navigation }) => {
     const [showtoggle, setShowToggle] = useState(false)
     const [showtoggle1, setShowToggle1] = useState(false)
     const [searchresult, setSearchResult] = useState(false)
-    const [userprofiledata, setUserProfileData] = useState();
+
+    const { userprofiledata, setUserProfileData } = useContext(UserContext);
     const [isModalVisible, setModalVisible] = useState(false);
     const [isModalVisible1, setModalVisible1] = useState(false);
     const [plandetails, setPlanDetails] = useState(null)
@@ -126,6 +128,8 @@ const ManageAccount = ({ navigation }) => {
             const resp = await axios.put(`account/update-account-settings/${userdetails?._id}`, body, { headers })
             // console.log('response from the update account token', resp.data);
             await AsyncStorage.setItem('accountSettings', JSON.stringify(body));
+            getUserProfileData()
+
         } catch (error) {
             console.log('error from the update account api', error.response.data.message);
         }

@@ -840,7 +840,6 @@ const OneToOneChat = ({ navigation, route }) => {
                         };
 
 
-
                         if (isCallRelated) {
                             const iconSource = item?.message === 'video'
                                 ? images.video
@@ -871,6 +870,7 @@ const OneToOneChat = ({ navigation, route }) => {
                         }
 
                         if (isPicRequest) {
+
                             return (
                                 <>
                                     {ispremiumuser ?
