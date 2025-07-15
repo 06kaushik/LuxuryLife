@@ -42,7 +42,9 @@ const ViewProfile = ({ navigation }) => {
     const [selectethnicity, setEthnicity] = useState('');
     const [isethnicity, setIsEthnicity] = useState(false)
     const [unit, setUnit] = useState('');
-    const [height, setHeight] = useState([122, 0]);
+    const [height, setHeight] = useState(0);
+    // console.log('height from slilder', height);
+
 
     const [isheight, setIsHeight] = useState(false)
     const [selectedBodyType, setSelectedBodyType] = useState('');
@@ -71,6 +73,8 @@ const ViewProfile = ({ navigation }) => {
     const [luxinterest, setLuxInterest] = useState([])
     const [isluxinterest, setIsLuxInterest] = useState(false)
     const [userprofiledata, setUserProfileData] = useState();
+    // console.log('userprofile dataaa', userprofiledata);
+
     const [isUploadingAny, setIsUploadingAny] = useState(false);
     const [loading, setLoading] = useState(false);
     const [loading1, setLoading1] = useState(false);
@@ -126,6 +130,11 @@ const ViewProfile = ({ navigation }) => {
             // console.log('user profile dataa', resp?.data?.data);
             const parsedData = resp?.data?.data
             setUserProfileData(resp?.data?.data)
+            if (parsedData?.tall?.value) {
+                // Set the value for index 1 from parsedData
+                setHeight([122, parsedData?.tall?.cm]);
+            }
+            setUnit(parsedData?.tall?.unit)
             setPhotos({
                 public: [
                     ...parsedData.publicPhotos,
@@ -157,11 +166,11 @@ const ViewProfile = ({ navigation }) => {
                     setAgeRange([ageRange.min, ageRange.max]);
                 }
                 setEthnicity(parsedData?.ethnicity)
-                if (parsedData?.tall?.value) {
-                    // Set the value for index 1 from parsedData
-                    setHeight([122, parsedData?.tall?.cm]);
-                }
-                setUnit(parsedData?.tall?.unit)
+                // if (parsedData?.tall?.value) {
+                //     // Set the value for index 1 from parsedData
+                //     setHeight([122, parsedData?.tall?.cm]);
+                // }
+                // setUnit(parsedData?.tall?.unit)
                 setSelectedBodyType(parsedData?.bodyType)
                 setChild(parsedData?.children)
                 setSmoke(parsedData?.smoke)
@@ -968,16 +977,24 @@ const ViewProfile = ({ navigation }) => {
         const headers = {
             Authorization: token,
         };
+
+        let formattedHeight = height;
+        if (unit === 'feet') {
+            const totalInches = height[1] / 2.54;
+            const feet = Math.floor(totalInches / 12);
+            const inches = Math.round(totalInches % 12);
+            formattedHeight = `${feet}.${inches < 10 ? + inches : inches}`;
+        }
         let body = {
             step: 6,
             accountUpdatePayload: {
                 tall: {
-                    value: height[1],
+                    value: unit === 'cm' ? formattedHeight[1] : formattedHeight,
                     unit: unit
                 }
             }
         }
-        //('body response of the height', body);
+        console.log('body response of the height', JSON.stringify(body));
         try {
             const resp = await axios.put(`auth/update-account/${userdetails?._id}`, body, { headers })
             if (resp?.status === 200) {
@@ -987,6 +1004,8 @@ const ViewProfile = ({ navigation }) => {
                         unit: unit
                     }
                 };
+                console.log('response from the heignt update', resp?.data?.data);
+
                 await AsyncStorage.setItem('UserData', JSON.stringify(updatedUserData));
                 getUserProfileData()
                 //('User data updated in AsyncStorage');
@@ -1745,7 +1764,7 @@ const ViewProfile = ({ navigation }) => {
                 {isheight != true ?
                     <View style={{ borderWidth: 1, height: 50, width: '90%', alignSelf: 'center', borderRadius: 5, borderColor: '#DDDDDD', justifyContent: 'center', marginTop: 10 }}>
                         <Text style={{ paddingLeft: 20, color: '#7A7A7A', fontSize: 14, fontFamily: POPPINSRFONTS.regular, top: 3 }}>
-                            {userdetails?.tall?.value} {userdetails?.tall?.unit === 'cm' ? 'cm' : 'feet'}
+                            {userprofiledata?.tall?.value} {userprofiledata?.tall?.unit === 'cm' ? 'cm' : 'feet'}
                         </Text>
 
                     </View> : null}

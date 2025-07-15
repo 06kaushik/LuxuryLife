@@ -167,6 +167,7 @@ const HiddenMembers = ({ navigation }) => {
                     renderItem={renderHiddenMember}
                     keyExtractor={(item) => item._id}
                     numColumns={2}
+                    removeClippedSubviews={false}
                     style={{ marginTop: 30 }}
                     onEndReached={handleEndReached}
                     onEndReachedThreshold={0.5}

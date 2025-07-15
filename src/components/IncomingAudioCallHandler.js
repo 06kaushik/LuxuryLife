@@ -195,8 +195,6 @@ const IncomingAudioCallHandler = ({ }) => {
 };
 
 
-
-
 const styles = StyleSheet.create({
     callOverlay: {
         position: 'absolute',

@@ -11,10 +11,10 @@ const RecentCard = ({ item, onChatPress, onLikePress, navigation }) => {
   const truncatedUserName = item.userName.length > 5 ? item.userName.slice(0, 5) : item.userName;
 
 
-
   return (
 
     <View style={styles.card}>
+
       <TouchableOpacity onPress={() => navigation.navigate('UserProfileDetails', { item: item?.userId })}>
         <ImageBackground source={{ uri: item?.profilePicture }} style={styles.imageBackground} imageStyle={{ borderRadius: 10 }}>
           <LinearGradient

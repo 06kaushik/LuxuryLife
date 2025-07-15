@@ -71,8 +71,10 @@ const RecentScreen = ({ navigation, index }) => {
 
 
     const getPhotoVideoSettings = async () => {
+
         const token = await AsyncStorage.getItem('authToken');
         const headers = { Authorization: token };
+
 
         try {
             const resp = await axios.post(
@@ -91,6 +93,7 @@ const RecentScreen = ({ navigation, index }) => {
             // );
         }
     };
+
 
     const getdatafromAsync = async () => {
         try {

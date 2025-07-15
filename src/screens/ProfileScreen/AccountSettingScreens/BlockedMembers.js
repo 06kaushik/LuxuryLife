@@ -166,6 +166,7 @@ const BlockedMembers = ({ navigation }) => {
                     data={blockedmember}
                     renderItem={renderBlockedMember}
                     keyExtractor={(item) => item._id}
+                    removeClippedSubviews={false}
                     numColumns={2}
                     style={{ marginTop: 30 }}
                     onEndReached={handleEndReached}

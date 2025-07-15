@@ -13,6 +13,7 @@ import * as Clarity from '@microsoft/react-native-clarity';
 
 const RazorPayGateway = ({ navigation }) => {
 
+
   const [selectedTab, setSelectedTab] = useState("Quarterly");
   const [plans, setPlans] = useState([])
   const [userdetails, setUserDetails] = useState(null)
@@ -25,6 +26,7 @@ const RazorPayGateway = ({ navigation }) => {
     analytics().logEvent('subscription_planView');
     Clarity.sendCustomEvent('subscription_planView')
   }, [])
+
 
 
   useEffect(() => {
@@ -204,11 +206,12 @@ const RazorPayGateway = ({ navigation }) => {
   ]));
 
 
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white' }}>
         <LottieView
-          source={require('../assets/loaderr.json')} // 👈 Update the correct path
+          source={require('../assets/loaderr.json')}
           autoPlay
           loop
           style={{ height: 100, width: 100 }}
@@ -216,6 +219,8 @@ const RazorPayGateway = ({ navigation }) => {
       </View>
     );
   }
+
+
 
   return (
     <View style={styles.main}>
@@ -256,8 +261,8 @@ const RazorPayGateway = ({ navigation }) => {
                 colors={["#DDDDDD", "#FFFFFF"]}
                 style={[styles.cardContainer, { borderColor: '#DDDDDD' }]}
                 start={{ x: 0, y: -1 }}
-                end={{ x: 0, y: 0.7 }}
-              >
+                end={{ x: 0, y: 0.7 }}>
+
                 <View>
                   <View style={{ top: 5 }}>
                     {/* <Image source={images.stars} style={{ height: 40, width: 40 }} /> */}
@@ -364,6 +369,7 @@ const RazorPayGateway = ({ navigation }) => {
           <TouchableOpacity onPress={() => setIsModalVisible(false)} style={styles.closeButton}>
             <Image source={images.cross} style={styles.closeIcon} />
           </TouchableOpacity>
+
           <View style={styles.modalContent}>
             <LottieView
               source={require('../assets/razorpay.json')}
@@ -385,6 +391,7 @@ const RazorPayGateway = ({ navigation }) => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   main: {

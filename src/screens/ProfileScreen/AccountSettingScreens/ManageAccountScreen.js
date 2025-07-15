@@ -121,7 +121,7 @@ const ManageAccount = ({ navigation }) => {
                 google: googleStatus
             }
         }
-        // console.log('response from the body of update account', body);
+        console.log('response from the body of update account', body);
         try {
             const resp = await axios.put(`account/update-account-settings/${userdetails?._id}`, body, { headers })
             // console.log('response from the update account token', resp.data);

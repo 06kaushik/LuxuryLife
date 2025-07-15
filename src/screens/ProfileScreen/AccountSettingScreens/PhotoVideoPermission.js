@@ -586,7 +586,7 @@ const PhotoVideoPermissions = ({ navigation }) => {
 
         try {
             const resp = await axios.post(`account/get-private-pic-access/${userId}`, body, { headers });
-            console.log('Response from private member API:', resp?.data?.data);
+            // console.log('Response from private member API:', resp?.data?.data);
             setPrivateMemberList(resp?.data?.data || []);
         } catch (error) {
             const message = error.response?.data?.message || error.message || 'Unknown error';
@@ -890,21 +890,13 @@ const PhotoVideoPermissions = ({ navigation }) => {
                         data={privatememberlist}
                         keyExtractor={(item) => item._id}
                         renderItem={renderMemberList}
+                        removeClippedSubviews={false}
                         contentContainerStyle={{ paddingBottom: 20 }}
                     />
                 }
 
 
             </ScrollView>
-
-
-
-
-
-
-
-
-
 
             <RBSheet
                 ref={rbSheetRef}

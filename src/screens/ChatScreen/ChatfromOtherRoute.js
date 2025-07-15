@@ -46,7 +46,7 @@ const OneToOneChatFromNav = ({ navigation, route }) => {
     const [isImageModalVisible, setIsImageModalVisible] = useState(false);
     const [selectedImageUri, setSelectedImageUri] = useState(null);
     const { emit, on, removeListener, socketId, once } = useSocket(onSocketConnect);
-    const [privatePicRequestStatus, setPrivatePicRequestStatus] = useState('Pending' || 'Accepted' || 'Rejected')
+    const [privatePicRequestStatus, setPrivatePicRequestStatus] = useState('pending' || 'accepted' || 'rejected')
     const requestPic = item?.participantId?.profilePicture
     const [loadingMessages, setLoadingMessages] = useState(true);
     const [loadingProfile, setLoadingProfile] = useState(true);
@@ -642,42 +642,49 @@ const OneToOneChatFromNav = ({ navigation, route }) => {
     };
 
     useEffect(() => {
+        if (!userdetails?._id || !item?.participantId?._id) return;
+
         const getRequestDetailStatus = async () => {
-            const token = await AsyncStorage.getItem('authToken')
-            const headers = {
-                Authorization: token
-            }
-            let body = {
-                receiverId: userdetails?._id,
-                targetUserId: item?.participantId?._id,
-            }
+            const token = await AsyncStorage.getItem('authToken');
+            const headers = { Authorization: token };
+
+            const picRequestMessage = messages?.find(msg => msg?.messageType === 'pic_request');
+            // console.log('pic request message', picRequestMessage?.messageType === 'pic_request');
+
+            const body = {
+                receiverId: picRequestMessage?.messageType === 'pic_request' ? userdetails?._id : item?.participantId?._id,
+                targetUserId: picRequestMessage?.messageType === 'pic_request' ? item?.participantId?._id : userdetails?._id,
+            };
+            // console.log('body of pic request', body);
+
             try {
                 const response = await axios.post('home/private-pic-request-details', body, { headers });
-                const status = response?.data?.data?.status?.toLowerCase()
-                if (status === 'accepted' || status === 'rejected') {
-                    const newStatus = status.replace("ed", "")
-                    setPrivatePicRequestStatus(newStatus)
-                } else {
-                    setPrivatePicRequestStatus(status)
-
-                }
+                const status = response?.data?.data?.status?.toLowerCase();
+                // console.log('Pic request status from API:', response?.data);
+                setPrivatePicRequestStatus(status);
             } catch (error) {
-                console.error('Error accepting pic request:', error.response.data.message);
+                console.error('Error fetching pic request status:', error?.response?.data?.message);
             }
-        }
-        getRequestDetailStatus()
-    }, [messages, privatePicRequestStatus])
+        };
+
+        getRequestDetailStatus();
+    }, [userdetails?._id, item?.participantId?._id, messages, privatePicRequestStatus]);
+
 
     useEffect(() => {
         on('privatePicRequestResponse', (data) => {
-            const status = data?.message?.status?.toLowerCase()
+            console.log('private pic response', data);
+
+            const status = data?.message?.status?.toLowerCase();
             if (status === 'accepted' || status === 'rejected' || status === 'removed') {
-                const newStatus = status.replace("ed", "")
-                setPrivatePicRequestStatus(newStatus)
+                setPrivatePicRequestStatus(status); // ✅ Set the real value
             }
-        })
-    }, [on, privatePicRequestStatus])
-    if (privatePicRequestStatus?.toLowerCase() === 'removed') return null
+        });
+
+        return () => {
+            removeListener('privatePicRequestResponse');
+        };
+    }, []);
 
 
     const handleSendPreview = async () => {
@@ -842,7 +849,8 @@ const OneToOneChatFromNav = ({ navigation, route }) => {
                         const isPicRequest = item?.messageType === 'pic_request';
                         const isCallRelated = ['call_request', 'call_request_accept', 'call_request_reject'].includes(item?.messageType);
                         const isReciever = item?.senderId !== userdetails?._id;
-                        const messageStylee = isReciever ? styles.userMessage : styles.receiverMessage;
+                        const messageStylee = isReciever ? styles.receiverMessage : styles.userMessage;
+
                         const getMessageTick = () => {
                             if (item.isRead && item.isDelivered) {
                                 return images.bluetick;
@@ -910,22 +918,22 @@ const OneToOneChatFromNav = ({ navigation, route }) => {
                                                     </View>
                                                 )}
                                             </View>
-                                            {privatePicRequestStatus?.toLowerCase() === 'accept' && isReciever && (
+                                            {privatePicRequestStatus?.toLowerCase() === 'accepted' && isReciever && (
                                                 <View style={messageStylee}>
                                                     <Text style={styles.messageText}>You have accepted the request. They can now view your private photos.</Text>
                                                 </View>
                                             )}
-                                            {privatePicRequestStatus?.toLowerCase() === 'reject' && isReciever && (
+                                            {privatePicRequestStatus?.toLowerCase() === 'rejected' && isReciever && (
                                                 <View style={messageStylee}>
                                                     <Text style={styles.messageText}>You have rejected the request. They cannot view your private photos.</Text>
                                                 </View>
                                             )}
-                                            {privatePicRequestStatus?.toLowerCase() === 'accept' && !isReciever && (
+                                            {privatePicRequestStatus?.toLowerCase() === 'accepted' && !isReciever && (
                                                 <View style={messageStylee}>
                                                     <Text style={styles.messageText}>Your request was accepted! You can now view their private photos</Text>
                                                 </View>
                                             )}
-                                            {privatePicRequestStatus?.toLowerCase() === 'reject' && !isReciever && (
+                                            {privatePicRequestStatus?.toLowerCase() === 'rejected' && !isReciever && (
                                                 <View style={messageStylee}>
                                                     <Text style={styles.messageText}>Your request was rejected! You cannot view their private photos</Text>
                                                 </View>

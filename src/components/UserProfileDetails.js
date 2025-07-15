@@ -65,6 +65,7 @@ const UserProfileDetails = ({ navigation, route }) => {
     const [likesetting, setManageLikeSetting] = useState()
     const [profileview, setProfileViewSetting] = useState()
     const [hidejoindate, setHideJoinDate] = useState()
+    const [isModalVisible1, setIsModalVisible1] = useState(false);
 
 
 
@@ -1003,21 +1004,30 @@ const UserProfileDetails = ({ navigation, route }) => {
                                 </TouchableOpacity>
                             ))}
 
+
                             {userprofiledata?.privatePhotosCount > 0 &&
-                                (userdetails?.isSubscribed || (userdetails?.gender === 'Female' && userdetails?.preferences?.gender[0] !== 'Female')) &&
+                                // ((userdetails?.gender === 'Female' && userdetails?.preferences?.gender[0] !== 'Female')) &&
                                 userprofiledata?.privatePicAccess?.status !== 'Accepted' && (
                                     <TouchableOpacity
                                         onPress={() => {
                                             const status = userprofiledata?.privatePicAccess?.status;
-                                            console.log('status', status);
 
-                                            if (status !== 'Pending' && status !== 'Rejected') {
-                                                handlePicRequest(userprofiledata?._id);
+                                            const isEligibleToRequest =
+                                                userdetails?.gender === 'Female' &&
+                                                userdetails?.preferences?.gender?.[0] !== 'Female';
+
+                                            if (isEligibleToRequest) {
+                                                if (status !== 'Pending' && status !== 'Rejected') {
+                                                    handlePicRequest(userprofiledata?._id);
+                                                } else {
+                                                    Toast.show(`You have already ${status} access`, Toast.SHORT);
+                                                }
                                             } else {
-                                                Toast.show(`You have already ${status} access`, Toast.SHORT);
+                                                setIsModalVisible1(true);
                                             }
                                         }}
                                     >
+
                                         <ImageBackground
                                             source={images.dummy1}
                                             style={{
@@ -1300,6 +1310,27 @@ const UserProfileDetails = ({ navigation, route }) => {
                     </View>
                 </View>
             </RBSheet>
+            <Modal isVisible={isModalVisible1} style={styles.modal}>
+                <View style={styles.overlay}>
+                    <TouchableOpacity onPress={() => setIsModalVisible1(false)} style={[styles.closeButton, { borderColor: 'white' }]}>
+                        <Image source={images.cross} style={[styles.closeIcon, { tintColor: 'white' }]} />
+                    </TouchableOpacity>
+                    {userprofiledata?.country === 'India' ?
+                        <TouchableWithoutFeedback onPress={() => {
+                            setIsModalVisible1(false);
+                            navigation.navigate('RazorPay');
+                        }}>
+                            <Image source={images.modal} style={{ height: 709, width: 363 }} />
+                        </TouchableWithoutFeedback>
+                        :
+                        <TouchableWithoutFeedback onPress={() => {
+                            setIsModalVisible1(false);
+                            navigation.navigate('Paypal');
+                        }}>
+                            <Image source={images.modal} style={{ height: 709, width: 363 }} />
+                        </TouchableWithoutFeedback>}
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -1705,6 +1736,34 @@ const styles = StyleSheet.create({
     iconStyle: {
         width: 20,
         height: 20,
+    },
+    modal: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        margin: 0,
+    },
+    overlay: {
+        // flex: 1, 
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        margin: 0,
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 15,
+        right: 15,
+        zIndex: 1,
+        borderWidth: 1,
+        height: 30,
+        width: 30,
+        justifyContent: 'center',
+        borderRadius: 100
+    },
+    closeIcon: {
+        height: 17,
+        width: 17,
+        alignSelf: 'center'
     },
 
 

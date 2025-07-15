@@ -31,6 +31,7 @@ const ChatScreen = ({ navigation }) => {
     const [sortingOption, setSortingOption] = useState('All');
 
 
+
     useEffect(() => {
         if (isFocused) {
             fetchUserDetails();
@@ -71,6 +72,8 @@ const ChatScreen = ({ navigation }) => {
         if (userdetails && socketId && !socketListenersInitialized.current) {
             on('recentChatListResponse', async (event) => {
                 const updatedChats = event?.list || [];
+                console.log('updated chats', updatedChats.length);
+
 
                 setChatList(updatedChats); // ✅ render immediately
                 setLoading(false); // ✅ hide loader now
@@ -124,7 +127,7 @@ const ChatScreen = ({ navigation }) => {
             socketListenersInitialized.current = false;
             emittedOnce.current = false;
         };
-    }, [userdetails, socketId]);
+    }, [userdetails, socketId, sortingOption]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
